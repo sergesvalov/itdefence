@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enikey Defense – Save Petya from the Tasks!</title>
+    <meta name="description" content="A funny tower-defense game set in a corporate office. Help Petya fend off coworkers bringing task-tickets!" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: #1a1a2e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        overflow: hidden;
+      }
+      #game-container {
+        position: relative;
+      }
+      canvas {
+        display: block;
+        border-radius: 8px;
+        box-shadow: 0 0 60px rgba(100,200,255,0.15), 0 0 20px rgba(0,0,0,0.8);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+{
+  "name": "itdefence",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "build:web": "tsc && vite build --mode web",
+    "build:electron": "tsc && vite build --mode electron",
+    "build:cap": "tsc && vite build --mode capacitor",
+    "electron:dev": "npm run build:electron && electron .",
+    "dist:win": "npm run build:electron && electron-builder --win --x64",
+    "cap:sync": "npm run build:cap && npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "phaser": "^3.88.2",
+    "@capacitor/core": "^7.4.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "electron": "^36.4.0",
+    "electron-builder": "^26.0.12",
+    "@capacitor/cli": "^7.4.0",
+    "@capacitor/android": "^7.4.0"
+  },
+  "build": {
+    "appId": "com.sergesvalov.itdefence",
+    "productName": "Office TD – Enikey Defense",
+    "files": [
+      "dist/**/*",
+      "electron/main.cjs"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "installerHeader": "public/icon.ico"
+    }
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "electron@36.9.5": true,
+    "electron-winstaller@5.4.0": true
+  }
+}
