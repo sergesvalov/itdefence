@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# ВОТ ЭТИ СТРОКИ Я СЛУЧАЙНО ПОТЕРЯЛ В ПРОШЛЫЙ РАЗ:
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:/opt/gradle-8.14/bin
+
 RUN mkdir -p /opt/android-sdk/cmdline-tools && \
     wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
          -O /tmp/cmdline-tools.zip && \
