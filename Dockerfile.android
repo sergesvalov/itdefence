@@ -1,6 +1,5 @@
 FROM docker.io/library/node:22-bookworm-slim
 
-# 1. Install base dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-17-jdk-headless \
     wget \
@@ -10,19 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Setup system paths
-ENV ANDROID_HOME=/opt/android-sdk
-ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:/opt/gradle-8.14/bin
-
-# 2. Download and configure AAPT2 for ARM64 manually
-RUN wget -q https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/8.4.0-11368066/aapt2-8.4.0-11368066-linux-aarch64.jar -O /tmp/aapt2.jar && \
-    unzip -q /tmp/aapt2.jar aapt2 -d /usr/bin/ && \
-    chmod +x /usr/bin/aapt2 && \
-    rm /tmp/aapt2.jar
-
-ENV ANDROID_AAPT2_PATH=/usr/bin/aapt2
-
-# Install Android SDK Command-line Tools
 RUN mkdir -p /opt/android-sdk/cmdline-tools && \
     wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
          -O /tmp/cmdline-tools.zip && \
@@ -30,14 +16,12 @@ RUN mkdir -p /opt/android-sdk/cmdline-tools && \
     mv /opt/android-sdk/cmdline-tools/cmdline-tools /opt/android-sdk/cmdline-tools/latest && \
     rm /tmp/cmdline-tools.zip
 
-# Accept licenses and install platform/build-tools
 RUN yes | sdkmanager --licenses > /dev/null 2>&1 && \
     sdkmanager \
         "platform-tools" \
         "platforms;android-35" \
         "build-tools;35.0.0"
 
-# Install Gradle 8.14
 RUN wget -q https://services.gradle.org/distributions/gradle-8.14-bin.zip \
          -O /tmp/gradle.zip && \
     unzip -q /tmp/gradle.zip -d /opt && \
@@ -45,10 +29,6 @@ RUN wget -q https://services.gradle.org/distributions/gradle-8.14-bin.zip \
     rm /tmp/gradle.zip
 
 WORKDIR /app
-
-# Copy and install Node.js dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
-
-# Copy project source
 COPY . .
