@@ -66,13 +66,29 @@ pipeline {
         }
 
         // ─────────────────────────────────────────────────────────────────
+        // Устанавливаем зависимости ОДИН РАЗ в Jenkins workspace.
+        // Без этого docker.inside() монтирует workspace поверх /app в образе,
+        // скрывая node_modules из образа — и npx скачивает не те пакеты.
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    echo "📦 npm ci → node_modules в workspace..."
+                    docker.image("${NODE_IMAGE}:latest").inside {
+                        sh 'npm ci --ignore-scripts'
+                    }
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
         stage('TypeScript Check') {
             when { expression { return !params.SKIP_TYPECHECK } }
             steps {
                 script {
                     echo "🔍 Запуск tsc --noEmit..."
                     docker.image("${NODE_IMAGE}:latest").inside {
-                        sh 'npx tsc --noEmit'
+                        // Используем локальный tsc из workspace/node_modules
+                        sh './node_modules/.bin/tsc --noEmit'
                     }
                 }
             }
@@ -116,7 +132,7 @@ pipeline {
                                 // 1. Собираем бандл с относительными путями
                                 sh 'VITE_MODE=electron npm run build:electron'
                                 // 2. Упаковываем в .exe (electron-builder)
-                                sh 'npx electron-builder --win --x64 --publish never'
+                                sh './node_modules/.bin/electron-builder --win --x64 --publish never'
                             }
                             sh 'ls -lh release/'
                             archiveArtifacts artifacts: 'release/*.exe', fingerprint: true
@@ -134,7 +150,7 @@ pipeline {
                                 // 1. Vite-билд для Capacitor
                                 sh 'VITE_MODE=capacitor npm run build:cap'
                                 // 2. Синхронизация в android/ проект
-                                sh 'npx cap sync android'
+                                sh './node_modules/.bin/cap sync android'
                                 // 3. Gradle assembleRelease
                                 sh '''
                                     cd android
