@@ -66,14 +66,12 @@ pipeline {
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // Устанавливаем зависимости ОДИН РАЗ в Jenkins workspace.
-        // Без этого docker.inside() монтирует workspace поверх /app в образе,
-        // скрывая node_modules из образа — и npx скачивает не те пакеты.
         stage('Install Dependencies') {
             steps {
                 script {
                     echo "📦 npm ci → node_modules в workspace..."
-                    docker.image("${NODE_IMAGE}:latest").inside {
+                    // ИСПРАВЛЕНО: Добавлен аргумент '-u root', чтобы npm имел доступ к записи в workspace хоста
+                    docker.image("${NODE_IMAGE}:latest").inside('-u root') {
                         sh 'npm ci --ignore-scripts'
                     }
                 }
@@ -86,8 +84,8 @@ pipeline {
             steps {
                 script {
                     echo "🔍 Запуск tsc --noEmit..."
-                    docker.image("${NODE_IMAGE}:latest").inside {
-                        // Используем локальный tsc из workspace/node_modules
+                    // ИСПРАВЛЕНО: Добавлен аргумент '-u root' для предотвращения EACCES ошибок
+                    docker.image("${NODE_IMAGE}:latest").inside('-u root') {
                         sh './node_modules/.bin/tsc --noEmit'
                     }
                 }
@@ -106,7 +104,8 @@ pipeline {
                     steps {
                         script {
                             echo "🌐 Vite web-билд..."
-                            docker.image("${NODE_IMAGE}:latest").inside {
+                            // ИСПРАВЛЕНО: Добавлен аргумент '-u root' для Vite сборщика
+                            docker.image("${NODE_IMAGE}:latest").inside('-u root') {
                                 sh 'VITE_MODE=web npm run build:web'
                             }
                             sh 'ls -lh dist/'
@@ -116,7 +115,6 @@ pipeline {
                             sh "docker push ${WEB_IMAGE}:${BUILD_TAG}"
                             sh "docker push ${WEB_IMAGE}:latest"
 
-                            // Стэш compose.yml нужен для Deploy
                             stash name: 'compose', includes: 'compose.yml'
                         }
                     }
@@ -128,10 +126,9 @@ pipeline {
                     steps {
                         script {
                             echo "🪟 Electron-builder → Windows x64 NSIS..."
-                            docker.image("${NODE_IMAGE}:latest").inside {
-                                // 1. Собираем бандл с относительными путями
+                            // ИСПРАВЛЕНО: Добавлен аргумент '-u root' для Electron-builder
+                            docker.image("${NODE_IMAGE}:latest").inside('-u root') {
                                 sh 'VITE_MODE=electron npm run build:electron'
-                                // 2. Упаковываем в .exe (electron-builder)
                                 sh './node_modules/.bin/electron-builder --win --x64 --publish never'
                             }
                             sh 'ls -lh release/'
@@ -149,15 +146,27 @@ pipeline {
                             docker.image("${ANDROID_IMAGE}:latest").inside('-u root') {
                                 // 1. Vite-билд для Capacitor
                                 sh 'VITE_MODE=capacitor npm run build:cap'
-                                // 2. Синхронизация в android/ проект
+                                
+                                // 2. ИСПРАВЛЕНО: Добавлена команда инициализации платформы npx cap add android, 
+                                // если папки 'android' ещё нет в репозитории
+                                sh '''
+                                    if [ ! -d "android" ]; then
+                                        echo "📱 Платформа Android не найдена. Добавляем через Capacitor..."
+                                        ./node_modules/.bin/cap add android
+                                    fi
+                                '''
+
+                                // 3. Синхронизация в android/ проект
                                 sh './node_modules/.bin/cap sync android'
-                                // 3. Gradle assembleRelease
+                                
+                                // 4. Gradle assembleRelease
                                 sh '''
                                     cd android
                                     chmod +x gradlew
                                     ./gradlew assembleRelease \
                                         --no-daemon \
                                         --stacktrace \
+                                        --no-build-cache \
                                         -Pandroid.useAndroidX=true
                                 '''
                             }
@@ -194,21 +203,18 @@ pipeline {
                     echo "🚀 Docker-деплой на ${DEPLOY_HOST}:${WEB_PORT} ..."
                     unstash 'compose'
                     sshagent(credentials: ['deploy-ssh-key']) {
-                        // 1. Создаём папку на сервере (если нет)
                         sh """
                             ssh -o StrictHostKeyChecking=no \
                                 ${DEPLOY_USER}@${DEPLOY_HOST} \
                                 'mkdir -p ${DEPLOY_DIR}'
                         """
 
-                        // 2. Копируем compose.yml на сервер
                         sh """
                             scp -o StrictHostKeyChecking=no \
                                 compose.yml \
                                 ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/compose.yml
                         """
 
-                        // 3. Пуллим новый образ и перезапускаем контейнер
                         sh """
                             ssh -o StrictHostKeyChecking=no \
                                 ${DEPLOY_USER}@${DEPLOY_HOST} \
@@ -217,7 +223,6 @@ pipeline {
                                  docker compose up -d --remove-orphans'
                         """
 
-                        // 4. Проверяем что контейнер поднялся
                         sh """
                             ssh -o StrictHostKeyChecking=no \
                                 ${DEPLOY_USER}@${DEPLOY_HOST} \
