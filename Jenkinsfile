@@ -21,10 +21,12 @@ pipeline {
         NODE_IMAGE     = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-builder"
         ANDROID_IMAGE  = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-android"
 
-        // ── Целевой веб-сервер ───────────────────────────────────────────
+        // ── Целевой сервер (Docker-деплой) ──────────────────────────────
         DEPLOY_HOST    = '192.168.10.222'
         DEPLOY_USER    = 'deploy'
-        DEPLOY_DIR     = '/var/www/itdefence'
+        DEPLOY_DIR     = '/opt/itdefence'           // папка с compose.yml на сервере
+        WEB_IMAGE      = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-web"
+        WEB_PORT       = '7979'
 
         // ── Метка сборки ─────────────────────────────────────────────────
         BUILD_TAG      = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'local'}"
@@ -92,8 +94,14 @@ pipeline {
                                 sh 'VITE_MODE=web npm run build:web'
                             }
                             sh 'ls -lh dist/'
-                            // Архивируем отдельно чтобы Deploy мог найти артефакт
-                            stash name: 'dist-web', includes: 'dist/**/*'
+
+                            echo "🐳 Сборка Nginx-образа с dist/ внутри..."
+                            sh "docker build -t ${WEB_IMAGE}:${BUILD_TAG} -t ${WEB_IMAGE}:latest -f Dockerfile.nginx ."
+                            sh "docker push ${WEB_IMAGE}:${BUILD_TAG}"
+                            sh "docker push ${WEB_IMAGE}:latest"
+
+                            // Стэш compose.yml нужен для Deploy
+                            stash name: 'compose', includes: 'compose.yml'
                         }
                     }
                 }
@@ -152,7 +160,7 @@ pipeline {
             when { expression { return params.BUILD_WEB } }
             steps {
                 archiveArtifacts artifacts: 'dist/**/*', fingerprint: true
-                echo "📦 Веб-артефакт сборки #${BUILD_TAG} сохранён."
+                echo "📦 dist/ сохранён в Jenkins. Основной артефакт — Docker-образ ${WEB_IMAGE}:${BUILD_TAG}"
             }
         }
 
@@ -167,20 +175,40 @@ pipeline {
             }
             steps {
                 script {
-                    echo "🚀 Деплой на ${DEPLOY_HOST}:${DEPLOY_DIR} ..."
-                    unstash 'dist-web'
+                    echo "🚀 Docker-деплой на ${DEPLOY_HOST}:${WEB_PORT} ..."
+                    unstash 'compose'
                     sshagent(credentials: ['deploy-ssh-key']) {
-                        sh """
-                            rsync -avz --delete \
-                                -e "ssh -o StrictHostKeyChecking=no" \
-                                dist/ \
-                                ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/
-                        """
+                        // 1. Создаём папку на сервере (если нет)
                         sh """
                             ssh -o StrictHostKeyChecking=no \
                                 ${DEPLOY_USER}@${DEPLOY_HOST} \
-                                'echo "Деплой #${BUILD_TAG} завершён: \$(date)"'
+                                'mkdir -p ${DEPLOY_DIR}'
                         """
+
+                        // 2. Копируем compose.yml на сервер
+                        sh """
+                            scp -o StrictHostKeyChecking=no \
+                                compose.yml \
+                                ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/compose.yml
+                        """
+
+                        // 3. Пуллим новый образ и перезапускаем контейнер
+                        sh """
+                            ssh -o StrictHostKeyChecking=no \
+                                ${DEPLOY_USER}@${DEPLOY_HOST} \
+                                'cd ${DEPLOY_DIR} && \
+                                 docker compose pull && \
+                                 docker compose up -d --remove-orphans'
+                        """
+
+                        // 4. Проверяем что контейнер поднялся
+                        sh """
+                            ssh -o StrictHostKeyChecking=no \
+                                ${DEPLOY_USER}@${DEPLOY_HOST} \
+                                'docker compose -f ${DEPLOY_DIR}/compose.yml ps'
+                        """
+
+                        echo "✅ Игра доступна: http://${DEPLOY_HOST}:${WEB_PORT}"
                     }
                 }
             }
