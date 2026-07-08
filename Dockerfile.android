@@ -18,6 +18,9 @@ ENV ANDROID_HOME=/opt/android-sdk
 ENV ANDROID_SDK_ROOT=${ANDROID_HOME}
 ENV PATH="${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools"
 
+# npm-кэш → /tmp (иначе EACCES когда Jenkins запускает контейнер от non-root)
+ENV npm_config_cache=/tmp/.npm
+
 # Скачиваем Android Command-line Tools
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
     wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \

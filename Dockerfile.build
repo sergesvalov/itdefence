@@ -1,6 +1,10 @@
 # ─── Stage 1: зависимости (кэш слоя) ───────────────────────────────────────
 FROM node:22-bookworm-slim AS deps
 
+# Направляем npm-кэш в /tmp — туда может писать любой пользователь,
+# в т.ч. jenkins (uid 111) когда Jenkins запускает контейнер через docker.inside()
+ENV npm_config_cache=/tmp/.npm
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -9,6 +13,9 @@ RUN npm ci --ignore-scripts
 # electron-builder может собрать Windows .exe без Wine если использовать
 # cross-platform nsis target (бинарные шаблоны встроены в пакет)
 FROM node:22-bookworm-slim AS builder
+
+# Кэш npm → /tmp чтобы не было EACCES при запуске от non-root пользователя
+ENV npm_config_cache=/tmp/.npm
 
 # Системные зависимости для electron-builder (nsis, icon processing)
 RUN apt-get update && apt-get install -y --no-install-recommends \
