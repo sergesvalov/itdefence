@@ -103,24 +103,23 @@ pipeline {
             }
         }
 
-        stage('Build: Windows (.exe)') {
+stage('Build: Windows (.exe)') {
             when { expression { return params.BUILD_WINDOWS } }
             steps {
                 script {
                     echo "🪟 Electron-builder → Windows x64 NSIS..."
                     withNodeBuilder {
-                        // Защита от падения, если нет иконки (как в spaceinvasion)
+                        // Используем встроенный в Node.js модуль https для скачивания (работает на 100%)
                         sh '''
                             mkdir -p public build
                             if [ ! -f "public/icon.ico" ] && [ ! -f "build/icon.ico" ]; then
-                                echo "⚠️ Иконка не найдена! Скачиваем заглушку..."
-                                curl -s -o public/icon.ico https://raw.githubusercontent.com/electron/electron/main/default_app/icon.ico || true
+                                echo "⚠️ Иконка не найдена! Скачиваем заглушку через Node.js..."
+                                node -e "require('https').get('https://raw.githubusercontent.com/electron/electron/main/default_app/icon.ico', (res) => res.pipe(require('fs').createWriteStream('public/icon.ico')))"
                             fi
                         '''
                         sh 'VITE_MODE=electron npm run build:electron'
                         sh './node_modules/.bin/electron-builder --win --x64 --publish never'
                     }
-                    sh 'ls -lh release/'
                     archiveArtifacts artifacts: 'release/*.exe', fingerprint: true
                 }
             }
