@@ -136,6 +136,8 @@ stage('Build: Windows (.exe)') {
                         
                         // 2. Инициализация платформы (красивый синтаксис из spaceinvasion)
                         sh "npx cap add android || npx cap sync android"
+
+                        sh 'echo "android.aapt2FromMavenOverride=/usr/bin/aapt2" >> android/gradle.properties'
                         
                         // 3. Компиляция через Gradle
                         sh '''
