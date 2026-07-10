@@ -1,33 +1,16 @@
-# ─── Stage 1: зависимости (кэш слоя) ───────────────────────────────────────
-FROM node:22-bookworm-slim AS deps
+# ─── Node/Vite toolchain image (Web build + TypeScript check) ──────────────
+#
+# Deliberately ships NO application code or node_modules: Jenkins runs this
+# image via docker.inside(), which bind-mounts the checked-out workspace over
+# the container's working directory — anything baked in under /app here
+# would be shadowed and never used. Keeping this image pure OS+toolchain
+# means it only needs rebuilding when this Dockerfile itself changes, instead
+# of on every commit (see Jenkinsfile: images are tagged by Dockerfile hash
+# and rebuilt only when that hash changes).
+FROM node:22-bookworm-slim
 
-# Направляем npm-кэш в /tmp — туда может писать любой пользователь,
-# в т.ч. jenkins (uid 111) когда Jenkins запускает контейнер через docker.inside()
+# npm cache dir must be writable by whatever uid runs `npm ci` inside the
+# container (Jenkins uses -u root, but /tmp works for any uid too).
+# Jenkins also mounts a persistent volume here so repeated `npm ci` runs on
+# the ARM host hit a warm cache instead of re-downloading the registry.
 ENV npm_config_cache=/tmp/.npm
-
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
-
-# ─── Stage 2: Web-билд + Electron-builder (Windows .exe) ───────────────────
-# electron-builder может собрать Windows .exe без Wine если использовать
-# cross-platform nsis target (бинарные шаблоны встроены в пакет)
-FROM node:22-bookworm-slim AS builder
-
-# Кэш npm → /tmp чтобы не было EACCES при запуске от non-root пользователя
-ENV npm_config_cache=/tmp/.npm
-
-# Системные зависимости для electron-builder (nsis, icon processing)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libarchive-tools \
-    fakeroot \
-    rpm \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# По умолчанию: проверка типов + web-билд
-CMD ["npm", "run", "build"]

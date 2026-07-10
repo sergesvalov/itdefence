@@ -78,26 +78,33 @@ itdefence/
 ### Этапы
 
 ```
-Source Checkout
+Source Checkout       (+ чистка dist/release/android от прошлой сборки)
     ↓
-Build Node Image     (Docker push → реестр: Dockerfile.build)
+Build Node Image      (пересобирается и пушится, только если изменился Dockerfile.build)
     ↓
-Build Android Image  (Docker push → реестр: Dockerfile.android)
+Build Android Image   (аналогично — только при изменении Dockerfile.android)
     ↓
-TypeScript Check     (tsc --noEmit)
+Install Dependencies  (npm ci, с постоянным кэшем — том itdefence-npm-cache)
     ↓
-┌──────────────────────────────────┐  ← параллельно
-│ Build: Web         │ Build: Win  │ Build: Android       │
-│ vite build:web     │ Electron    │ Capacitor + Gradle   │
-│ → dist/            │ builder     │ → android/...apk     │
-│                    │ → release/  │                      │
-│                    │   *.exe     │                      │
-└──────────────────────────────────┘
+TypeScript Check      (tsc --noEmit)
     ↓
-Archive (dist/**, release/*.exe, **/*.apk)
+┌───────────────────────────────────────┐  ← последовательно (ARM-хост не тянет parallel)
+│ Build: Web           │ Build: Android          │
+│ vite build:web       │ Capacitor + Gradle      │
+│ → dist/ → Nginx-образ │ → android/...apk        │
+│                       │ (кэш: itdefence-gradle-cache) │
+└───────────────────────────────────────┘
     ↓
-Deploy Web [только main] → rsync → /var/www/itdefence
+Archive (dist/**, **/*.apk)
+    ↓
+Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 192.168.10.222:7979
 ```
+
+> **Windows .exe не собирается в этом пайплайне.** `electron-builder --win` создаёт
+> NSIS-инсталлятор, а это требует Wine для запуска Windows-бинарников — на ARM64
+> Linux-хосте Wine работал бы только через x86-эмуляцию (box64/qemu), что
+> ненадёжно и очень медленно. Собирайте Windows-версию (`npm run dist:win`)
+> либо локально на Windows, либо на отдельном Windows-агенте/раннере.
 
 ### Необходимые секреты Jenkins
 
@@ -110,4 +117,7 @@ Deploy Web [только main] → rsync → /var/www/itdefence
 | Параметр | По умолчанию | Описание |
 |---|---|---|
 | `SKIP_TYPECHECK` | false | Пропустить tsc-проверку |
+| `BUILD_WEB` | true | Собирать веб-версию и деплоить на сервер |
+| `BUILD_ANDROID` | true | Собирать Android .apk |
 | `FORCE_DEPLOY` | false | Деплоить не из ветки main |
+| `FORCE_REBUILD_IMAGES` | false | Пересобрать Node/Android toolchain-образы, даже если их Dockerfile не менялся |

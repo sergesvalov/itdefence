@@ -2,11 +2,11 @@ pipeline {
     agent { label 'built-in' }
 
     parameters {
-        booleanParam(name: 'SKIP_TYPECHECK', defaultValue: false, description: 'Пропустить TypeScript-проверку')
-        booleanParam(name: 'BUILD_WEB',      defaultValue: true,  description: 'Собирать веб-версию и деплоить на сервер')
-        booleanParam(name: 'BUILD_WINDOWS',  defaultValue: true,  description: 'Собирать Windows .exe (Electron)')
-        booleanParam(name: 'BUILD_ANDROID',  defaultValue: true,  description: 'Собирать Android .apk (Capacitor)')
-        booleanParam(name: 'FORCE_DEPLOY',   defaultValue: false, description: 'Деплоить веб не из ветки main')
+        booleanParam(name: 'SKIP_TYPECHECK',       defaultValue: false, description: 'Пропустить TypeScript-проверку')
+        booleanParam(name: 'BUILD_WEB',             defaultValue: true,  description: 'Собирать веб-версию и деплоить на сервер')
+        booleanParam(name: 'BUILD_ANDROID',         defaultValue: true,  description: 'Собирать Android .apk (Capacitor)')
+        booleanParam(name: 'FORCE_DEPLOY',          defaultValue: false, description: 'Деплоить веб не из ветки main')
+        booleanParam(name: 'FORCE_REBUILD_IMAGES',  defaultValue: false, description: 'Пересобрать toolchain-образы (Node/Android), даже если их Dockerfile не менялся')
     }
 
     environment {
@@ -24,6 +24,12 @@ pipeline {
         WEB_PORT       = '7979'
 
         BUILD_TAG      = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'local'}"
+
+        // Именованные Docker-тома с npm/gradle кэшем — переживают между
+        // сборками (в отличие от слоёв образа) и сильно ускоряют повторные
+        // npm ci / gradle assembleRelease на медленном ARM-хосте
+        NPM_CACHE_VOLUME    = 'itdefence-npm-cache'
+        GRADLE_CACHE_VOLUME = 'itdefence-gradle-cache'
     }
 
     stages {
@@ -32,15 +38,21 @@ pipeline {
             steps {
                 checkout scm
                 echo "▶ Коммит: ${env.GIT_COMMIT} | Ветка: ${env.GIT_BRANCH}"
+
+                // Предыдущие сборки могли оставить в workspace dist/,
+                // release/ и android/ (cap add android — это полноценный
+                // Gradle-проект). Без .dockerignore это раздувало context
+                // каждого `docker build`; теперь на всякий случай чистим и
+                // тут, чтобы workspace не пух от сборки к сборке.
+                sh 'rm -rf dist release android'
             }
         }
 
         stage('Build Node Image') {
             steps {
                 script {
-                    echo "🐳 Сборка Node-образа (Web + Electron builder)..."
-                    sh "docker build -t ${NODE_IMAGE}:latest -f Dockerfile.build ."
-                    sh "docker push ${NODE_IMAGE}:latest"
+                    env.NODE_IMAGE_TAG = sh(script: 'sha1sum Dockerfile.build | cut -c1-12', returnStdout: true).trim()
+                    buildAndPushIfChanged(env.NODE_IMAGE, env.NODE_IMAGE_TAG, 'Dockerfile.build', 'Node')
                 }
             }
         }
@@ -49,9 +61,8 @@ pipeline {
             when { expression { return params.BUILD_ANDROID } }
             steps {
                 script {
-                    echo "🐳 Сборка Android-образа..."
-                    sh "docker build -t ${ANDROID_IMAGE}:latest -f Dockerfile.android ."
-                    sh "docker push ${ANDROID_IMAGE}:latest"
+                    env.ANDROID_IMAGE_TAG = sh(script: 'sha1sum Dockerfile.android | cut -c1-12', returnStdout: true).trim()
+                    buildAndPushIfChanged(env.ANDROID_IMAGE, env.ANDROID_IMAGE_TAG, 'Dockerfile.android', 'Android')
                 }
             }
         }
@@ -80,7 +91,8 @@ pipeline {
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // ПОСЛЕДОВАТЕЛЬНЫЕ СБОРКИ (Изменено: убран parallel для стабильности на ARM)
+        // ПОСЛЕДОВАТЕЛЬНЫЕ СБОРКИ (без parallel — ARM-хост не тянет
+        // одновременные тяжёлые контейнеры vite+gradle без деградации)
         // ═════════════════════════════════════════════════════════════════
 
         stage('Build: Web') {
@@ -103,28 +115,6 @@ pipeline {
             }
         }
 
-stage('Build: Windows (.exe)') {
-            when { expression { return params.BUILD_WINDOWS } }
-            steps {
-                script {
-                    echo "🪟 Electron-builder → Windows x64 NSIS..."
-                    withNodeBuilder {
-                        // Используем встроенный в Node.js модуль https для скачивания (работает на 100%)
-                        sh '''
-                            mkdir -p public build
-                            if [ ! -f "public/icon.ico" ] && [ ! -f "build/icon.ico" ]; then
-                                echo "⚠️ Иконка не найдена! Скачиваем заглушку через Node.js..."
-                                node -e "require('https').get('https://raw.githubusercontent.com/electron/electron/main/default_app/icon.ico', (res) => res.pipe(require('fs').createWriteStream('public/icon.ico')))"
-                            fi
-                        '''
-                        sh 'VITE_MODE=electron npm run build:electron'
-                        sh './node_modules/.bin/electron-builder --win --x64 --publish never'
-                    }
-                    archiveArtifacts artifacts: 'release/*.exe', fingerprint: true
-                }
-            }
-        }
-
         stage('Build: Android (.apk)') {
             when { expression { return params.BUILD_ANDROID } }
             steps {
@@ -133,17 +123,17 @@ stage('Build: Windows (.exe)') {
                     withAndroidBuilder {
                         // 1. Vite-билд для мобилки
                         sh 'VITE_MODE=capacitor npm run build:cap'
-                        
-                        // 2. Инициализация платформы (красивый синтаксис из spaceinvasion)
+
+                        // 2. Инициализация платформы
                         sh "npx cap add android || npx cap sync android"
 
                         sh 'echo "android.aapt2FromMavenOverride=/usr/bin/aapt2" >> android/gradle.properties'
-                        
-                        // 3. Компиляция через Gradle
+
+                        // 3. Компиляция через Gradle (с постоянным кэшем — см. GRADLE_CACHE_VOLUME)
                         sh '''
                             cd android
                             chmod +x gradlew
-                            ./gradlew assembleRelease --no-daemon --stacktrace --no-build-cache -Pandroid.useAndroidX=true
+                            ./gradlew assembleRelease --no-daemon --stacktrace --build-cache -Pandroid.useAndroidX=true
                         '''
                     }
                     sh 'find android/app/build/outputs/apk -name "*.apk" | head -5'
@@ -193,17 +183,34 @@ stage('Build: Windows (.exe)') {
     }
 }
 
-// Функции-обертки для контейнеров (как в твоем рабочем файле)
+// ── Функции-обертки ──────────────────────────────────────────────────────
+
+// Собирает и пушит toolchain-образ только если его Dockerfile реально
+// изменился (тег = хэш содержимого файла). Раньше оба образа собирались и
+// пушились в реестр на КАЖДОЙ сборке — на Android-образе это лишние
+// gradle/SDK-скачивания, а Node-образ ещё и содержал бесполезный npm ci
+// (см. комментарии в Dockerfile.build/Dockerfile.android).
+def buildAndPushIfChanged(String image, String tag, String dockerfile, String label) {
+    def exists = !params.FORCE_REBUILD_IMAGES &&
+                 sh(script: "docker pull ${image}:${tag} > /dev/null 2>&1", returnStatus: true) == 0
+    if (exists) {
+        echo "✅ ${label}-образ ${tag} уже есть в реестре — пересборка не нужна"
+    } else {
+        echo "🐳 Сборка ${label}-образа (${tag})..."
+        sh "docker build -t ${image}:${tag} -t ${image}:latest -f ${dockerfile} ."
+        sh "docker push ${image}:${tag}"
+        sh "docker push ${image}:latest"
+    }
+}
+
 def withNodeBuilder(Closure body) {
-    docker.image("${env.NODE_IMAGE}:latest").inside('-u root') {
+    docker.image("${env.NODE_IMAGE}:${env.NODE_IMAGE_TAG}").inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm") {
         body()
     }
 }
 
 def withAndroidBuilder(Closure body) {
-    // ВНИМАНИЕ: Если на этапе Android все еще будет падать aapt2, 
-    // добавь сюда флаг эмуляции: inside('-u root --platform linux/amd64')
-    docker.image("${env.ANDROID_IMAGE}:latest").inside('-u root') {
+    docker.image("${env.ANDROID_IMAGE}:${env.ANDROID_IMAGE_TAG}").inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm -v ${env.GRADLE_CACHE_VOLUME}:/root/.gradle") {
         body()
     }
 }

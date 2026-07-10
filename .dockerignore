@@ -1,0 +1,10 @@
+node_modules
+android
+release
+dist_electron
+.git
+*.apk
+*.exe
+*.log
+.vscode
+.idea

@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
-    aapt aapt2 \
+    aapt \
     && rm -rf /var/lib/apt/lists/*
 
 # ВОТ ЭТИ СТРОКИ Я СЛУЧАЙНО ПОТЕРЯЛ В ПРОШЛЫЙ РАЗ:
@@ -33,7 +33,9 @@ RUN wget -q https://services.gradle.org/distributions/gradle-8.14-bin.zip \
     ln -s /opt/gradle-8.14/bin/gradle /usr/local/bin/gradle && \
     rm /tmp/gradle.zip
 
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
-COPY . .
+# No npm ci / COPY here on purpose: Jenkins bind-mounts the workspace over
+# this container via docker.inside(), and node_modules is already installed
+# there by the "Install Dependencies" stage (Node image) before this one
+# runs. Baking a second npm ci into this image was dead weight nobody used —
+# it just doubled install time and image size on every build.
+ENV npm_config_cache=/tmp/.npm
