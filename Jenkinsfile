@@ -6,7 +6,6 @@ pipeline {
         booleanParam(name: 'BUILD_WEB',             defaultValue: true,  description: 'Собирать веб-версию и деплоить на сервер')
         booleanParam(name: 'BUILD_ANDROID',         defaultValue: true,  description: 'Собирать Android .apk (Capacitor)')
         booleanParam(name: 'FORCE_DEPLOY',          defaultValue: false, description: 'Деплоить веб не из ветки main')
-        booleanParam(name: 'DEPLOY_TEST',           defaultValue: true,  description: 'Деплоить тестовый контейнер на порт 7373 (с любой ветки, отдельно от прод-деплоя на 7979)')
         booleanParam(name: 'FORCE_REBUILD_IMAGES',  defaultValue: false, description: 'Пересобрать toolchain-образы (Node/Android), даже если их Dockerfile не менялся')
     }
 
@@ -24,7 +23,6 @@ pipeline {
         DEPLOY_DIR     = '/opt/itdefence'
         WEB_IMAGE      = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-web"
         WEB_PORT       = '7979'
-        TEST_WEB_PORT  = '7373'
 
         BUILD_TAG      = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'local'}"
 
@@ -114,7 +112,7 @@ pipeline {
                     sh "docker push ${WEB_IMAGE}:${BUILD_TAG}"
                     sh "docker push ${WEB_IMAGE}:latest"
 
-                    stash name: 'compose', includes: 'compose.yml,compose.test.yml'
+                    stash name: 'compose', includes: 'compose.yml'
                 }
             }
         }
@@ -160,27 +158,6 @@ pipeline {
             }
         }
 
-        stage('Deploy Web (Test)') {
-            // Отдельный контейнер (itdefence-web-test) и отдельный
-            // compose-проект (-p itdefence-test) в той же DEPLOY_DIR — не
-            // пересекается с прод-контейнером из compose.yml, поэтому
-            // --remove-orphans тут не может случайно снести прод при деплое
-            // с любой ветки (в отличие от Deploy Web, не требует main).
-            when { expression { return params.BUILD_WEB && params.DEPLOY_TEST } }
-            steps {
-                script {
-                    echo "🧪 Тестовый Docker-деплой на ${DEPLOY_HOST}:${TEST_WEB_PORT} ..."
-                    unstash 'compose'
-                    sshagent(credentials: [DEPLOY_CREDS]) {
-                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_DIR}'"
-                        sh "scp -o StrictHostKeyChecking=no compose.test.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/compose.test.yml"
-                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_DIR} && docker compose -f compose.test.yml -p itdefence-test pull && docker compose -f compose.test.yml -p itdefence-test up -d --remove-orphans'"
-                        echo "✅ Тестовая версия доступна: http://${DEPLOY_HOST}:${TEST_WEB_PORT}"
-                    }
-                }
-            }
-        }
-
         stage('Deploy Web') {
             when {
                 anyOf { branch 'main'; expression { return params.FORCE_DEPLOY } }
@@ -193,7 +170,7 @@ pipeline {
                     sshagent(credentials: [DEPLOY_CREDS]) {
                         sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_DIR}'"
                         sh "scp -o StrictHostKeyChecking=no compose.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/compose.yml"
-                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_DIR} && docker compose -p itdefence pull && docker compose -p itdefence up -d --remove-orphans'"
+                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_DIR} && docker compose pull && docker compose up -d --remove-orphans'"
                         echo "✅ Игра доступна: http://${DEPLOY_HOST}:${WEB_PORT}"
                     }
                 }

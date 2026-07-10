@@ -97,14 +97,8 @@ TypeScript Check      (tsc --noEmit)
     ↓
 Archive (dist/**, **/*.apk)
     ↓
-Deploy Web (Test) [любая ветка] → docker compose -p itdefence-test → 192.168.10.222:7373
-    ↓
-Deploy Web [только main]        → docker compose -p itdefence      → 192.168.10.222:7979
+Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 192.168.10.222:7979
 ```
-
-Тестовый и прод-контейнеры — разные `docker compose`-проекты (`-p itdefence-test` /
-`-p itdefence`) в одной директории `/opt/itdefence`, поэтому `--remove-orphans` у
-тестового деплоя не может случайно снести прод-контейнер.
 
 > **Windows .exe не собирается в этом пайплайне.** `electron-builder --win` создаёт
 > NSIS-инсталлятор, а это требует Wine для запуска Windows-бинарников — на ARM64
@@ -141,6 +135,5 @@ Deploy Web [только main]        → docker compose -p itdefence      → 1
 | `SKIP_TYPECHECK` | false | Пропустить tsc-проверку |
 | `BUILD_WEB` | true | Собирать веб-версию и деплоить на сервер |
 | `BUILD_ANDROID` | true | Собирать Android .apk |
-| `FORCE_DEPLOY` | false | Деплоить прод не из ветки main |
-| `DEPLOY_TEST` | true | Деплоить тестовый контейнер на порт 7373 (с любой ветки) |
+| `FORCE_DEPLOY` | false | Деплоить не из ветки main |
 | `FORCE_REBUILD_IMAGES` | false | Пересобрать Node/Android toolchain-образы, даже если их Dockerfile не менялся |
