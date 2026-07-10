@@ -19,14 +19,19 @@ export function drawMap(scene: Phaser.Scene): void {
   gfx.fillStyle(0x1e2a3a);
   gfx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-  // ── Reception strip (top 1/4) + bottom wall strip ────────────────────
-  // Same "wall" texture slot for both — they're the non-buildable areas.
-  if (scene.textures.exists('tile-wall')) {
-    scene.add.tileSprite(0, 0, GAME_WIDTH, OFFICE_Y_TOP, 'tile-wall').setOrigin(0, 0);
-    scene.add.tileSprite(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM, 'tile-wall').setOrigin(0, 0);
+  // ── Reception strip (top 1/4) — the corridor the doors open onto ────
+  if (scene.textures.exists('tile-corridor-floor')) {
+    scene.add.tileSprite(0, 0, GAME_WIDTH, OFFICE_Y_TOP, 'tile-corridor-floor').setOrigin(0, 0);
   } else {
     gfx.fillStyle(0x2d3e50);
     gfx.fillRect(0, 0, GAME_WIDTH, OFFICE_Y_TOP);
+  }
+
+  // ── Bottom wall strip ────────────────────────────────────────────────
+  if (scene.textures.exists('tile-wall')) {
+    scene.add.tileSprite(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM, 'tile-wall').setOrigin(0, 0);
+  } else {
+    gfx.fillStyle(0x2d3e50);
     gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM);
   }
 
@@ -88,7 +93,7 @@ export function drawMap(scene: Phaser.Scene): void {
   gfx.lineStyle(1, 0xe74c3c, 0.4);
   gfx.strokeCircle(DESK_X, DESK_Y, 60);
 
-  // Desk (+ monitor, baked into the sprite if one is supplied)
+  // Desk (+ monitor + Petya himself, all baked into the sprite if one is supplied)
   if (scene.textures.exists('sprite-desk')) {
     scene.add.image(DESK_X, DESK_Y - 10, 'sprite-desk').setDisplaySize(100, 90);
   } else {

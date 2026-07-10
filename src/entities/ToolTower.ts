@@ -36,9 +36,11 @@ export class ToolTower extends Phaser.GameObjects.Container {
   private readonly baseDamage: number;
   private readonly special?: TowerSpecial;
 
-  // Child visuals
-  private base: Phaser.GameObjects.Rectangle;
-  private icon: Phaser.GameObjects.Text;
+  // Child visuals — either a coloured square + emoji icon, or (if the
+  // matching sprite-tower-<variant> texture was loaded) a single image.
+  private base?: Phaser.GameObjects.Rectangle;
+  private icon?: Phaser.GameObjects.Text;
+  private sprite?: Phaser.GameObjects.Image;
   private rangeCircle: Phaser.GameObjects.Arc;
   private barrelLine: Phaser.GameObjects.Graphics;
   private levelText: Phaser.GameObjects.Text;
@@ -63,16 +65,18 @@ export class ToolTower extends Phaser.GameObjects.Container {
     this.rangeCircle.setStrokeStyle(1, color, 0.35);
     this.rangeCircle.setVisible(false);
 
-    // ── Tower base (coloured square) ─────────────────────────────────────
-    this.base = scene.add.rectangle(0, 0, TOWER_SIZE * 2, TOWER_SIZE * 2, color);
-    this.base.setStrokeStyle(2, 0xffffff, 0.4);
-
     // ── Barrel graphic ───────────────────────────────────────────────────
     this.barrelLine = scene.add.graphics();
 
-    // ── Icon ─────────────────────────────────────────────────────────────
-    this.icon = scene.add.text(0, 0, stats.icon, { fontSize: '18px' })
-      .setOrigin(0.5, 0.5);
+    // ── Tower body: sprite if one was loaded, else coloured square + icon ──
+    const spriteKey = `sprite-tower-${variant}`;
+    if (scene.textures.exists(spriteKey)) {
+      this.sprite = scene.add.image(0, 0, spriteKey).setDisplaySize(TOWER_SIZE * 2, TOWER_SIZE * 2);
+    } else {
+      this.base = scene.add.rectangle(0, 0, TOWER_SIZE * 2, TOWER_SIZE * 2, color);
+      this.base.setStrokeStyle(2, 0xffffff, 0.4);
+      this.icon = scene.add.text(0, 0, stats.icon, { fontSize: '18px' }).setOrigin(0.5, 0.5);
+    }
 
     // ── Level indicator ──────────────────────────────────────────────────
     this.levelText = scene.add.text(0, TOWER_SIZE + 4, this.levelStars(), {
@@ -80,7 +84,8 @@ export class ToolTower extends Phaser.GameObjects.Container {
       color: '#ffeaa7',
     }).setOrigin(0.5, 0);
 
-    this.add([this.rangeCircle, this.base, this.barrelLine, this.icon, this.levelText]);
+    const body = this.sprite ? [this.sprite] : [this.base!, this.icon!];
+    this.add([this.rangeCircle, this.barrelLine, ...body, this.levelText]);
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
 
     // Show range on hover

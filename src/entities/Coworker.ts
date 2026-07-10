@@ -28,9 +28,10 @@ export class Coworker extends Phaser.GameObjects.Container {
   private isBlockedAtDoor = false;
   private waitDamageTimer = 0;
 
-  // Child visuals
-  private coBody: Phaser.GameObjects.Arc;
-  private emoji: Phaser.GameObjects.Text;
+  // Child visuals — either the placeholder circle + angry-face emoji, or
+  // (if sprite-coworker was loaded) a single tinted image in its place.
+  private coBody: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
+  private readonly useSprite: boolean;
   private hpBar: Phaser.GameObjects.Graphics;
   private ticket: Phaser.GameObjects.Graphics;
   private hitFlash = 0;
@@ -46,12 +47,19 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hp           = this.maxHp;
 
     // ── Body ─────────────────────────────────────────────────────────────
-    this.coBody = scene.add.arc(0, 0, RADIUS, 0, 360, false, 0xff7675);
-    this.coBody.setStrokeStyle(2, 0xd63031);
+    this.useSprite = scene.textures.exists('sprite-coworker');
+    const bodyParts: Phaser.GameObjects.GameObject[] = [];
 
-    // ── Face emoji ───────────────────────────────────────────────────────
-    this.emoji = scene.add.text(0, -2, '😤', { fontSize: '13px' })
-      .setOrigin(0.5, 0.5);
+    if (this.useSprite) {
+      this.coBody = scene.add.image(0, 0, 'sprite-coworker').setDisplaySize(RADIUS * 2, RADIUS * 2.4);
+      bodyParts.push(this.coBody);
+    } else {
+      this.coBody = scene.add.arc(0, 0, RADIUS, 0, 360, false, 0xff7675);
+      this.coBody.setStrokeStyle(2, 0xd63031);
+      bodyParts.push(this.coBody);
+      // Face emoji — only for the placeholder body; a real sprite draws its own face.
+      bodyParts.push(scene.add.text(0, -2, '😤', { fontSize: '13px' }).setOrigin(0.5, 0.5));
+    }
 
     // ── Ticket (carried "task") ──────────────────────────────────────────
     this.ticket = scene.add.graphics();
@@ -61,11 +69,20 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hpBar = scene.add.graphics();
     this.redrawHpBar();
 
-    this.add([this.coBody, this.emoji, this.ticket, this.hpBar]);
+    this.add([...bodyParts, this.ticket, this.hpBar]);
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
   }
 
   // ── Private helpers ────────────────────────────────────────────────────
+
+  /** Tints the body — setFillStyle for the placeholder Arc, setTint for a sprite. */
+  private tintBody(color: number): void {
+    if (this.useSprite) {
+      (this.coBody as Phaser.GameObjects.Image).setTint(color);
+    } else {
+      (this.coBody as Phaser.GameObjects.Arc).setFillStyle(color);
+    }
+  }
 
   private drawTicket(): void {
     this.ticket.clear();
@@ -180,15 +197,15 @@ export class Coworker extends Phaser.GameObjects.Container {
     // Hit-flash / waiting-at-door / stunned / slow tint
     if (this.hitFlash > 0) {
       this.hitFlash -= delta;
-      this.coBody.setFillStyle(0xffffff);
+      this.tintBody(0xffffff);
     } else if (this.isBlockedAtDoor) {
-      this.coBody.setFillStyle(0xf39c12);
+      this.tintBody(0xf39c12);
     } else if (this.slowMultiplier === 0) {
-      this.coBody.setFillStyle(0xa29bfe); // stunned (Docs' RTFM) — dizzy purple
+      this.tintBody(0xa29bfe); // stunned (Docs' RTFM) — dizzy purple
     } else if (this.slowMultiplier < 1) {
-      this.coBody.setFillStyle(0x74b9ff); // slowed — blue
+      this.tintBody(0x74b9ff); // slowed — blue
     } else {
-      this.coBody.setFillStyle(0xff7675);
+      this.tintBody(this.useSprite ? 0xffffff : 0xff7675); // sprite: no tint = its natural colours
     }
 
     if (this.isBlockedAtDoor) {
