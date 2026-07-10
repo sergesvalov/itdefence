@@ -18,7 +18,8 @@ pipeline {
 
         // ── Целевой сервер (Docker-деплой) ──────────────────────────────
         DEPLOY_HOST    = '192.168.10.222'
-        DEPLOY_USER    = 'deploy'
+        DEPLOY_USER    = 'serge'
+        DEPLOY_CREDS   = 'serge'
         DEPLOY_DIR     = '/opt/itdefence'
         WEB_IMAGE      = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-web"
         WEB_PORT       = '7979'
@@ -166,7 +167,7 @@ pipeline {
                 script {
                     echo "🚀 Docker-деплой на ${DEPLOY_HOST}:${WEB_PORT} ..."
                     unstash 'compose'
-                    sshagent(credentials: ['deploy-ssh-key']) {
+                    sshagent(credentials: [DEPLOY_CREDS]) {
                         sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_DIR}'"
                         sh "scp -o StrictHostKeyChecking=no compose.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/compose.yml"
                         sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_DIR} && docker compose pull && docker compose up -d --remove-orphans'"

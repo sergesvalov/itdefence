@@ -126,7 +126,7 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 
 | ID | Тип | Описание |
 |---|---|---|
-| `deploy-ssh-key` | SSH Username with Private Key | Приватный ключ деплой-пользователя |
+| `serge` | SSH Username with Private Key | Ключ пользователя `serge` на целевом сервере (deploy-пользователя `deploy` на хосте нет — используется тот же credential/юзер, что и в других проектах на этом Jenkins) |
 
 ### Параметры сборки
 
