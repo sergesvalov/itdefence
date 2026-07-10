@@ -13,6 +13,13 @@ const config: Phaser.Types.Core.GameConfig = {
     antialias: true,
     pixelArt: false,
   },
+  // Portrait canvas at a fixed logical size — scale it to fit whatever
+  // viewport the phone/browser actually gives us, keeping the aspect ratio
+  // and centering it, instead of rendering at a fixed pixel size.
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
 };
 
 new Phaser.Game(config);

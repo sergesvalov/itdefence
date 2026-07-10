@@ -11,7 +11,9 @@ const config: CapacitorConfig = {
   },
 
   android: {
-    // Ориентация: только landscape (нужна для TD-игр)
+    // Игра портретная (480×800) — жёсткий лок ориентации на portrait
+    // задаётся в android/app/.../AndroidManifest.xml (android:screenOrientation),
+    // этот файл в репозитории не хранится — генерируется `cap add android`.
     allowMixedContent: false,
   },
 };

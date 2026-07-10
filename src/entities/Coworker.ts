@@ -22,6 +22,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   private readonly waypoints: Waypoint[];
   private waypointIndex = 0;
   private readonly speed: number;
+  private slowMultiplier = 1;
+  private slowUntil = 0;
 
   // Child visuals
   private coBody: Phaser.GameObjects.Arc;
@@ -110,15 +112,28 @@ export class Coworker extends Phaser.GameObjects.Container {
     });
   }
 
+  /** Slows movement to `multiplier`× speed for `durationMs` (e.g. the coffee tower). */
+  public applySlow(multiplier: number, durationMs: number): void {
+    this.slowMultiplier = multiplier;
+    this.slowUntil = this.scene.time.now + durationMs;
+  }
+
   // ── Per-frame ─────────────────────────────────────────────────────────
 
   public tick(delta: number): void {
     if (this.isDead || this.hasReachedDesk) return;
 
-    // Hit-flash tint
+    if (this.slowUntil > 0 && this.scene.time.now > this.slowUntil) {
+      this.slowMultiplier = 1;
+      this.slowUntil = 0;
+    }
+
+    // Hit-flash / slow tint
     if (this.hitFlash > 0) {
       this.hitFlash -= delta;
       this.coBody.setFillStyle(0xffffff);
+    } else if (this.slowMultiplier < 1) {
+      this.coBody.setFillStyle(0x74b9ff);
     } else {
       this.coBody.setFillStyle(0xff7675);
     }
@@ -135,14 +150,15 @@ export class Coworker extends Phaser.GameObjects.Container {
     const dy   = target.y - this.y;
     const dist = Math.hypot(dx, dy);
     const dt   = delta / 1000;
+    const effectiveSpeed = this.speed * this.slowMultiplier;
 
     if (dist < 6) {
       this.x = target.x;
       this.y = target.y;
       this.waypointIndex++;
     } else {
-      this.x += (dx / dist) * this.speed * dt;
-      this.y += (dy / dist) * this.speed * dt;
+      this.x += (dx / dist) * effectiveSpeed * dt;
+      this.y += (dy / dist) * effectiveSpeed * dt;
     }
 
     // Gentle bob
