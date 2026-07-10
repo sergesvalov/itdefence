@@ -116,6 +116,12 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 > сломается (несовместимый флаг aapt2) — нужно поднять версию релиза в
 > `Dockerfile.android` и обновить хэш.
 
+> **JDK берётся не из apt, а из тарбола Eclipse Temurin.** Capacitor 7
+> генерирует Android-проект под Java 21, а Debian bookworm пакует только
+> openjdk-17 (openjdk-21 появился лишь в Debian 13). `Dockerfile.android`
+> ставит [Temurin 21 arm64](https://github.com/adoptium/temurin21-binaries)
+> из checksum-пиненного тарбола вместо apt-пакета.
+
 ### Необходимые секреты Jenkins
 
 | ID | Тип | Описание |
