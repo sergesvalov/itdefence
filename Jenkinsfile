@@ -44,7 +44,13 @@ pipeline {
                 // Gradle-проект). Без .dockerignore это раздувало context
                 // каждого `docker build`; теперь на всякий случай чистим и
                 // тут, чтобы workspace не пух от сборки к сборке.
-                sh 'rm -rf dist release android'
+                //
+                // Эти файлы создавались контейнерами с -u root (см.
+                // withNodeBuilder/withAndroidBuilder), поэтому на хосте они
+                // root-owned — обычный `rm -rf` от jenkins-пользователя не
+                // может их удалить (Permission denied). Чистим тоже от root,
+                // через одноразовый контейнер на том же bind-mount workspace.
+                sh 'docker run --rm -u root -v "$WORKSPACE:$WORKSPACE" -w "$WORKSPACE" node:22-bookworm-slim rm -rf dist release android'
             }
         }
 
