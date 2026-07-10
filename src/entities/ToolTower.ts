@@ -2,12 +2,14 @@ import Phaser from 'phaser';
 import type { Coworker } from './Coworker';
 import {
   PROJECTILE_SPEED,
-  TOWER_VARIANTS_DATA, type TowerVariant,
+  TOWER_VARIANTS_DATA, type TowerVariant, type TowerVariantStats,
   TOWER_MAX_LEVEL, TOWER_UPGRADE_DAMAGE_BONUS, TOWER_UPGRADE_RANGE_BONUS, TOWER_UPGRADE_FIRE_RATE_MULT,
-  SLOW_MULTIPLIER, SLOW_DURATION_MS, AOE_SPLASH_RADIUS,
+  SLOW_MULTIPLIER, SLOW_DURATION_MS, AOE_SPLASH_RADIUS, STUN_DURATION_MS,
 } from '../config';
 
 export const TOWER_SIZE = 26; // half-width of the square body
+
+type TowerSpecial = TowerVariantStats['special'];
 
 /**
  * ToolTower – a defence tower placed by the player.
@@ -15,7 +17,8 @@ export const TOWER_SIZE = 26; // half-width of the square body
  * and waits for the fire-rate cooldown before shooting again.
  * Base range/fire rate/damage/cost come from the variant (see
  * TOWER_VARIANTS_DATA in config.ts); some variants also have a special
- * effect ('slow' or 'aoe' splash) applied on hit.
+ * effect on hit ('slow', 'aoe' splash, or 'stun'), and Router ('aoeSlow')
+ * skips the projectile entirely for a self-centred pulse — see tick().
  * Can be upgraded (up to TOWER_MAX_LEVEL) for more damage, range and
  * fire rate — see upgrade().
  */
@@ -31,7 +34,7 @@ export class ToolTower extends Phaser.GameObjects.Container {
   private readonly baseRange: number;
   private readonly baseFireRate: number;
   private readonly baseDamage: number;
-  private readonly special?: 'slow' | 'aoe';
+  private readonly special?: TowerSpecial;
 
   // Child visuals
   private base: Phaser.GameObjects.Rectangle;
@@ -129,6 +132,18 @@ export class ToolTower extends Phaser.GameObjects.Container {
     this.cooldown -= delta;
     if (this.cooldown > 0) return;
 
+    if (this.special === 'aoeSlow') {
+      // Router: no single target — pulses if anyone is in range at all.
+      const anyoneInRange = enemies.some(
+        e => !e.isDead && !e.hasReachedDesk &&
+             Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= this.range
+      );
+      if (!anyoneInRange) return;
+      this.cooldown = this.fireRate;
+      this.firePulse(enemies);
+      return;
+    }
+
     const target = this.findTarget(enemies);
     if (!target) {
       this.barrelLine.clear();
@@ -159,11 +174,56 @@ export class ToolTower extends Phaser.GameObjects.Container {
     this.barrelLine.lineBetween(0, 0, Math.cos(angle) * barrelLen, Math.sin(angle) * barrelLen);
   }
 
-  private fireAt(target: Coworker, enemies: Coworker[]): void {
-    // ── Create a simple projectile as a scene-level graphics object ──────
+  /** Router: an expanding ring wave centred on the tower, hitting everyone in range. */
+  private firePulse(enemies: Coworker[]): void {
     const scene = this.scene;
+    const ring = scene.add.arc(this.x, this.y, 6, 0, 360, false, 0x6c5ce7, 0);
+    ring.setStrokeStyle(3, 0xa29bfe, 0.9);
+
+    scene.tweens.add({
+      targets: ring,
+      radius: this.range,
+      alpha: 0,
+      duration: 350,
+      ease: 'Quad.Out',
+      onComplete: () => ring.destroy(),
+    });
+
+    for (const e of enemies) {
+      if (e.isDead || e.hasReachedDesk) continue;
+      if (Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= this.range) {
+        e.takeDamage(this.damage);
+        e.applySlow(SLOW_MULTIPLIER, SLOW_DURATION_MS);
+      }
+    }
+  }
+
+  /** Script fires code glyphs, Docs hurls a tome, everyone else a plain bolt. */
+  private createProjectileVisual(): Phaser.GameObjects.Text | Phaser.GameObjects.Arc {
+    const scene = this.scene;
+
+    if (this.variant === 'script') {
+      const glyph = Phaser.Math.Between(0, 1) ? '0' : '1';
+      return scene.add.text(this.x, this.y, glyph, {
+        fontSize: '14px',
+        fontStyle: 'bold',
+        fontFamily: 'monospace',
+        color: '#00ff9d',
+      }).setOrigin(0.5);
+    }
+
+    if (this.variant === 'docs') {
+      return scene.add.text(this.x, this.y, '📖', { fontSize: '18px' }).setOrigin(0.5);
+    }
+
     const proj = scene.add.arc(this.x, this.y, 5, 0, 360, false, 0xfdcb6e);
     proj.setStrokeStyle(1.5, 0xe17055);
+    return proj;
+  }
+
+  private fireAt(target: Coworker, enemies: Coworker[]): void {
+    const scene = this.scene;
+    const proj = this.createProjectileVisual();
 
     const angle = Phaser.Math.Angle.Between(this.x, this.y, target.x, target.y);
     const vx = Math.cos(angle) * PROJECTILE_SPEED;
@@ -188,6 +248,7 @@ export class ToolTower extends Phaser.GameObjects.Container {
         if (dist < 18) {
           target.takeDamage(damage);
           if (special === 'slow') target.applySlow(SLOW_MULTIPLIER, SLOW_DURATION_MS);
+          if (special === 'stun') target.applySlow(0, STUN_DURATION_MS);
           if (special === 'aoe') {
             for (const e of enemies) {
               if (e === target || e.isDead || e.hasReachedDesk) continue;

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS } from '../config';
 
 export interface Waypoint {
   x: number;
@@ -24,6 +25,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   private readonly speed: number;
   private slowMultiplier = 1;
   private slowUntil = 0;
+  private isBlockedAtDoor = false;
+  private waitDamageTimer = 0;
 
   // Child visuals
   private coBody: Phaser.GameObjects.Arc;
@@ -112,10 +115,56 @@ export class Coworker extends Phaser.GameObjects.Container {
     });
   }
 
-  /** Slows movement to `multiplier`× speed for `durationMs` (e.g. the coffee tower). */
+  /**
+   * Slows movement to `multiplier`× speed for `durationMs` (coffee tower,
+   * router's pulse). A multiplier of 0 is a full stun (Docs' RTFM hit) —
+   * same mechanism, just frozen instead of merely slowed.
+   */
   public applySlow(multiplier: number, durationMs: number): void {
     this.slowMultiplier = multiplier;
     this.slowUntil = this.scene.time.now + durationMs;
+  }
+
+  /**
+   * Removed by the "Создай тикет" ultimate — too lazy to file an official
+   * ticket, so they just deflate and leave instead of dying in combat.
+   * Visually distinct from kill(): squashes and floats up instead of
+   * popping, but is otherwise identical (counts as a normal kill for wave
+   * progress — see WaveManager).
+   */
+  public sendToHelpdesk(): void {
+    if (this.isDead) return;
+    this.isDead = true;
+    this.scene.tweens.add({
+      targets: this,
+      alpha: 0,
+      scaleX: 1.3,
+      scaleY: 0.1,
+      y: this.y - 20,
+      duration: 380,
+      ease: 'Quad.In',
+      onComplete: () => { if (this.scene) this.destroy(); },
+    });
+  }
+
+  /**
+   * Called by WaveManager when this coworker reaches the desk while the
+   * "Я на митинге" shield is up: instead of hitting Petya, they get stuck
+   * at the door and take periodic damage until they die or the shield
+   * expires (see releaseFromDoor()).
+   */
+  public blockAtDoor(): void {
+    if (this.isBlockedAtDoor) return;
+    this.isBlockedAtDoor = true;
+    this.hasReachedDesk = false;
+    this.waitDamageTimer = SHIELD_DOT_INTERVAL_MS;
+  }
+
+  /** Shield expired while this coworker was still waiting — they barge in. */
+  public releaseFromDoor(): void {
+    if (!this.isBlockedAtDoor) return;
+    this.isBlockedAtDoor = false;
+    this.hasReachedDesk = true;
   }
 
   // ── Per-frame ─────────────────────────────────────────────────────────
@@ -128,14 +177,31 @@ export class Coworker extends Phaser.GameObjects.Container {
       this.slowUntil = 0;
     }
 
-    // Hit-flash / slow tint
+    // Hit-flash / waiting-at-door / stunned / slow tint
     if (this.hitFlash > 0) {
       this.hitFlash -= delta;
       this.coBody.setFillStyle(0xffffff);
+    } else if (this.isBlockedAtDoor) {
+      this.coBody.setFillStyle(0xf39c12);
+    } else if (this.slowMultiplier === 0) {
+      this.coBody.setFillStyle(0xa29bfe); // stunned (Docs' RTFM) — dizzy purple
     } else if (this.slowMultiplier < 1) {
-      this.coBody.setFillStyle(0x74b9ff);
+      this.coBody.setFillStyle(0x74b9ff); // slowed — blue
     } else {
       this.coBody.setFillStyle(0xff7675);
+    }
+
+    if (this.isBlockedAtDoor) {
+      // Stuck at the "Не беспокоить" sign — take periodic damage instead
+      // of moving, until it dies or the shield drops (releaseFromDoor()).
+      this.waitDamageTimer -= delta;
+      if (this.waitDamageTimer <= 0) {
+        this.waitDamageTimer = SHIELD_DOT_INTERVAL_MS;
+        this.takeDamage(SHIELD_DOT_DAMAGE);
+      }
+      // Agitated shake instead of the gentle bob.
+      this.rotation = Math.sin(this.scene.time.now / 80) * 0.15;
+      return;
     }
 
     // Move toward current waypoint

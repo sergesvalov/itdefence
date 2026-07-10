@@ -54,16 +54,28 @@ export interface TowerVariantStats {
   damage: number;
   /** Money cost to place (and base unit for upgrade cost: cost * level) */
   cost: number;
-  special?: 'slow' | 'aoe';
+  /**
+   * 'slow'    — single-target slow on hit (coffee)
+   * 'aoe'     — projectile splash-damages everyone near the impact point (aircon)
+   * 'aoeSlow' — no projectile: an expanding ring pulse from the tower itself,
+   *             damages + slows everyone currently in range (router)
+   * 'stun'    — big single-target hit that also freezes movement (docs)
+   */
+  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun';
 }
 
+// Order matches how right-click / 1-6 / HUD-tap cycle through variants.
+export const TOWER_VARIANT_KEYS: readonly TowerVariant[] =
+  ['script', 'router', 'docs', 'coffee', 'chair', 'aircon'];
+
 export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
-  // Balanced all-rounder — the default choice.
-  script: { label: 'Script',  icon: '📜', color: 0x0984e3, range: 130, fireRate: 1000, damage: 1, cost: 50 },
-  // Fast but short-ranged — good against fast/weak rushes.
-  router: { label: 'Router',  icon: '📡', color: 0x6c5ce7, range: 100, fireRate: 600,  damage: 1, cost: 60 },
-  // Long-ranged heavy hitter, slow fire rate.
-  docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 170, fireRate: 1400, damage: 2, cost: 70 },
+  // Basic rapid-fire gun — sprays matrix-green 0s and 1s.
+  script: { label: 'Script',  icon: '📜', color: 0x0984e3, range: 110, fireRate: 500,  damage: 1, cost: 45 },
+  // Ring-shaped Wi-Fi pulse from the tower itself ("ping is high, the task
+  // is loading slowly") — damages and slows everyone currently in range.
+  router: { label: 'Router',  icon: '📡', color: 0x6c5ce7, range: 100, fireRate: 1500, damage: 1, cost: 65, special: 'aoeSlow' },
+  // Slow heavy artillery — hurls RTFM tomes that hit hard and stun.
+  docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 160, fireRate: 1800, damage: 3, cost: 75, special: 'stun' },
   // Coffee break — slows whatever it hits.
   coffee: { label: 'Coffee',  icon: '☕', color: 0x8b5e3c, range: 110, fireRate: 1200, damage: 1, cost: 55, special: 'slow' },
   // Cheap starter tower — low stats, low cost.
@@ -72,12 +84,36 @@ export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   aircon: { label: 'AC',      icon: '🌬️', color: 0x81ecec, range: 140, fireRate: 1600, damage: 1, cost: 80, special: 'aoe' },
 };
 
-/** Coffee tower: how much it slows its target, and for how long */
+/** Coffee/Router: how much a slow reduces speed, and for how long */
 export const SLOW_MULTIPLIER  = 0.5;
 export const SLOW_DURATION_MS = 1500;
 
-/** AC tower: splash-damage radius around the impact point */
+/** AC: splash-damage radius around the impact point (Router's pulse just
+ *  uses its own `range` as the radius — no separate constant needed) */
 export const AOE_SPLASH_RADIUS = 50;
+
+/** Docs: how long the stun (RTFM to the face) freezes movement for */
+export const STUN_DURATION_MS = 1200;
+
+// ─── Ultimate: "Создай тикет" ────────────────────────────────────────────
+// A long-cooldown global strike. Once fully charged, tapping the HUD
+// button instantly removes a fraction of the coworkers currently on
+// screen — they're too lazy to file an official Jira ticket, so they
+// just leave instead of reaching the desk.
+export const ULTIMATE_COOLDOWN_MS = 30000;
+/** Fraction of enemies on screen removed per activation (rounded up) */
+export const ULTIMATE_KILL_FRACTION = 0.5;
+
+// ─── Shield: "Я на митинге" ──────────────────────────────────────────────
+// Temporary invulnerability for Petya's office door. While active, anyone
+// who reaches the desk instead gets stuck at the "Не беспокоить" sign and
+// takes periodic damage from waiting — towers can still finish them off.
+// If the shield expires before they die, they barge in immediately.
+export const SHIELD_COOLDOWN_MS = 25000;
+/** How long one activation stays up */
+export const SHIELD_DURATION_MS = 5000;
+export const SHIELD_DOT_DAMAGE = 1;
+export const SHIELD_DOT_INTERVAL_MS = 1000;
 
 // ─── Map textures ───────────────────────────────────────────────────────
 // Drop matching files under public/assets/... (see the README files there)
@@ -97,4 +133,20 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   { key: 'tile-office-floor', path: 'assets/tiles/office-floor.png',  kind: 'tile' },
   { key: 'sprite-door',       path: 'assets/sprites/door.png',        kind: 'sprite' },
   { key: 'sprite-desk',       path: 'assets/sprites/desk.png',        kind: 'sprite' },
+];
+
+// ─── Spawn doors ────────────────────────────────────────────────────────
+// Reception strip along the top edge, one row, below where the HUD panel
+// sits (top-left corner) so nothing gets visually covered.
+export interface DoorDef {
+  x: number;
+  y: number;
+  label: string;
+}
+
+export const SPAWN_DOORS: DoorDef[] = [
+  { x: 60,  y: 165, label: 'HR' },
+  { x: 180, y: 165, label: 'Finance' },
+  { x: 300, y: 165, label: 'PM' },
+  { x: 420, y: 165, label: 'Legal' },
 ];
