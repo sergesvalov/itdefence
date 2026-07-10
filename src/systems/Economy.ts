@@ -1,6 +1,6 @@
 import type { HUD } from '../ui/HUD';
 
-/** Petya's money: spend it on towers/upgrades, earn it from the salary. */
+/** Petya's money: spend it on towers/upgrades, earn it once per cleared wave. */
 export class Economy {
   private money: number;
 

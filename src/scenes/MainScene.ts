@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { MAX_TASKS, STARTING_MONEY, TEXTURE_ASSETS } from '../config';
+import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY, TEXTURE_ASSETS } from '../config';
 import { drawMap } from '../rendering/MapRenderer';
 import { HUD } from '../ui/HUD';
 import { Economy } from '../systems/Economy';
@@ -7,15 +7,18 @@ import { TowerPlacer } from '../systems/TowerPlacer';
 import { WaveManager } from '../systems/WaveManager';
 import { Ultimate } from '../systems/Ultimate';
 import { Shield } from '../systems/Shield';
+import { Inbox } from '../systems/Inbox';
 
 /**
- * MainScene — thin coordinator. Owns overall game/round state (game-over,
- * task counter) and wires together the modules that do the actual work:
+ * MainScene — thin coordinator. Owns overall game/round state (game-over)
+ * and wires together the modules that do the actual work:
  *  - MapRenderer: draws the static map once
  *  - HUD: on-screen stats panel + Game Over overlay
  *  - Economy: money
  *  - TowerPlacer: placement/upgrade input and the towers list
- *  - WaveManager: spawning, enemy list, wave/kill progress, salary
+ *  - WaveManager: spawning, enemy list, wave loop (pause + Start Wave), money
+ *  - Inbox: the task queue coworkers feed when they reach the desk —
+ *    overflowing it (not a life counter) is what ends the game
  *  - Ultimate: "Создай тикет" — the charged global strike
  *  - Shield: "Я на митинге" — temporary door invulnerability
  */
@@ -26,8 +29,8 @@ export class MainScene extends Phaser.Scene {
   private waveManager!: WaveManager;
   private ultimate!: Ultimate;
   private shield!: Shield;
+  private inbox!: Inbox;
 
-  private tasksOnDesk = 0;
   private isGameOver = false;
 
   constructor() {
@@ -53,18 +56,19 @@ export class MainScene extends Phaser.Scene {
     // resetting state here (rather than in a separate "reset" method) is
     // what keeps a new round from inheriting the previous one's — every
     // module below is freshly constructed too.
-    this.tasksOnDesk = 0;
     this.isGameOver = false;
 
     drawMap(this);
 
-    this.hud = new HUD(this, STARTING_MONEY, MAX_TASKS);
+    this.hud = new HUD(this, STARTING_MONEY, INBOX_LIMIT);
     this.economy = new Economy(this.hud, STARTING_MONEY);
     this.towerPlacer = new TowerPlacer(this, this.economy, this.hud);
+    this.inbox = new Inbox(this, this.hud, INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, () => this.triggerGameOver());
     this.waveManager = new WaveManager(
       this, this.economy, this.hud,
-      () => this.onTaskReachedDesk(),
+      (urgent) => this.inbox.enqueue(urgent),
       () => this.shield.isActive,
+      () => this.towerPlacer.furniture,
     );
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
@@ -79,24 +83,19 @@ export class MainScene extends Phaser.Scene {
     this.waveManager.update(delta);
     this.towerPlacer.tick(delta, this.waveManager.enemies);
     this.ultimate.update(delta);
+    this.inbox.update(delta);
   }
 
   // ──────────────────────────────────────────────────────────────────────
   // GAME LOGIC
   // ──────────────────────────────────────────────────────────────────────
 
-  private onTaskReachedDesk(): void {
-    this.tasksOnDesk++;
-    this.hud.setTasks(this.tasksOnDesk, MAX_TASKS);
-    if (this.tasksOnDesk >= MAX_TASKS) this.triggerGameOver();
-  }
-
   private triggerGameOver(): void {
     this.isGameOver = true;
     this.towerPlacer.enabled = false;
     this.ultimate.enabled = false;
     this.shield.enabled = false;
-    console.log('Game Over – Petya is overwhelmed by tasks!');
+    console.log('Game Over – the Inbox overflowed!');
     this.hud.showGameOver();
     this.cameras.main.shake(600, 0.012);
   }
@@ -106,6 +105,7 @@ export class MainScene extends Phaser.Scene {
     // rebuilds everything else fresh.
     for (const cw of this.waveManager.enemies) cw.destroy();
     for (const t  of this.towerPlacer.towers) t.destroy();
+    for (const f  of this.towerPlacer.furniture) f.destroy();
     this.scene.restart();
   }
 }

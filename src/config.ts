@@ -18,8 +18,18 @@ export const DESK_Y = 700;
 /** Projectile speed px/s */
 export const PROJECTILE_SPEED = 280;
 
-/** How many tasks reaching the desk triggers game-over */
-export const MAX_TASKS = 10;
+/**
+ * Inbox (the "Очередь задач" mechanic): coworkers who reach the desk drop
+ * a task in the Inbox instead of hitting Petya directly. If the queue ever
+ * exceeds INBOX_LIMIT, it's game over. Petya auto-resolves the task at the
+ * front of the queue every INBOX_RESOLVE_INTERVAL_MS.
+ */
+export const INBOX_LIMIT = 10;
+export const INBOX_RESOLVE_INTERVAL_MS = 2000;
+
+/** Chance a spawning coworker carries a red/urgent task, which jumps the
+ *  Inbox queue (to the front) instead of joining the back on arrival. */
+export const URGENT_TASK_CHANCE = 0.15;
 
 /** Enemy spawn interval range (ms) */
 export const SPAWN_INTERVAL_MIN = 2000;
@@ -28,9 +38,12 @@ export const SPAWN_INTERVAL_MAX = 3500;
 /** Money Petya starts the game with */
 export const STARTING_MONEY = 150;
 
-/** Salary paid out every SALARY_INTERVAL_WAVES waves */
-export const SALARY_AMOUNT = 100;
-export const SALARY_INTERVAL_WAVES = 10;
+/** Money paid out every time a wave is fully cleared */
+export const WAVE_MONEY_AMOUNT = 40;
+
+/** How many coworkers spawn in a wave: BASE + wave * GROWTH */
+export const ENEMIES_PER_WAVE_BASE = 6;
+export const ENEMIES_PER_WAVE_GROWTH = 1;
 
 /** Tower upgrades: max level and per-level bonuses (applied on top of each
  *  variant's own base range/fireRate/damage below) */
@@ -114,6 +127,35 @@ export const STUN_DURATION_MS = 1200;
 export const CHAIN_DAMAGE_MULT = 0.5;
 export const CHAIN_MAX_BOUNCES = 3;
 
+// ─── Furniture ──────────────────────────────────────────────────────────
+// Movable, finite-stock obstacles the player places in the office — not
+// weapons, just terrain. Cabinets and drawers are plain solid obstacles
+// (coworkers steer around them); sofas are also solid, but on contact a
+// coworker stops and sits down on it for SOFA_SIT_DURATION_MS (towers can
+// still shoot them while they're seated) before standing up and moving on.
+export type FurnitureType = 'cabinet' | 'drawer' | 'sofa';
+
+export interface FurnitureTypeStats {
+  label: string;
+  icon: string;
+  color: number;
+  /** Solid collision radius coworkers steer around / collide with */
+  radius: number;
+  /** How many of this piece the player can have placed at once */
+  maxCount: number;
+}
+
+export const FURNITURE_TYPE_KEYS: readonly FurnitureType[] = ['cabinet', 'drawer', 'sofa'];
+
+export const FURNITURE_TYPES_DATA: Record<FurnitureType, FurnitureTypeStats> = {
+  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x795548, radius: 22, maxCount: 3 },
+  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0xa1887f, radius: 16, maxCount: 4 },
+  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x8e44ad, radius: 24, maxCount: 2 },
+};
+
+/** How long a coworker sits on a sofa before standing back up and continuing */
+export const SOFA_SIT_DURATION_MS = 3000;
+
 // ─── Ultimate: "Создай тикет" ────────────────────────────────────────────
 // A long-cooldown global strike. Once fully charged, tapping the HUD
 // button instantly removes a fraction of the coworkers currently on
@@ -158,6 +200,12 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   ...TOWER_VARIANT_KEYS.map((variant): TextureAsset => ({
     key: `sprite-tower-${variant}`,
     path: `assets/sprites/tower-${variant}.png`,
+    kind: 'sprite',
+  })),
+  // One sprite slot per furniture type — sprite-furniture-cabinet, ...
+  ...FURNITURE_TYPE_KEYS.map((type): TextureAsset => ({
+    key: `sprite-furniture-${type}`,
+    path: `assets/sprites/furniture-${type}.png`,
     kind: 'sprite',
   })),
 ];

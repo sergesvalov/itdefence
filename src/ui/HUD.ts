@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, type TowerVariantStats } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT, type TowerVariantStats, type FurnitureTypeStats } from '../config';
+import type { Task } from '../systems/Inbox';
 
 interface AbilityButton {
   container: Phaser.GameObjects.Container;
@@ -18,7 +19,8 @@ interface AbilityButton {
 export class HUD extends Phaser.Events.EventEmitter {
   private scene: Phaser.Scene;
   private moneyText: Phaser.GameObjects.Text;
-  private taskCounterText: Phaser.GameObjects.Text;
+  private inboxCountText: Phaser.GameObjects.Text;
+  private inboxQueueText: Phaser.GameObjects.Text;
   private waveText: Phaser.GameObjects.Text;
   private towerSelectText: Phaser.GameObjects.Text;
   private gameOverOverlay: Phaser.GameObjects.Container;
@@ -26,7 +28,10 @@ export class HUD extends Phaser.Events.EventEmitter {
   private ultimateButton: AbilityButton;
   private shieldButton: AbilityButton;
 
-  constructor(scene: Phaser.Scene, startingMoney: number, maxTasks: number) {
+  private startWaveButton: Phaser.GameObjects.Container;
+  private startWaveText: Phaser.GameObjects.Text;
+
+  constructor(scene: Phaser.Scene, startingMoney: number, inboxLimit: number) {
     super();
     this.scene = scene;
     const pad = 12;
@@ -34,7 +39,7 @@ export class HUD extends Phaser.Events.EventEmitter {
     // ── Top-left HUD panel ────────────────────────────────────────────
     const hudBg = scene.add.graphics();
     hudBg.fillStyle(0x000000, 0.55);
-    hudBg.fillRoundedRect(pad, pad, 280, 134, 10);
+    hudBg.fillRoundedRect(pad, pad, 280, 158, 10);
     hudBg.setDepth(15);
 
     // Money
@@ -44,25 +49,31 @@ export class HUD extends Phaser.Events.EventEmitter {
       fontStyle: 'bold',
     }).setDepth(16);
 
-    // Task counter
-    this.taskCounterText = scene.add.text(pad + 14, pad + 36, `📋 Tasks on Desk: 0 / ${maxTasks}`, {
+    // Inbox counter
+    this.inboxCountText = scene.add.text(pad + 14, pad + 36, `📥 Inbox: 0 / ${inboxLimit}`, {
       fontSize: '16px',
       color: '#ffeaa7',
       fontStyle: 'bold',
     }).setDepth(16);
 
+    // Inbox queue — one glyph per slot, in resolve order (leftmost = next up).
+    // Urgent tasks show red and jump to the front, so this reads the queue
+    // priority at a glance.
+    this.inboxQueueText = scene.add.text(pad + 14, pad + 58, '', { fontSize: '13px' })
+      .setDepth(16);
+
     // Wave indicator
-    this.waveText = scene.add.text(pad + 14, pad + 64, '', { fontSize: '13px', color: '#a29bfe' })
+    this.waveText = scene.add.text(pad + 14, pad + 80, '', { fontSize: '13px', color: '#a29bfe' })
       .setDepth(16);
 
     // Tower selector — tap to cycle type (right-click / 1-6 don't exist on touch)
-    this.towerSelectText = scene.add.text(pad + 14, pad + 86, '', { fontSize: '13px', color: '#74b9ff' })
+    this.towerSelectText = scene.add.text(pad + 14, pad + 102, '', { fontSize: '13px', color: '#74b9ff' })
       .setDepth(16)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.emit('variant-tap'));
 
     // Hint text
-    scene.add.text(pad + 14, pad + 110, 'Тап: кабинет — башня, башня — апгрейд, тип — смена', {
+    scene.add.text(pad + 14, pad + 134, 'Тап: кабинет — постройка, постройка — апгрейд/переставить', {
       fontSize: '9px',
       color: '#636e72',
     }).setDepth(16);
@@ -70,6 +81,35 @@ export class HUD extends Phaser.Events.EventEmitter {
     // ── Ability buttons — top-right corner ──────────────────────────────
     this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 96, 48, '🎫', 'Тикет', 'ultimate-tap');
     this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 40, 48, '🛡️', 'Митинг', 'shield-tap');
+
+    // ── "Start Wave" button — shown only during the between-waves pause.
+    // Parked under the ability buttons (top-right) so it doesn't collide
+    // with the (now taller) stats panel or the spawn-door row below it.
+    const swX = GAME_WIDTH - 68;
+    const swY = 112;
+    const swBg = scene.add.circle(0, 0, 26, 0x27ae60, 0.95);
+    swBg.setStrokeStyle(3, 0xffffff, 0.9);
+    const swIcon = scene.add.text(0, 0, '▶️', { fontSize: '18px' }).setOrigin(0.5);
+    this.startWaveButton = scene.add.container(swX, swY, [swBg, swIcon])
+      .setDepth(17)
+      .setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains)
+      .on('pointerdown', () => this.emit('start-wave-tap'));
+    this.startWaveText = scene.add.text(swX, swY + 34, '', {
+      fontSize: '10px',
+      color: '#2ecc71',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5).setDepth(17);
+    scene.tweens.add({
+      targets: this.startWaveButton,
+      scaleX: 1.12, scaleY: 1.12,
+      duration: 500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    });
+    this.startWaveButton.setVisible(false);
+    this.startWaveText.setVisible(false);
 
     // ── Game Over overlay ─────────────────────────────────────────────
     this.gameOverOverlay = this.buildGameOverOverlay();
@@ -81,7 +121,7 @@ export class HUD extends Phaser.Events.EventEmitter {
     this.moneyText.setText(`💰 ${amount}`);
   }
 
-  /** Brief colour pulse on the money text — used when the salary comes in. */
+  /** Brief colour pulse on the money text — used when wave money comes in. */
   pulseMoney(color: string): void {
     this.scene.tweens.add({
       targets: this.moneyText,
@@ -93,25 +133,53 @@ export class HUD extends Phaser.Events.EventEmitter {
     });
   }
 
-  setTasks(count: number, max: number): void {
-    this.taskCounterText.setText(`📋 Tasks on Desk: ${count} / ${max}`);
+  /**
+   * Redraws the Inbox counter + the per-slot queue row (leftmost glyph is
+   * the next task Petya resolves). Called by Inbox on every enqueue/resolve.
+   */
+  setInbox(tasks: readonly Task[], limit: number): void {
+    this.inboxCountText.setText(`📥 Inbox: ${tasks.length} / ${limit}`);
+
+    const glyphs: string[] = [];
+    for (let i = 0; i < limit; i++) {
+      const task = tasks[i];
+      glyphs.push(!task ? '▫️' : task.urgent ? '🔴' : '🟡');
+    }
+    this.inboxQueueText.setText(glyphs.join(''));
 
     this.scene.tweens.add({
-      targets: this.taskCounterText,
+      targets: this.inboxCountText,
       scaleX: 1.3, scaleY: 1.3,
       duration: 120,
       yoyo: true,
-      onStart: () => this.taskCounterText.setColor('#ff6b6b'),
-      onComplete: () => this.taskCounterText.setColor('#ffeaa7'),
+      onStart: () => this.inboxCountText.setColor('#ff6b6b'),
+      onComplete: () => this.inboxCountText.setColor('#ffeaa7'),
     });
   }
 
-  setWave(wave: number, wavesToSalary: number): void {
-    this.waveText.setText(`🌊 Волна ${wave}  (зарплата через ${wavesToSalary})`);
+  setWave(wave: number): void {
+    this.waveText.setText(`🌊 Волна ${wave}`);
+  }
+
+  /** Between-waves pause: shows the pulsing "Start Wave" button. */
+  showStartWaveButton(nextWave: number): void {
+    this.startWaveText.setText(`Готовься!\nВолна ${nextWave}`);
+    this.startWaveButton.setVisible(true);
+    this.startWaveText.setVisible(true);
+  }
+
+  hideStartWaveButton(): void {
+    this.startWaveButton.setVisible(false);
+    this.startWaveText.setVisible(false);
   }
 
   setTowerSelect(stats: TowerVariantStats): void {
     this.towerSelectText.setText(`🔧 Building: ${stats.icon} ${stats.label} (💰${stats.cost})`);
+  }
+
+  /** Same row as setTowerSelect — the tower/furniture build cycle shares one selector. */
+  setFurnitureSelect(stats: FurnitureTypeStats, left: number): void {
+    this.towerSelectText.setText(`🪑 Building: ${stats.icon} ${stats.label} (${left}/${stats.maxCount} left)`);
   }
 
   showGameOver(): void {
@@ -213,7 +281,7 @@ export class HUD extends Phaser.Events.EventEmitter {
       stroke: '#000', strokeThickness: 5,
     }).setOrigin(0.5);
 
-    const sub = scene.add.text(0, -40, "Petya's desk is buried in tasks!", {
+    const sub = scene.add.text(0, -40, "Petya's Inbox overflowed!", {
       fontSize: '15px', color: '#dfe6e9', align: 'center', wordWrap: { width: 320 },
     }).setOrigin(0.5);
 

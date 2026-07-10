@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS } from '../config';
+import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS } from '../config';
+import type { Furniture } from './Furniture';
 
 export interface Waypoint {
   x: number;
@@ -19,6 +20,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   public readonly maxHp: number;
   public isDead = false;
   public hasReachedDesk = false;
+  /** Red/urgent task — jumps the Inbox queue on arrival (see Inbox.enqueue()). */
+  public readonly urgent: boolean;
 
   private readonly waypoints: Waypoint[];
   private waypointIndex = 0;
@@ -28,15 +31,25 @@ export class Coworker extends Phaser.GameObjects.Container {
   private isBlockedAtDoor = false;
   private waitDamageTimer = 0;
 
+  // Sofa contact: stops and sits for SOFA_SIT_DURATION_MS instead of moving.
+  // sitCooldown* prevents immediately re-triggering on the same sofa right
+  // after standing back up while still touching its edge.
+  private isSitting = false;
+  private sitTimer = 0;
+  private sitFurniture: Furniture | null = null;
+  private sitCooldownFurniture: Furniture | null = null;
+  private sitCooldownUntil = 0;
+
   // Child visuals — either the placeholder circle + angry-face emoji, or
   // (if sprite-coworker was loaded) a single tinted image in its place.
   private coBody: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
   private readonly useSprite: boolean;
   private hpBar: Phaser.GameObjects.Graphics;
   private ticket: Phaser.GameObjects.Graphics;
+  private sitIcon: Phaser.GameObjects.Text;
   private hitFlash = 0;
 
-  constructor(scene: Phaser.Scene, waypoints: Waypoint[]) {
+  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false) {
     const start = waypoints[0];
     super(scene, start.x, start.y);
 
@@ -45,6 +58,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.speed        = BASE_SPEED + Phaser.Math.Between(-8, 16);
     this.maxHp        = BASE_HP;
     this.hp           = this.maxHp;
+    this.urgent       = urgent;
 
     // ── Body ─────────────────────────────────────────────────────────────
     this.useSprite = scene.textures.exists('sprite-coworker');
@@ -69,7 +83,10 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hpBar = scene.add.graphics();
     this.redrawHpBar();
 
-    this.add([...bodyParts, this.ticket, this.hpBar]);
+    // ── Sofa sit indicator (hidden unless sitting) ─────────────────────────
+    this.sitIcon = scene.add.text(0, -32, '💺', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
+
+    this.add([...bodyParts, this.ticket, this.hpBar, this.sitIcon]);
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
   }
 
@@ -86,12 +103,16 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   private drawTicket(): void {
     this.ticket.clear();
-    this.ticket.fillStyle(0xffeaa7);
+    // Urgent (red) tasks carry a visibly different ticket — the player
+    // should be able to spot the priority threat before it reaches the desk.
+    const fill = this.urgent ? 0xff7675 : 0xffeaa7;
+    const stroke = this.urgent ? 0xd63031 : 0xd4ac0d;
+    this.ticket.fillStyle(fill);
     this.ticket.fillRect(-7, -30, 14, 10);
-    this.ticket.lineStyle(1.5, 0xd4ac0d);
+    this.ticket.lineStyle(1.5, stroke);
     this.ticket.strokeRect(-7, -30, 14, 10);
     // tiny lines simulating text
-    this.ticket.lineStyle(1, 0xb7950b);
+    this.ticket.lineStyle(1, this.urgent ? 0x922b21 : 0xb7950b);
     for (let i = 0; i < 3; i++) {
       this.ticket.lineBetween(-5, -28 + i * 3, 5, -28 + i * 3);
     }
@@ -184,9 +205,36 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hasReachedDesk = true;
   }
 
+  /** Sofa contact: stop and sit for a while (towers can still hit them). */
+  private sitDown(f: Furniture): void {
+    this.isSitting = true;
+    this.sitTimer = SOFA_SIT_DURATION_MS;
+    this.sitFurniture = f;
+    this.sitIcon.setVisible(true);
+    const angle = Phaser.Math.Angle.Between(f.x, f.y, this.x, this.y);
+    this.x = f.x + Math.cos(angle) * (f.radius * 0.4);
+    this.y = f.y + Math.sin(angle) * (f.radius * 0.4);
+  }
+
+  /** Stands up, stepping just clear of the sofa so it doesn't sit right back down. */
+  private standUp(): void {
+    const f = this.sitFurniture;
+    this.sitIcon.setVisible(false);
+    if (f) {
+      const angle = Phaser.Math.Angle.Between(f.x, f.y, this.x, this.y);
+      const pushDist = RADIUS + f.radius + 4;
+      this.x = f.x + Math.cos(angle) * pushDist;
+      this.y = f.y + Math.sin(angle) * pushDist;
+      this.sitCooldownFurniture = f;
+      this.sitCooldownUntil = this.scene.time.now + 1500;
+    }
+    this.isSitting = false;
+    this.sitFurniture = null;
+  }
+
   // ── Per-frame ─────────────────────────────────────────────────────────
 
-  public tick(delta: number): void {
+  public tick(delta: number, furniture: Furniture[]): void {
     if (this.isDead || this.hasReachedDesk) return;
 
     if (this.slowUntil > 0 && this.scene.time.now > this.slowUntil) {
@@ -194,12 +242,14 @@ export class Coworker extends Phaser.GameObjects.Container {
       this.slowUntil = 0;
     }
 
-    // Hit-flash / waiting-at-door / stunned / slow tint
+    // Hit-flash / waiting-at-door / sitting / stunned / slow tint
     if (this.hitFlash > 0) {
       this.hitFlash -= delta;
       this.tintBody(0xffffff);
     } else if (this.isBlockedAtDoor) {
       this.tintBody(0xf39c12);
+    } else if (this.isSitting) {
+      this.tintBody(0xffeaa7); // lounging on the sofa
     } else if (this.slowMultiplier === 0) {
       this.tintBody(0xa29bfe); // stunned (Docs' RTFM) — dizzy purple
     } else if (this.slowMultiplier < 1) {
@@ -221,6 +271,13 @@ export class Coworker extends Phaser.GameObjects.Container {
       return;
     }
 
+    if (this.isSitting) {
+      this.sitTimer -= delta;
+      this.rotation = 0;
+      if (this.sitTimer <= 0) this.standUp();
+      return;
+    }
+
     // Move toward current waypoint
     const target = this.waypoints[this.waypointIndex];
     if (!target) {
@@ -235,14 +292,40 @@ export class Coworker extends Phaser.GameObjects.Container {
     const dt   = delta / 1000;
     const effectiveSpeed = this.speed * this.slowMultiplier;
 
-    if (dist < 6) {
-      this.x = target.x;
-      this.y = target.y;
-      this.waypointIndex++;
+    let nx = this.x;
+    let ny = this.y;
+    const reachedWaypoint = dist < 6;
+    if (reachedWaypoint) {
+      nx = target.x;
+      ny = target.y;
     } else {
-      this.x += (dx / dist) * effectiveSpeed * dt;
-      this.y += (dy / dist) * effectiveSpeed * dt;
+      nx = this.x + (dx / dist) * effectiveSpeed * dt;
+      ny = this.y + (dy / dist) * effectiveSpeed * dt;
     }
+
+    // Solid furniture collision: cabinets/drawers just steer them around;
+    // a sofa (off cooldown) stops them entirely and sits them down instead.
+    for (const f of furniture) {
+      const fd = Phaser.Math.Distance.Between(nx, ny, f.x, f.y);
+      const minDist = RADIUS + f.radius;
+      if (fd >= minDist) continue;
+
+      const onCooldown = this.sitCooldownFurniture === f && this.scene.time.now < this.sitCooldownUntil;
+      if (f.type === 'sofa' && !onCooldown) {
+        this.sitDown(f);
+        return;
+      }
+
+      const pushAngle = fd > 0.01
+        ? Phaser.Math.Angle.Between(f.x, f.y, nx, ny)
+        : Phaser.Math.Angle.Between(f.x, f.y, target.x, target.y);
+      nx = f.x + Math.cos(pushAngle) * minDist;
+      ny = f.y + Math.sin(pushAngle) * minDist;
+    }
+
+    this.x = nx;
+    this.y = ny;
+    if (reachedWaypoint) this.waypointIndex++;
 
     // Gentle bob
     this.rotation = Math.sin(this.scene.time.now / 250 + this.x * 0.01) * 0.07;

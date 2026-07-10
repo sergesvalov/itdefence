@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 
-/** A small text that pops up and fades out — used for cost/upgrade/salary feedback. */
+/** A small text that pops up and fades out — used for cost/upgrade/wave-money feedback. */
 export function showFloatingText(scene: Phaser.Scene, x: number, y: number, text: string, color: string): void {
   const txt = scene.add.text(x, y - 20, text, {
     fontSize: '13px',

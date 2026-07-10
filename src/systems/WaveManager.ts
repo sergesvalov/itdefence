@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
 import { Coworker, type Waypoint } from '../entities/Coworker';
+import type { Furniture } from '../entities/Furniture';
 import {
   SPAWN_DOORS, type DoorDef,
   SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX,
   OFFICE_Y_TOP, DESK_X, DESK_Y,
-  SALARY_AMOUNT, SALARY_INTERVAL_WAVES,
+  WAVE_MONEY_AMOUNT, ENEMIES_PER_WAVE_BASE, ENEMIES_PER_WAVE_GROWTH,
+  URGENT_TASK_CHANCE,
   GAME_WIDTH, GAME_HEIGHT,
 } from '../config';
 import type { Economy } from './Economy';
@@ -23,33 +25,42 @@ function buildPath(door: DoorDef): Waypoint[] {
 }
 
 /**
- * WaveManager — spawns coworkers, ticks them, counts kills/waves, and
- * pays the salary every SALARY_INTERVAL_WAVES waves. Owns the `enemies`
- * list that ToolTower.tick() targets.
+ * WaveManager — spawns coworkers, ticks them, and runs the wave loop: each
+ * wave spawns a fixed batch of coworkers; once every one of them is dealt
+ * with (killed or reached the desk), the wave pays out money and pauses,
+ * waiting for the player to tap "Start Wave" (HUD) before the next batch
+ * starts. Wave 1 starts immediately — the pause only happens *between*
+ * waves, from wave 2 onward. Owns the `enemies` list that ToolTower.tick()
+ * targets. Coworkers who reach the desk no longer hit Petya directly —
+ * `onTaskArrived` hands their ticket off to MainScene's Inbox instead.
  */
 export class WaveManager {
   public readonly enemies: Coworker[] = [];
 
   private wave = 1;
-  private waveKills = 0;
-  private readonly killsPerWave = 8;
+  private spawnedThisWave = 0;
+  /** True between "wave cleared" and the player tapping Start Wave. */
+  private isPaused = false;
   private spawnTimer = 0;
 
   constructor(
     private scene: Phaser.Scene,
     private economy: Economy,
     private hud: HUD,
-    private onTaskReachedDesk: () => void,
+    private onTaskArrived: (urgent: boolean) => void,
     private isDoorShielded: () => boolean,
+    private getFurniture: () => Furniture[],
   ) {
     this.scheduleNextSpawn();
-    this.hud.setWave(this.wave, this.wavesToSalary());
+    this.hud.setWave(this.wave);
+    this.hud.on('start-wave-tap', () => this.startNextWave());
   }
 
   update(delta: number): void {
+    const furniture = this.getFurniture();
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const cw = this.enemies[i];
-      cw.tick(delta);
+      cw.tick(delta, furniture);
 
       if (cw.hasReachedDesk && !cw.isDead) {
         if (this.isDoorShielded()) {
@@ -59,16 +70,23 @@ export class WaveManager {
           cw.blockAtDoor();
           continue;
         }
+        const { urgent } = cw;
         cw.isDead = true;
         cw.setVisible(false);
         cw.destroy();
         this.enemies.splice(i, 1);
-        this.onTaskReachedDesk();
+        this.onTaskArrived(urgent);
       } else if (cw.isDead) {
         this.enemies.splice(i, 1);
-        this.waveKills++;
-        this.checkWaveProgress();
       }
+    }
+
+    if (this.isPaused) return;
+
+    if (this.spawnedThisWave >= this.enemiesPerWave() ) {
+      // Whole batch is out — wait for the field to clear, then end the wave.
+      if (this.enemies.length === 0) this.completeWave();
+      return;
     }
 
     this.spawnTimer -= delta;
@@ -80,6 +98,10 @@ export class WaveManager {
 
   // ── Spawning ─────────────────────────────────────────────────────────
 
+  private enemiesPerWave(): number {
+    return ENEMIES_PER_WAVE_BASE + this.wave * ENEMIES_PER_WAVE_GROWTH;
+  }
+
   private scheduleNextSpawn(): void {
     this.spawnTimer = Phaser.Math.Between(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX);
     // Faster in later waves
@@ -89,30 +111,31 @@ export class WaveManager {
 
   private spawnCoworker(): void {
     const door = SPAWN_DOORS[Phaser.Math.Between(0, SPAWN_DOORS.length - 1)];
-    const cw = new Coworker(this.scene, buildPath(door));
+    const urgent = Math.random() < URGENT_TASK_CHANCE;
+    const cw = new Coworker(this.scene, buildPath(door), urgent);
     this.enemies.push(cw);
+    this.spawnedThisWave++;
   }
 
-  // ── Waves & salary ───────────────────────────────────────────────────
+  // ── Wave loop & money ─────────────────────────────────────────────────
 
-  private checkWaveProgress(): void {
-    if (this.waveKills >= this.killsPerWave * this.wave) {
-      this.wave++;
-      this.waveKills = 0;
-      this.showWaveAnnouncement();
-      this.hud.setWave(this.wave, this.wavesToSalary());
+  private completeWave(): void {
+    this.economy.earn(WAVE_MONEY_AMOUNT);
+    showFloatingText(this.scene, DESK_X, DESK_Y - 40, `+${WAVE_MONEY_AMOUNT} 💰`, '#2ecc71');
 
-      if (this.wave % SALARY_INTERVAL_WAVES === 0) this.paySalary();
-    }
+    this.isPaused = true;
+    this.hud.showStartWaveButton(this.wave + 1);
   }
 
-  private wavesToSalary(): number {
-    return SALARY_INTERVAL_WAVES - (this.wave % SALARY_INTERVAL_WAVES);
-  }
-
-  private paySalary(): void {
-    this.economy.earn(SALARY_AMOUNT);
-    showFloatingText(this.scene, DESK_X, DESK_Y - 40, `+${SALARY_AMOUNT} 💰 Зарплата!`, '#2ecc71');
+  private startNextWave(): void {
+    if (!this.isPaused) return;
+    this.wave++;
+    this.spawnedThisWave = 0;
+    this.isPaused = false;
+    this.hud.hideStartWaveButton();
+    this.hud.setWave(this.wave);
+    this.showWaveAnnouncement();
+    this.scheduleNextSpawn();
   }
 
   private showWaveAnnouncement(): void {
