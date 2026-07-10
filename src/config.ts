@@ -58,10 +58,20 @@ export interface TowerVariantStats {
    * 'slow'    — single-target slow on hit (coffee)
    * 'aoe'     — projectile splash-damages everyone near the impact point (aircon)
    * 'aoeSlow' — no projectile: an expanding ring pulse from the tower itself,
-   *             damages + slows everyone currently in range (router)
+   *             damages (if damage > 0) + slows everyone currently in range (router)
    * 'stun'    — big single-target hit that also freezes movement (docs)
+   * 'chain'   — a kill ricochets to the nearest other enemy in range for
+   *             reduced damage, chaining again on every further kill (script)
    */
-  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun';
+  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun' | 'chain';
+  /**
+   * Bypasses enemy armor/damage-reduction. Currently inert — no enemy in
+   * the game has armor yet. Docs is flagged now so that whenever an
+   * armored enemy (e.g. a shielded "Manager") gets added, there's an
+   * obvious place to check this instead of re-deriving which tower should
+   * pierce it.
+   */
+  armorPiercing?: boolean;
 }
 
 // Order matches how right-click / 1-6 / HUD-tap cycle through variants.
@@ -69,13 +79,18 @@ export const TOWER_VARIANT_KEYS: readonly TowerVariant[] =
   ['script', 'router', 'docs', 'coffee', 'chair', 'aircon'];
 
 export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
-  // Basic rapid-fire gun — sprays matrix-green 0s and 1s.
-  script: { label: 'Script',  icon: '📜', color: 0x0984e3, range: 110, fireRate: 500,  damage: 1, cost: 45 },
-  // Ring-shaped Wi-Fi pulse from the tower itself ("ping is high, the task
-  // is loading slowly") — damages and slows everyone currently in range.
-  router: { label: 'Router',  icon: '📡', color: 0x6c5ce7, range: 100, fireRate: 1500, damage: 1, cost: 65, special: 'aoeSlow' },
-  // Slow heavy artillery — hurls RTFM tomes that hit hard and stun.
-  docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 160, fireRate: 1800, damage: 3, cost: 75, special: 'stun' },
+  // "Автоматизация": basic rapid-fire gun, sprays matrix-green 0s and 1s.
+  // A kill chain-reacts into the nearest other enemy in range for half
+  // damage — great at mowing down a crowd of weak targets.
+  script: { label: 'Script',  icon: '📜', color: 0x0984e3, range: 110, fireRate: 500,  damage: 1, cost: 45, special: 'chain' },
+  // "Плохой коннект": pure crowd control, no real damage. Ring-shaped
+  // Wi-Fi pulse from the tower itself — everyone in range "hangs loading
+  // the page" (slowed), holding them in other towers' kill zones.
+  router: { label: 'Router',  icon: '📡', color: 0x6c5ce7, range: 100, fireRate: 1500, damage: 0, cost: 65, special: 'aoeSlow' },
+  // "Бюрократия": slow heavy artillery, single target, colossal damage.
+  // Ignores armor (armorPiercing) — the intended counter once an armored
+  // enemy exists (see the interface comment above).
+  docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 160, fireRate: 2200, damage: 5, cost: 90, special: 'stun', armorPiercing: true },
   // Coffee break — slows whatever it hits.
   coffee: { label: 'Coffee',  icon: '☕', color: 0x8b5e3c, range: 110, fireRate: 1200, damage: 1, cost: 55, special: 'slow' },
   // Cheap starter tower — low stats, low cost.
@@ -94,6 +109,10 @@ export const AOE_SPLASH_RADIUS = 50;
 
 /** Docs: how long the stun (RTFM to the face) freezes movement for */
 export const STUN_DURATION_MS = 1200;
+
+/** Script: ricochet damage multiplier and max chain length per shot */
+export const CHAIN_DAMAGE_MULT = 0.5;
+export const CHAIN_MAX_BOUNCES = 3;
 
 // ─── Ultimate: "Создай тикет" ────────────────────────────────────────────
 // A long-cooldown global strike. Once fully charged, tapping the HUD

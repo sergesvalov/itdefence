@@ -5,6 +5,7 @@ import {
   TOWER_VARIANTS_DATA, type TowerVariant, type TowerVariantStats,
   TOWER_MAX_LEVEL, TOWER_UPGRADE_DAMAGE_BONUS, TOWER_UPGRADE_RANGE_BONUS, TOWER_UPGRADE_FIRE_RATE_MULT,
   SLOW_MULTIPLIER, SLOW_DURATION_MS, AOE_SPLASH_RADIUS, STUN_DURATION_MS,
+  CHAIN_DAMAGE_MULT, CHAIN_MAX_BOUNCES,
 } from '../config';
 
 export const TOWER_SIZE = 26; // half-width of the square body
@@ -17,8 +18,9 @@ type TowerSpecial = TowerVariantStats['special'];
  * and waits for the fire-rate cooldown before shooting again.
  * Base range/fire rate/damage/cost come from the variant (see
  * TOWER_VARIANTS_DATA in config.ts); some variants also have a special
- * effect on hit ('slow', 'aoe' splash, or 'stun'), and Router ('aoeSlow')
- * skips the projectile entirely for a self-centred pulse — see tick().
+ * effect on hit ('slow', 'aoe' splash, 'stun', or 'chain' ricochet), and
+ * Router ('aoeSlow') skips the projectile entirely for a self-centred
+ * pulse — see tick().
  * Can be upgraded (up to TOWER_MAX_LEVEL) for more damage, range and
  * fire rate — see upgrade().
  */
@@ -197,9 +199,45 @@ export class ToolTower extends Phaser.GameObjects.Container {
     for (const e of enemies) {
       if (e.isDead || e.hasReachedDesk) continue;
       if (Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= this.range) {
-        e.takeDamage(this.damage);
+        // Router is pure crowd control at base level — the slow is the
+        // point, damage (if any, from upgrades) is just a side effect.
+        if (this.damage > 0) e.takeDamage(this.damage);
         e.applySlow(SLOW_MULTIPLIER, SLOW_DURATION_MS);
       }
+    }
+  }
+
+  /**
+   * Script: a kill ricochets to the nearest other enemy in range for
+   * `damage` (already the reduced ricochet amount — see CHAIN_DAMAGE_MULT),
+   * chaining again on every further kill, up to `bouncesLeft` hops. Great
+   * for mowing down a crowd of low-HP targets.
+   */
+  private fireChainRicochet(
+    fromX: number, fromY: number, enemies: Coworker[],
+    damage: number, bouncesLeft: number, alreadyHit: Set<Coworker>,
+  ): void {
+    if (bouncesLeft <= 0) return;
+
+    let next: Coworker | null = null;
+    let minDist = this.range;
+    for (const e of enemies) {
+      if (e.isDead || e.hasReachedDesk || alreadyHit.has(e)) continue;
+      const d = Phaser.Math.Distance.Between(fromX, fromY, e.x, e.y);
+      if (d < minDist) { minDist = d; next = e; }
+    }
+    if (!next) return;
+    alreadyHit.add(next);
+
+    const scene = this.scene;
+    const bolt = scene.add.graphics();
+    bolt.lineStyle(2, 0x00ff9d, 0.9);
+    bolt.lineBetween(fromX, fromY, next.x, next.y);
+    scene.tweens.add({ targets: bolt, alpha: 0, duration: 150, onComplete: () => bolt.destroy() });
+
+    next.takeDamage(damage);
+    if (next.isDead) {
+      this.fireChainRicochet(next.x, next.y, enemies, damage, bouncesLeft - 1, alreadyHit);
     }
   }
 
@@ -261,6 +299,14 @@ export class ToolTower extends Phaser.GameObjects.Container {
                 e.takeDamage(damage);
               }
             }
+          }
+          if (special === 'chain' && target.isDead) {
+            this.fireChainRicochet(
+              target.x, target.y, enemies,
+              damage * CHAIN_DAMAGE_MULT,
+              CHAIN_MAX_BOUNCES,
+              new Set([target]),
+            );
           }
           destroyProj();
           return;
