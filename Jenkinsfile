@@ -127,7 +127,11 @@ pipeline {
                         // 2. Инициализация платформы
                         sh "npx cap add android || npx cap sync android"
 
-                        sh 'echo "android.aapt2FromMavenOverride=/usr/bin/aapt2" >> android/gradle.properties'
+                        // Без aapt2FromMavenOverride: система подсовывала старый
+                        // aapt2 из Debian-пакета aapt, который не понимает флаг
+                        // --source-path, нужный текущей AGP. Даём Gradle/AGP
+                        // самому разрешить aapt2 из SDK build-tools (соседний
+                        // проект на этом же ARM-хосте так и собирается).
 
                         // 3. Компиляция через Gradle (с постоянным кэшем — см. GRADLE_CACHE_VOLUME)
                         sh '''
