@@ -54,21 +54,16 @@ pipeline {
             }
         }
 
-        stage('Build Node Image') {
+        stage('Build Toolchain Images') {
             steps {
                 script {
                     env.NODE_IMAGE_TAG = sh(script: 'sha1sum Dockerfile.build | cut -c1-12', returnStdout: true).trim()
                     buildAndPushIfChanged(env.NODE_IMAGE, env.NODE_IMAGE_TAG, 'Dockerfile.build', 'Node')
-                }
-            }
-        }
 
-        stage('Build Android Image') {
-            when { expression { return params.BUILD_ANDROID } }
-            steps {
-                script {
-                    env.ANDROID_IMAGE_TAG = sh(script: 'sha1sum Dockerfile.android | cut -c1-12', returnStdout: true).trim()
-                    buildAndPushIfChanged(env.ANDROID_IMAGE, env.ANDROID_IMAGE_TAG, 'Dockerfile.android', 'Android')
+                    if (params.BUILD_ANDROID) {
+                        env.ANDROID_IMAGE_TAG = sh(script: 'sha1sum Dockerfile.android | cut -c1-12', returnStdout: true).trim()
+                        buildAndPushIfChanged(env.ANDROID_IMAGE, env.ANDROID_IMAGE_TAG, 'Dockerfile.android', 'Android')
+                    }
                 }
             }
         }
