@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
-    aapt \
     && rm -rf /var/lib/apt/lists/*
 
 # ВОТ ЭТИ СТРОКИ Я СЛУЧАЙНО ПОТЕРЯЛ В ПРОШЛЫЙ РАЗ:
@@ -32,6 +31,20 @@ RUN wget -q https://services.gradle.org/distributions/gradle-8.14-bin.zip \
     unzip -q /tmp/gradle.zip -d /opt && \
     ln -s /opt/gradle-8.14/bin/gradle /usr/local/bin/gradle && \
     rm /tmp/gradle.zip
+
+# ─── ARM64 aapt2 ─────────────────────────────────────────────────────────
+# Google only ships aapt2 for x86_64/macOS/Windows — AGP downloads its own
+# copy from Maven regardless of what's in the SDK's build-tools, and that
+# copy fails outright on arm64 hosts ("Syntax error: '(' unexpected", i.e.
+# a shell trying to exec an x86_64 ELF). There is no official arm64 build.
+# Using a community cross-compile (Commit451/android-arm-build-tools, MIT,
+# rebuilt from AOSP release tags) pinned to a specific release + checksum,
+# and pointing AGP at it via android.aapt2FromMavenOverride in the
+# Jenkinsfile.
+RUN wget -q https://github.com/Commit451/android-arm-build-tools/releases/download/platform-tools-37.0.0/aapt2 \
+         -O /usr/local/bin/aapt2 && \
+    echo "a41b31103da2bac2fadb53017b57e8d1f11499b8e2ff9ed89d5e31158406ae4d  /usr/local/bin/aapt2" | sha256sum -c - && \
+    chmod +x /usr/local/bin/aapt2
 
 # No npm ci / COPY here on purpose: Jenkins bind-mounts the workspace over
 # this container via docker.inside(), and node_modules is already installed

@@ -106,6 +106,16 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 > ненадёжно и очень медленно. Собирайте Windows-версию (`npm run dist:win`)
 > либо локально на Windows, либо на отдельном Windows-агенте/раннере.
 
+> **Android-сборка использует сторонний `aapt2` для arm64.** Google публикует
+> `aapt2` только под x86_64/macOS/Windows, а Android Gradle Plugin тянет
+> именно эту версию с Maven независимо от SDK build-tools — на ARM-хосте
+> она не запускается. `Dockerfile.android` подкладывает вместо неё бинарник
+> из [Commit451/android-arm-build-tools](https://github.com/Commit451/android-arm-build-tools)
+> (MIT, пересобран из тегов релиза AOSP), запиненный на конкретный релиз и
+> проверенный по SHA-256 при сборке образа. Если после апдейта AGP снова
+> сломается (несовместимый флаг aapt2) — нужно поднять версию релиза в
+> `Dockerfile.android` и обновить хэш.
+
 ### Необходимые секреты Jenkins
 
 | ID | Тип | Описание |

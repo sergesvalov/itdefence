@@ -127,11 +127,13 @@ pipeline {
                         // 2. Инициализация платформы
                         sh "npx cap add android || npx cap sync android"
 
-                        // Без aapt2FromMavenOverride: система подсовывала старый
-                        // aapt2 из Debian-пакета aapt, который не понимает флаг
-                        // --source-path, нужный текущей AGP. Даём Gradle/AGP
-                        // самому разрешить aapt2 из SDK build-tools (соседний
-                        // проект на этом же ARM-хосте так и собирается).
+                        // AGP тянет свой aapt2 с Maven (только x86_64) независимо
+                        // от SDK build-tools — на arm64 падает с "Syntax error:
+                        // '(' unexpected" (shell пытается исполнить x86_64 ELF).
+                        // Официального arm64-билда от Google нет, поэтому
+                        // подсовываем проверенный по чек-сумме arm64 aapt2 из
+                        // Dockerfile.android (Commit451/android-arm-build-tools).
+                        sh 'echo "android.aapt2FromMavenOverride=/usr/local/bin/aapt2" >> android/gradle.properties'
 
                         // 3. Компиляция через Gradle (с постоянным кэшем — см. GRADLE_CACHE_VOLUME)
                         sh '''
