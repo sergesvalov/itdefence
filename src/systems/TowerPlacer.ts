@@ -65,9 +65,20 @@ export class TowerPlacer {
     return this.buildItems[this.selectedIndex];
   }
 
+  private snap(val: number): number {
+    return Math.round(val / 52) * 52;
+  }
+
   tick(delta: number, enemies: Coworker[]): void {
     for (const tower of this.towers) {
+      tower.setDepth(tower.y);
       tower.tick(delta, enemies);
+    }
+    for (const f of this.furniture) {
+      f.setDepth(f.y);
+    }
+    if (this.carrying) {
+      this.carrying.setDepth(9999); // Draw held item on top
     }
   }
 
@@ -75,12 +86,15 @@ export class TowerPlacer {
 
   private setupInput(): void {
     this.scene.input.on('pointermove', (ptr: Phaser.Input.Pointer) => {
+      const sx = this.snap(ptr.x);
+      const sy = this.snap(ptr.y);
+
       if (this.carrying) {
-        this.carrying.setPosition(ptr.x, ptr.y);
+        this.carrying.setPosition(sx, sy);
         return;
       }
-      const inOffice = this.isInOffice(ptr.x, ptr.y);
-      this.placementPreview.setPosition(ptr.x, ptr.y);
+      const inOffice = this.isInOffice(sx, sy);
+      this.placementPreview.setPosition(sx, sy);
       this.placementPreview.setVisible(inOffice);
     });
 
@@ -93,7 +107,7 @@ export class TowerPlacer {
       }
 
       if (this.carrying) {
-        this.tryDrop(ptr.x, ptr.y);
+        this.tryDrop(this.snap(ptr.x), this.snap(ptr.y));
         return;
       }
 
@@ -117,18 +131,20 @@ export class TowerPlacer {
         return;
       }
 
-      if (!this.isInOffice(ptr.x, ptr.y)) return;
+      const sx = this.snap(ptr.x);
+      const sy = this.snap(ptr.y);
+      if (!this.isInOffice(sx, sy)) return;
 
       const item = this.currentItem;
       if (item.kind === 'tower') {
         const stats = TOWER_VARIANTS_DATA[item.variant];
         const radius = stats.radius || TOWER_SIZE;
-        if (!this.isPlacementValid(ptr.x, ptr.y, radius)) return;
-        this.tryPlaceTower(ptr.x, ptr.y, item.variant);
+        if (!this.isPlacementValid(sx, sy, radius)) return;
+        this.tryPlaceTower(sx, sy, item.variant);
       } else {
         const stats = FURNITURE_TYPES_DATA[item.type];
-        if (!this.isPlacementValid(ptr.x, ptr.y, stats.radius)) return;
-        this.tryPlaceFurniture(ptr.x, ptr.y, item.type);
+        if (!this.isPlacementValid(sx, sy, stats.radius)) return;
+        this.tryPlaceFurniture(sx, sy, item.type);
       }
     });
 
@@ -307,8 +323,8 @@ export class TowerPlacer {
       const stats = FURNITURE_TYPES_DATA[type];
       if (this.countPlaced(type) >= stats.maxCount) continue;
 
-      const x = Phaser.Math.Between(40, GAME_WIDTH - 40);
-      const y = Phaser.Math.Between(OFFICE_Y_TOP + 40, OFFICE_Y_BOTTOM - 40);
+      const x = this.snap(Phaser.Math.Between(40, GAME_WIDTH - 40));
+      const y = this.snap(Phaser.Math.Between(OFFICE_Y_TOP + 40, OFFICE_Y_BOTTOM - 40));
 
       // Check if it fits
       if (this.isInOffice(x, y) && this.isPlacementValid(x, y, stats.radius)) {

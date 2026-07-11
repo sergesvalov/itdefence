@@ -255,6 +255,8 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   public tick(delta: number, furniture: Furniture[], towers: ToolTower[]): void {
     if (this.isDead || this.hasReachedDesk) return;
+    
+    this.setDepth(this.y);
 
     if (!this.hasRolledForPartner) {
       this.hasRolledForPartner = true;
