@@ -63,13 +63,20 @@ export class MainScene extends Phaser.Scene {
     this.hud = new HUD(this, STARTING_MONEY, INBOX_LIMIT);
     this.economy = new Economy(this.hud, STARTING_MONEY);
     this.towerPlacer = new TowerPlacer(this, this.economy, this.hud);
+    
+    // Spawn initial barricade furniture scattered around the room
+    this.towerPlacer.autoSpawnFurniture(10);
+
     this.inbox = new Inbox(this, this.hud, INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, () => this.triggerGameOver());
     this.waveManager = new WaveManager(
       this, this.economy, this.hud, doorSprites,
       (urgent) => this.inbox.enqueue(urgent),
       () => this.shield.isActive,
       () => this.towerPlacer.furniture,
+      () => this.towerPlacer.towers,
     );
+    this.towerPlacer.getWave = () => this.waveManager.getWave();
+    this.towerPlacer.isPaused = () => this.waveManager.getIsPaused();
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
 

@@ -32,12 +32,15 @@ export class TowerPlacer {
   /** Set to false on game over to stop accepting placement/upgrade input. */
   public enabled = true;
 
+  public getWave: () => number = () => 1;
+  public isPaused: () => boolean = () => false;
+
   private readonly buildItems: BuildItem[];
   private selectedIndex = 0;
   private placementPreview: Phaser.GameObjects.Arc;
 
-  /** Furniture piece currently picked up and following the pointer, if any. */
-  private carrying: Furniture | null = null;
+  /** Furniture or Partner desk currently picked up and following the pointer. */
+  private carrying: Furniture | ToolTower | null = null;
   private carryOrigin = { x: 0, y: 0 };
 
   constructor(private scene: Phaser.Scene, private economy: Economy, private hud: HUD) {
@@ -95,10 +98,14 @@ export class TowerPlacer {
       }
 
       const clickedTower = this.towers.find(
-        t => Phaser.Math.Distance.Between(t.x, t.y, ptr.x, ptr.y) < TOWER_SIZE
+        t => Phaser.Math.Distance.Between(t.x, t.y, ptr.x, ptr.y) < (TOWER_VARIANTS_DATA[t.variant].radius || TOWER_SIZE)
       );
       if (clickedTower) {
-        this.tryUpgrade(clickedTower);
+        if (clickedTower.variant === 'partner' && this.isPaused()) {
+          this.pickUpTower(clickedTower);
+        } else {
+          this.tryUpgrade(clickedTower);
+        }
         return;
       }
 
@@ -114,7 +121,9 @@ export class TowerPlacer {
 
       const item = this.currentItem;
       if (item.kind === 'tower') {
-        if (!this.isPlacementValid(ptr.x, ptr.y, TOWER_SIZE)) return;
+        const stats = TOWER_VARIANTS_DATA[item.variant];
+        const radius = stats.radius || TOWER_SIZE;
+        if (!this.isPlacementValid(ptr.x, ptr.y, radius)) return;
         this.tryPlaceTower(ptr.x, ptr.y, item.variant);
       } else {
         const stats = FURNITURE_TYPES_DATA[item.type];
@@ -146,7 +155,7 @@ export class TowerPlacer {
     const item = this.currentItem;
     if (item.kind === 'tower') {
       const stats = TOWER_VARIANTS_DATA[item.variant];
-      this.placementPreview.setRadius(TOWER_SIZE);
+      this.placementPreview.setRadius(stats.radius || TOWER_SIZE);
       this.placementPreview.setFillStyle(stats.color, 0.35);
       this.placementPreview.setStrokeStyle(2, stats.color, 0.8);
     } else {
@@ -188,7 +197,9 @@ export class TowerPlacer {
   /** Checks against towers and other furniture (skipping the piece being carried). */
   private isPlacementValid(x: number, y: number, ownRadius: number): boolean {
     for (const t of this.towers) {
-      if (Phaser.Math.Distance.Between(t.x, t.y, x, y) < TOWER_SIZE + ownRadius + 6) return false;
+      if (t === this.carrying) continue;
+      const tRadius = TOWER_VARIANTS_DATA[t.variant].radius || TOWER_SIZE;
+      if (Phaser.Math.Distance.Between(t.x, t.y, x, y) < tRadius + ownRadius + 6) return false;
     }
     for (const f of this.furniture) {
       if (f === this.carrying) continue;
@@ -199,7 +210,22 @@ export class TowerPlacer {
 
   // ── Money-gated tower actions ──────────────────────────────────────────
 
+  private getPartnerLimit(): number {
+    const w = this.getWave();
+    if (w > 6) return 2;
+    if (w > 3) return 1;
+    return 0;
+  }
+
   private tryPlaceTower(x: number, y: number, variant: TowerVariant): void {
+    if (variant === 'partner') {
+      const count = this.towers.filter(t => t.variant === 'partner').length;
+      if (count >= this.getPartnerLimit()) {
+        showFloatingText(this.scene, x, y, 'Лимит напарников', '#a29bfe');
+        return;
+      }
+    }
+
     const cost = TOWER_VARIANTS_DATA[variant].cost;
 
     if (!this.economy.canAfford(cost)) {
@@ -249,14 +275,48 @@ export class TowerPlacer {
     piece.setPicked(true);
   }
 
+  private pickUpTower(tower: ToolTower): void {
+    this.carrying = tower;
+    this.carryOrigin = { x: tower.x, y: tower.y };
+    tower.setAlpha(0.55);
+  }
+
   private tryDrop(x: number, y: number): void {
     const piece = this.carrying!;
-    if (this.isInOffice(x, y) && this.isPlacementValid(x, y, piece.radius)) {
+    const radius = piece instanceof Furniture ? piece.radius : (TOWER_VARIANTS_DATA[piece.variant].radius || TOWER_SIZE);
+    
+    if (this.isInOffice(x, y) && this.isPlacementValid(x, y, radius)) {
       piece.setPosition(x, y);
     } else {
       piece.setPosition(this.carryOrigin.x, this.carryOrigin.y);
     }
-    piece.setPicked(false);
+    
+    if (piece instanceof Furniture) piece.setPicked(false);
+    else piece.setAlpha(1);
+    
     this.carrying = null;
+  }
+
+  public autoSpawnFurniture(count: number): void {
+    let attempts = 0;
+    let spawned = 0;
+    while (spawned < count && attempts < 200) {
+      attempts++;
+      const type = Phaser.Utils.Array.GetRandom([...FURNITURE_TYPE_KEYS]) as FurnitureType;
+      
+      const stats = FURNITURE_TYPES_DATA[type];
+      if (this.countPlaced(type) >= stats.maxCount) continue;
+
+      const x = Phaser.Math.Between(40, GAME_WIDTH - 40);
+      const y = Phaser.Math.Between(OFFICE_Y_TOP + 40, OFFICE_Y_BOTTOM - 40);
+
+      // Check if it fits
+      if (this.isInOffice(x, y) && this.isPlacementValid(x, y, stats.radius)) {
+        const piece = new Furniture(this.scene, x, y, type);
+        this.furniture.push(piece);
+        spawned++;
+      }
+    }
+    this.refreshHudSelection();
   }
 }

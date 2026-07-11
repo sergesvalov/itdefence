@@ -44,6 +44,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   // Lure mechanic (for Cooler tower)
   public visitedCoolers = new Set<ToolTower>();
   private lureTarget: ToolTower | null = null;
+  public partnerTarget: ToolTower | null = null;
+  private hasRolledForPartner = false;
 
   // Child visuals — either the placeholder circle + angry-face emoji, or
   // (if sprite-coworker was loaded) a single tinted image in its place.
@@ -251,8 +253,22 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   // ── Per-frame ─────────────────────────────────────────────────────────
 
-  public tick(delta: number, furniture: Furniture[]): void {
+  public tick(delta: number, furniture: Furniture[], towers: ToolTower[]): void {
     if (this.isDead || this.hasReachedDesk) return;
+
+    if (!this.hasRolledForPartner) {
+      this.hasRolledForPartner = true;
+      if (Math.random() < 0.5) {
+        const activePartners = towers.filter(t => t.variant === 'partner' && t.tasksSolved < 10);
+        if (activePartners.length > 0) {
+          this.partnerTarget = Phaser.Utils.Array.GetRandom(activePartners);
+        }
+      }
+    }
+
+    if (this.partnerTarget && (!this.partnerTarget.scene || this.partnerTarget.tasksSolved >= 10)) {
+      this.partnerTarget = null;
+    }
 
     if (this.slowUntil > 0 && this.scene.time.now > this.slowUntil) {
       this.slowMultiplier = 1;
@@ -306,6 +322,9 @@ export class Coworker extends Phaser.GameObjects.Container {
     if (this.lureTarget) {
       targetX = this.lureTarget.x;
       targetY = this.lureTarget.y;
+    } else if (this.partnerTarget) {
+      targetX = this.partnerTarget.x;
+      targetY = this.partnerTarget.y;
     } else {
       const target = this.waypoints[this.waypointIndex];
       if (!target) {

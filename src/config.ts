@@ -53,7 +53,7 @@ export const TOWER_UPGRADE_RANGE_BONUS = 20;
 export const TOWER_UPGRADE_FIRE_RATE_MULT = 0.85;
 
 // ─── Tower variants ─────────────────────────────────────────────────────
-export type TowerVariant = 'cooler' | 'router' | 'docs' | 'coffee' | 'aircon';
+export type TowerVariant = 'cooler' | 'router' | 'docs' | 'coffee' | 'aircon' | 'partner';
 
 export interface TowerVariantStats {
   label: string;
@@ -74,8 +74,9 @@ export interface TowerVariantStats {
    *             damages (if damage > 0) + slows everyone currently in range (router)
    * 'stun'    — big single-target hit that also freezes movement (docs)
    * 'lureChain' — lures enemies to approach it once, and unleashes chain damage upon contact.
+   * 'partner' — lures enemies (50% chance). After 10 hits, burns out.
    */
-  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun' | 'lureChain';
+  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun' | 'lureChain' | 'partner';
   /**
    * Bypasses enemy armor/damage-reduction. Currently inert — no enemy in
    * the game has armor yet. Docs is flagged now so that whenever an
@@ -84,11 +85,13 @@ export interface TowerVariantStats {
    * pierce it.
    */
   armorPiercing?: boolean;
+  /** Optional override for radius (e.g., for large objects like desks). Default is TOWER_SIZE. */
+  radius?: number;
 }
 
 // Order matches how right-click / 1-6 / HUD-tap cycle through variants.
 export const TOWER_VARIANT_KEYS: readonly TowerVariant[] =
-  ['cooler', 'router', 'docs', 'coffee', 'aircon'];
+  ['cooler', 'router', 'docs', 'coffee', 'aircon', 'partner'];
 
 export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   // "Кулер": Lures enemies to take a break.
@@ -106,6 +109,8 @@ export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   coffee: { label: 'Coffee',  icon: '☕', color: 0x8b5e3c, range: 110, fireRate: 1200, damage: 1, cost: 55, special: 'slow' },
   // Blast of cold air — splash-damages everyone near the impact point.
   aircon: { label: 'AC',      icon: '🌬️', color: 0x81ecec, range: 140, fireRate: 1600, damage: 1, cost: 80, special: 'aoe' },
+  // Partner desk — absorbs 10 tasks, 50% chance to intercept enemies.
+  partner:{ label: 'Напарник',icon: '🧑‍💻', color: 0x55efc4, range: 0, fireRate: 0, damage: 0, cost: 200, special: 'partner', radius: 45 },
 };
 
 /** Coffee/Router: how much a slow reduces speed, and for how long */
@@ -144,9 +149,9 @@ export interface FurnitureTypeStats {
 export const FURNITURE_TYPE_KEYS: readonly FurnitureType[] = ['cabinet', 'drawer', 'sofa'];
 
 export const FURNITURE_TYPES_DATA: Record<FurnitureType, FurnitureTypeStats> = {
-  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x795548, radius: 22, maxCount: 3 },
-  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0xa1887f, radius: 16, maxCount: 4 },
-  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x8e44ad, radius: 24, maxCount: 2 },
+  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x795548, radius: 22, maxCount: 5 },
+  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0xa1887f, radius: 16, maxCount: 6 },
+  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x8e44ad, radius: 24, maxCount: 3 },
 };
 
 /** How long a coworker sits on a sofa before standing back up and continuing */
@@ -191,8 +196,9 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   { key: 'tile-wall',           path: 'assets/tiles/wall.png',           kind: 'tile' },
   { key: 'sprite-door',         path: 'assets/sprites/door.png',         kind: 'sprite' },
   { key: 'sprite-door-open',    path: 'assets/sprites/door-open.png',    kind: 'sprite' },
-  { key: 'sprite-desk',         path: 'assets/sprites/desk.png',         kind: 'sprite' },
-  { key: 'sprite-coworker',     path: 'assets/sprites/coworker.png',     kind: 'sprite' },
+  { key: 'sprite-desk-partner',   path: 'assets/sprites/desk-partner.png', kind: 'sprite' },
+  { key: 'sprite-tower-partner',  path: 'assets/sprites/desk-partner.png', kind: 'sprite' },
+  { key: 'sprite-coworker',       path: 'assets/sprites/coworker.png',     kind: 'sprite' },
   // One sprite slot per tower variant — sprite-tower-script, sprite-tower-router, ...
   ...TOWER_VARIANT_KEYS.map((variant): TextureAsset => ({
     key: `sprite-tower-${variant}`,

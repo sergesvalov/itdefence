@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Coworker, type Waypoint } from '../entities/Coworker';
 import type { Furniture } from '../entities/Furniture';
+import type { ToolTower } from '../entities/ToolTower';
 import {
   SPAWN_DOORS, type DoorDef,
   SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX,
@@ -51,17 +52,22 @@ export class WaveManager {
     private onTaskArrived: (urgent: boolean) => void,
     private isDoorShielded: () => boolean,
     private getFurniture: () => Furniture[],
+    private getTowers: () => ToolTower[],
   ) {
     this.scheduleNextSpawn();
     this.hud.setWave(this.wave);
     this.hud.on('start-wave-tap', () => this.startNextWave());
   }
 
+  public getWave(): number { return this.wave; }
+  public getIsPaused(): boolean { return this.isPaused; }
+
   update(delta: number): void {
     const furniture = this.getFurniture();
+    const towers = this.getTowers();
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const cw = this.enemies[i];
-      cw.tick(delta, furniture);
+      cw.tick(delta, furniture, towers);
 
       if (cw.hasReachedDesk && !cw.isDead) {
         if (this.isDoorShielded()) {

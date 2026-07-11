@@ -27,6 +27,7 @@ type TowerSpecial = TowerVariantStats['special'];
 export class ToolTower extends Phaser.GameObjects.Container {
   public readonly variant: TowerVariant;
   public level = 1;
+  public tasksSolved = 0;
   private cooldown = 0;
   private range: number;
   private damage: number;
@@ -72,10 +73,11 @@ export class ToolTower extends Phaser.GameObjects.Container {
 
     // ── Tower body: sprite if one was loaded, else coloured square + icon ──
     const spriteKey = `sprite-tower-${variant}`;
+    const radius = stats.radius || TOWER_SIZE;
     if (scene.textures.exists(spriteKey)) {
-      this.sprite = scene.add.image(0, 0, spriteKey).setDisplaySize(TOWER_SIZE * 2, TOWER_SIZE * 2);
+      this.sprite = scene.add.image(0, 0, spriteKey).setDisplaySize(radius * 2, radius * 2);
     } else {
-      this.base = scene.add.rectangle(0, 0, TOWER_SIZE * 2, TOWER_SIZE * 2, color);
+      this.base = scene.add.rectangle(0, 0, radius * 2, radius * 2, color);
       this.base.setStrokeStyle(2, 0xffffff, 0.4);
       this.icon = scene.add.text(0, 0, stats.icon, { fontSize: '18px' }).setOrigin(0.5, 0.5);
     }
@@ -136,6 +138,24 @@ export class ToolTower extends Phaser.GameObjects.Container {
   // ── Per-frame ─────────────────────────────────────────────────────────
 
   public tick(delta: number, enemies: Coworker[]): void {
+    if (this.special === 'partner') {
+      if (this.tasksSolved >= 10) {
+        this.setAlpha(0.5);
+        return;
+      }
+      for (const e of enemies) {
+        if (e.partnerTarget === this && Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) < 24) {
+          e.partnerTarget = null;
+          e.sendToHelpdesk();
+          this.tasksSolved++;
+          this.scene.tweens.add({
+            targets: this, scaleX: 1.1, scaleY: 1.1, duration: 80, yoyo: true
+          });
+        }
+      }
+      return; // Partners don't shoot or lure
+    }
+
     if (this.special === 'lureChain') {
       for (const e of enemies) {
         if (!e.isDead && !e.hasReachedDesk && !e.visitedCoolers.has(this)) {
