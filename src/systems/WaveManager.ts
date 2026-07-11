@@ -13,34 +13,22 @@ import {
 import type { Economy } from './Economy';
 import type { HUD } from '../ui/HUD';
 import { showFloatingText } from '../ui/FloatingText';
+import { EventBus, GameEvents } from '../events/EventBus';
 
-// Coworkers step down into the office, converge on the desk's column, then
-// walk straight down that column to the desk.
 function buildPath(door: DoorDef): Waypoint[] {
   return [
     { x: door.x, y: door.y },
-    { x: door.x, y: OFFICE_Y_TOP },  // step down into the office
-    { x: DESK_X, y: OFFICE_Y_TOP },  // converge on the desk's column
-    { x: DESK_X, y: DESK_Y },        // walk down to the desk
+    { x: door.x, y: OFFICE_Y_TOP },
+    { x: DESK_X, y: OFFICE_Y_TOP },
+    { x: DESK_X, y: DESK_Y },
   ];
 }
 
-/**
- * WaveManager — spawns coworkers, ticks them, and runs the wave loop: each
- * wave spawns a fixed batch of coworkers; once every one of them is dealt
- * with (killed or reached the desk), the wave pays out money and pauses,
- * waiting for the player to tap "Start Wave" (HUD) before the next batch
- * starts. Wave 1 starts immediately — the pause only happens *between*
- * waves, from wave 2 onward. Owns the `enemies` list that ToolTower.tick()
- * targets. Coworkers who reach the desk no longer hit Petya directly —
- * `onTaskArrived` hands their ticket off to MainScene's Inbox instead.
- */
 export class WaveManager {
   public readonly enemies: Coworker[] = [];
 
   private wave = 1;
   private spawnedThisWave = 0;
-  /** True between "wave cleared" and the player tapping Start Wave. */
   private isPaused = false;
   private spawnTimer = 0;
 
@@ -49,7 +37,6 @@ export class WaveManager {
     private economy: Economy,
     private hud: HUD,
     private doorSprites: Map<DoorDef, Phaser.GameObjects.Image | null>,
-    private onTaskArrived: (urgent: boolean) => void,
     private isDoorShielded: () => boolean,
     private getFurniture: () => Furniture[],
     private getTowers: () => ToolTower[],
@@ -71,9 +58,6 @@ export class WaveManager {
 
       if (cw.hasReachedDesk && !cw.isDead) {
         if (this.isDoorShielded()) {
-          // "Я на митинге" is up — stuck at the door instead of hitting
-          // Petya. Coworker suppresses hasReachedDesk internally until
-          // Shield releases it (on expiry) or it dies from waiting.
           cw.blockAtDoor();
           continue;
         }
@@ -82,7 +66,7 @@ export class WaveManager {
         cw.setVisible(false);
         cw.destroy();
         this.enemies.splice(i, 1);
-        this.onTaskArrived(urgent);
+        EventBus.emit(GameEvents.TASK_ARRIVED, urgent);
       } else if (cw.isDead) {
         this.enemies.splice(i, 1);
       }
