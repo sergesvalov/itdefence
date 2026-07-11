@@ -81,19 +81,23 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
       gfx.fillCircle(door.x + 12, door.y, 4);
     }
     // Label
-    scene.add.text(door.x, door.y + 20, door.label, {
-      fontSize: '9px',
-      color: '#ff7675',
+    const text = scene.add.text(door.x, door.y + 20, door.label, {
+      fontFamily: 'Courier, monospace',
+      fontSize: '11px',
+      color: '#FFFFFF',
       fontStyle: 'bold',
     }).setOrigin(0.5, 0);
+    text.setShadow(1, 1, '#000000', 2, false, true);
   }
 
   // ── "PETYA'S OFFICE" label near the top of the room ─────────────────
-  scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 8, "PETYA'S OFFICE", {
-    fontSize: '11px',
-    color: '#74b9ff',
+  const officeText = scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 8, "PETYA'S OFFICE", {
+    fontFamily: 'Courier, monospace',
+    fontSize: '12px',
+    color: '#93C5FD',
     fontStyle: 'bold',
   }).setOrigin(0.5, 0);
+  officeText.setShadow(1, 1, '#000000', 2, false, true);
 
   // Desk zone warning glow (towers can't be placed too close, always drawn)
   gfx.lineStyle(1, 0xe74c3c, 0.4);
@@ -118,11 +122,18 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   }
 
   // Petya label
-  scene.add.text(DESK_X, DESK_Y + 30, '🧑‍💻 Petya', {
-    fontSize: '12px',
-    color: '#74b9ff',
+  const petyaText = scene.add.text(DESK_X, DESK_Y + 30, '🧑‍💻 Petya', {
+    fontFamily: 'Courier, monospace',
+    fontSize: '14px',
+    color: '#FBBF24',
     fontStyle: 'bold',
+    backgroundColor: '#000000',
+    padding: { x: 6, y: 4 }
   }).setOrigin(0.5, 0);
+  petyaText.setShadow(1, 1, '#000000', 0, false, true);
+  
+  // Add a slight transparency to the background of Petya text via a graphics underlay if needed, 
+  // but backgroundColor works well enough for high contrast.
 
   return doorSprites;
 }

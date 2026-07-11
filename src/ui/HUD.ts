@@ -38,45 +38,40 @@ export class HUD extends Phaser.Events.EventEmitter {
 
     // ── Top-left HUD panel ────────────────────────────────────────────
     const hudBg = scene.add.graphics();
-    hudBg.fillStyle(0x000000, 0.55);
-    hudBg.fillRoundedRect(pad, pad, 280, 158, 10);
+    hudBg.fillStyle(0x000000, 0.75);
+    hudBg.fillRoundedRect(pad, pad, 240, 120, 12);
     hudBg.setDepth(15);
 
+    const textStyle = { fontFamily: 'Courier, monospace', fontSize: '14px', color: '#FFFFFF' };
+    const boldStyle = { ...textStyle, fontStyle: 'bold' };
+
     // Money
-    this.moneyText = scene.add.text(pad + 14, pad + 10, `💰 ${startingMoney}`, {
-      fontSize: '16px',
-      color: '#f1c40f',
-      fontStyle: 'bold',
+    this.moneyText = scene.add.text(pad + 16, pad + 16, `💰 0`, {
+      ...boldStyle, color: '#FBBF24', fontSize: '16px'
     }).setDepth(16);
+    this.setMoney(startingMoney);
 
     // Inbox counter
-    this.inboxCountText = scene.add.text(pad + 14, pad + 36, `📥 Inbox: 0 / ${inboxLimit}`, {
-      fontSize: '16px',
-      color: '#ffeaa7',
-      fontStyle: 'bold',
-    }).setDepth(16);
+    this.inboxCountText = scene.add.text(pad + 16, pad + 40, `📥 Inbox: 0 / ${inboxLimit}`, boldStyle).setDepth(16);
 
-    // Inbox queue — one glyph per slot, in resolve order (leftmost = next up).
-    // Urgent tasks show red and jump to the front, so this reads the queue
-    // priority at a glance.
-    this.inboxQueueText = scene.add.text(pad + 14, pad + 58, '', { fontSize: '13px' })
-      .setDepth(16);
+    // Inbox queue
+    this.inboxQueueText = scene.add.text(pad + 16, pad + 60, '', textStyle).setDepth(16);
 
     // Wave indicator
-    this.waveText = scene.add.text(pad + 14, pad + 80, '', { fontSize: '13px', color: '#a29bfe' })
-      .setDepth(16);
+    this.waveText = scene.add.text(pad + 16, pad + 80, '', boldStyle).setDepth(16);
 
-    // Tower selector — tap to cycle type (right-click / 1-6 don't exist on touch)
-    this.towerSelectText = scene.add.text(pad + 14, pad + 102, '', { fontSize: '13px', color: '#74b9ff' })
+    // Tower selector
+    this.towerSelectText = scene.add.text(pad + 16, pad + 100, '', { ...boldStyle, color: '#93C5FD' })
       .setDepth(16)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.emit('variant-tap'));
 
-    // Hint text
-    scene.add.text(pad + 14, pad + 134, 'Тап: кабинет — постройка, постройка — апгрейд/переставить', {
-      fontSize: '9px',
-      color: '#636e72',
-    }).setDepth(16);
+    // Hint text (bottom center)
+    const hintText = scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 20, 'Тап: кабинет — постройка, постройка — апгрейд/перестановка', {
+      fontFamily: 'Courier, monospace',
+      fontSize: '11px',
+      color: '#FFFFFF',
+    }).setOrigin(0.5).setDepth(16).setAlpha(0.6);
 
     // ── Ability buttons — top-right corner ──────────────────────────────
     this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 96, 48, '🎫', 'Тикет', 'ultimate-tap');
@@ -208,27 +203,26 @@ export class HUD extends Phaser.Events.EventEmitter {
 
   // ── Ability button helpers ───────────────────────────────────────────
 
-  private buildAbilityButton(x: number, y: number, icon: string, label: string, tapEvent: string): AbilityButton {
+  private buildAbilityButton(x: number, y: number, icon: string, buttonLabel: string, tapEvent: string): AbilityButton {
     const scene = this.scene;
 
     const bg = scene.add.circle(0, 0, 22, 0x2d3436, 0.9);
     bg.setStrokeStyle(2, 0x636e72, 0.8);
 
     const ring = scene.add.graphics();
-
-    const iconText = scene.add.text(0, 0, icon, { fontSize: '18px' }).setOrigin(0.5);
-
-    const container = scene.add.container(x, y, [bg, ring, iconText])
+    const t = scene.add.text(0, 0, icon, { fontSize: '20px' }).setOrigin(0.5);
+    const container = scene.add.container(x, y, [bg, ring, t])
       .setDepth(16)
       .setInteractive(new Phaser.Geom.Circle(0, 0, 26), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit(tapEvent));
-
-    scene.add.text(x, y + 30, label, {
-      fontSize: '9px',
-      color: '#dfe6e9',
+      
+    scene.add.text(x, y + 32, buttonLabel, {
+      fontFamily: 'Courier, monospace',
+      fontSize: '11px',
+      color: '#FFFFFF',
       fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(16);
-
+    
     return { container, bg, ring };
   }
 
@@ -276,16 +270,23 @@ export class HUD extends Phaser.Events.EventEmitter {
     panel.lineStyle(3, 0xe74c3c, 0.9);
     panel.strokeRoundedRect(-190, -170, 380, 340, 18);
 
-    const title = scene.add.text(0, -110, '💀 GAME OVER', {
-      fontSize: '34px', fontStyle: 'bold', color: '#e74c3c',
-      stroke: '#000', strokeThickness: 5,
+    const text = this.scene.add.text(0, -20, 'GAME OVER', {
+      fontFamily: 'Courier, monospace',
+      fontSize: '48px',
+      color: '#e74c3c',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+    
+    const subText = this.scene.add.text(0, 30, 'Петя сгорел на работе 🔥', {
+      fontFamily: 'Courier, monospace',
+      fontSize: '18px',
+      color: '#FFFFFF',
+      align: 'center', 
+      wordWrap: { width: 320 },
     }).setOrigin(0.5);
 
-    const sub = scene.add.text(0, -40, "Petya's Inbox overflowed!", {
-      fontSize: '15px', color: '#dfe6e9', align: 'center', wordWrap: { width: 320 },
-    }).setOrigin(0.5);
-
-    const hint = scene.add.text(0, 30, 'Press  R  to try again', {
+    const hint = scene.add.text(0, 100, 'Press R to try again', {
+      fontFamily: 'Courier, monospace',
       fontSize: '20px', color: '#74b9ff', fontStyle: 'bold',
     }).setOrigin(0.5);
 
@@ -298,7 +299,7 @@ export class HUD extends Phaser.Events.EventEmitter {
       repeat: -1,
     });
 
-    overlay.add([veil, panel, title, sub, hint]);
+    overlay.add([veil, panel, text, subText, hint]);
     return overlay;
   }
 }
