@@ -53,7 +53,7 @@ export const TOWER_UPGRADE_RANGE_BONUS = 20;
 export const TOWER_UPGRADE_FIRE_RATE_MULT = 0.85;
 
 // ─── Tower variants ─────────────────────────────────────────────────────
-export type TowerVariant = 'cooler' | 'router' | 'docs' | 'coffee' | 'chair' | 'aircon';
+export type TowerVariant = 'cooler' | 'router' | 'docs' | 'coffee' | 'aircon';
 
 export interface TowerVariantStats {
   label: string;
@@ -88,7 +88,7 @@ export interface TowerVariantStats {
 
 // Order matches how right-click / 1-6 / HUD-tap cycle through variants.
 export const TOWER_VARIANT_KEYS: readonly TowerVariant[] =
-  ['cooler', 'router', 'docs', 'coffee', 'chair', 'aircon'];
+  ['cooler', 'router', 'docs', 'coffee', 'aircon'];
 
 export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   // "Кулер": Lures enemies to take a break.
@@ -104,8 +104,6 @@ export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 160, fireRate: 2200, damage: 5, cost: 90, special: 'stun', armorPiercing: true },
   // Coffee break — slows whatever it hits.
   coffee: { label: 'Coffee',  icon: '☕', color: 0x8b5e3c, range: 110, fireRate: 1200, damage: 1, cost: 55, special: 'slow' },
-  // Cheap starter tower — low stats, low cost.
-  chair:  { label: 'Chair',   icon: '🪑', color: 0xe17055, range: 90,  fireRate: 800,  damage: 1, cost: 30 },
   // Blast of cold air — splash-damages everyone near the impact point.
   aircon: { label: 'AC',      icon: '🌬️', color: 0x81ecec, range: 140, fireRate: 1600, damage: 1, cost: 80, special: 'aoe' },
 };

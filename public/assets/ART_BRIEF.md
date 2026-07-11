@@ -101,7 +101,6 @@
 | `tower-router.png` | `sprite-tower-router` | 52×52 | Башня "Router" — фиолетовое сетевое устройство с антеннами, тема Wi-Fi/пинга (индикаторы сигнала, антенны). |
 | `tower-docs.png` | `sprite-tower-docs` | 52×52 | Башня "Docs" — зелёная башня-стопка тяжёлых книг/талмудов (RTFM), тема документации. |
 | `tower-coffee.png` | `sprite-tower-coffee` | 52×52 | Башня "Coffee" — коричневая кофемашина. |
-| `tower-chair.png` | `sprite-tower-chair` | 52×52 | Башня "Chair" — терракотовое офисное кресло. |
 | `tower-aircon.png` | `sprite-tower-aircon` | 52×52 | Башня "AC" — голубой кондиционер, тема холодного воздуха. |
 | `furniture-cabinet.png` | `sprite-furniture-cabinet` | 44×44 | Офисный шкаф (для документов/канцелярии) — непроходимое препятствие, коричневые тона `#795548`. Вид сверху-сбоку, как и башни. |
 | `furniture-drawer.png` | `sprite-furniture-drawer` | 32×32 | Тумбочка — компактнее шкафа, светло-коричневая `#a1887f`. |
