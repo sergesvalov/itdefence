@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS } from '../config';
 import type { Furniture } from './Furniture';
+import type { ToolTower } from './ToolTower';
 
 export interface Waypoint {
   x: number;
@@ -39,6 +40,10 @@ export class Coworker extends Phaser.GameObjects.Container {
   private sitFurniture: Furniture | null = null;
   private sitCooldownFurniture: Furniture | null = null;
   private sitCooldownUntil = 0;
+
+  // Lure mechanic (for Cooler tower)
+  public visitedCoolers = new Set<ToolTower>();
+  private lureTarget: ToolTower | null = null;
 
   // Child visuals — either the placeholder circle + angry-face emoji, or
   // (if sprite-coworker was loaded) a single tinted image in its place.
@@ -137,6 +142,18 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.redrawHpBar();
     this.hitFlash = 120; // ms
     if (this.hp <= 0) this.kill();
+  }
+
+  public setLure(tower: ToolTower): void {
+    this.lureTarget = tower;
+  }
+
+  public getLure(): ToolTower | null {
+    return this.lureTarget;
+  }
+
+  public clearLure(): void {
+    this.lureTarget = null;
   }
 
   public kill(): void {
@@ -278,26 +295,40 @@ export class Coworker extends Phaser.GameObjects.Container {
       return;
     }
 
-    // Move toward current waypoint
-    const target = this.waypoints[this.waypointIndex];
-    if (!target) {
-      // No more waypoints → reached desk
-      this.hasReachedDesk = true;
-      return;
+    // Move toward current waypoint or lure
+    let targetX: number;
+    let targetY: number;
+
+    if (this.lureTarget && !this.lureTarget.scene) {
+      this.lureTarget = null; // tower was sold/removed
     }
 
-    const dx   = target.x - this.x;
-    const dy   = target.y - this.y;
+    if (this.lureTarget) {
+      targetX = this.lureTarget.x;
+      targetY = this.lureTarget.y;
+    } else {
+      const target = this.waypoints[this.waypointIndex];
+      if (!target) {
+        // No more waypoints → reached desk
+        this.hasReachedDesk = true;
+        return;
+      }
+      targetX = target.x;
+      targetY = target.y;
+    }
+
+    const dx   = targetX - this.x;
+    const dy   = targetY - this.y;
     const dist = Math.hypot(dx, dy);
     const dt   = delta / 1000;
     const effectiveSpeed = this.speed * this.slowMultiplier;
 
     let nx = this.x;
     let ny = this.y;
-    const reachedWaypoint = dist < 6;
-    if (reachedWaypoint) {
-      nx = target.x;
-      ny = target.y;
+    const reachedTarget = dist < 6;
+    if (reachedTarget) {
+      nx = targetX;
+      ny = targetY;
     } else {
       nx = this.x + (dx / dist) * effectiveSpeed * dt;
       ny = this.y + (dy / dist) * effectiveSpeed * dt;
@@ -318,14 +349,16 @@ export class Coworker extends Phaser.GameObjects.Container {
 
       const pushAngle = fd > 0.01
         ? Phaser.Math.Angle.Between(f.x, f.y, nx, ny)
-        : Phaser.Math.Angle.Between(f.x, f.y, target.x, target.y);
+        : Phaser.Math.Angle.Between(f.x, f.y, targetX, targetY);
       nx = f.x + Math.cos(pushAngle) * minDist;
       ny = f.y + Math.sin(pushAngle) * minDist;
     }
 
     this.x = nx;
     this.y = ny;
-    if (reachedWaypoint) this.waypointIndex++;
+    if (reachedTarget && !this.lureTarget) {
+      this.waypointIndex++;
+    }
 
     // Gentle bob
     this.rotation = Math.sin(this.scene.time.now / 250 + this.x * 0.01) * 0.07;

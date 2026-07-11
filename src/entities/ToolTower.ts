@@ -47,7 +47,7 @@ export class ToolTower extends Phaser.GameObjects.Container {
   private barrelLine: Phaser.GameObjects.Graphics;
   private levelText: Phaser.GameObjects.Text;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, variant: TowerVariant = 'script') {
+  constructor(scene: Phaser.Scene, x: number, y: number, variant: TowerVariant = 'cooler') {
     super(scene, x, y);
     this.variant = variant;
 
@@ -136,6 +136,39 @@ export class ToolTower extends Phaser.GameObjects.Container {
   // ── Per-frame ─────────────────────────────────────────────────────────
 
   public tick(delta: number, enemies: Coworker[]): void {
+    if (this.special === 'lureChain') {
+      for (const e of enemies) {
+        if (!e.isDead && !e.hasReachedDesk && !e.visitedCoolers.has(this)) {
+          if (!e.getLure()) {
+             const dist = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
+             if (dist <= this.range) {
+               e.setLure(this);
+             }
+          }
+        }
+      }
+
+      for (const e of enemies) {
+        if (e.getLure() === this) {
+          const dist = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y);
+          if (dist < 18) {
+            e.clearLure();
+            e.visitedCoolers.add(this);
+            e.takeDamage(this.damage);
+            if (e.isDead) {
+              this.fireChainRicochet(
+                e.x, e.y, enemies,
+                this.damage * CHAIN_DAMAGE_MULT,
+                CHAIN_MAX_BOUNCES,
+                new Set([e]),
+              );
+            }
+          }
+        }
+      }
+      return;
+    }
+
     this.cooldown -= delta;
     if (this.cooldown > 0) return;
 
@@ -208,10 +241,9 @@ export class ToolTower extends Phaser.GameObjects.Container {
   }
 
   /**
-   * Script: a kill ricochets to the nearest other enemy in range for
+   * Cooler: deals damage, and if it kills, ricochets to the nearest other enemy in range for
    * `damage` (already the reduced ricochet amount — see CHAIN_DAMAGE_MULT),
-   * chaining again on every further kill, up to `bouncesLeft` hops. Great
-   * for mowing down a crowd of low-HP targets.
+   * chaining again on every further kill, up to `bouncesLeft` hops.
    */
   private fireChainRicochet(
     fromX: number, fromY: number, enemies: Coworker[],
@@ -241,19 +273,9 @@ export class ToolTower extends Phaser.GameObjects.Container {
     }
   }
 
-  /** Script fires code glyphs, Docs hurls a tome, everyone else a plain bolt. */
+  /** Docs hurls a tome, everyone else a plain bolt. */
   private createProjectileVisual(): Phaser.GameObjects.Text | Phaser.GameObjects.Arc {
     const scene = this.scene;
-
-    if (this.variant === 'script') {
-      const glyph = Phaser.Math.Between(0, 1) ? '0' : '1';
-      return scene.add.text(this.x, this.y, glyph, {
-        fontSize: '14px',
-        fontStyle: 'bold',
-        fontFamily: 'monospace',
-        color: '#00ff9d',
-      }).setOrigin(0.5);
-    }
 
     if (this.variant === 'docs') {
       return scene.add.text(this.x, this.y, '📖', { fontSize: '18px' }).setOrigin(0.5);
@@ -299,14 +321,6 @@ export class ToolTower extends Phaser.GameObjects.Container {
                 e.takeDamage(damage);
               }
             }
-          }
-          if (special === 'chain' && target.isDead) {
-            this.fireChainRicochet(
-              target.x, target.y, enemies,
-              damage * CHAIN_DAMAGE_MULT,
-              CHAIN_MAX_BOUNCES,
-              new Set([target]),
-            );
           }
           destroyProj();
           return;

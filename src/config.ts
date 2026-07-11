@@ -53,7 +53,7 @@ export const TOWER_UPGRADE_RANGE_BONUS = 20;
 export const TOWER_UPGRADE_FIRE_RATE_MULT = 0.85;
 
 // ─── Tower variants ─────────────────────────────────────────────────────
-export type TowerVariant = 'script' | 'router' | 'docs' | 'coffee' | 'chair' | 'aircon';
+export type TowerVariant = 'cooler' | 'router' | 'docs' | 'coffee' | 'chair' | 'aircon';
 
 export interface TowerVariantStats {
   label: string;
@@ -73,10 +73,9 @@ export interface TowerVariantStats {
    * 'aoeSlow' — no projectile: an expanding ring pulse from the tower itself,
    *             damages (if damage > 0) + slows everyone currently in range (router)
    * 'stun'    — big single-target hit that also freezes movement (docs)
-   * 'chain'   — a kill ricochets to the nearest other enemy in range for
-   *             reduced damage, chaining again on every further kill (script)
+   * 'lureChain' — lures enemies to approach it once, and unleashes chain damage upon contact.
    */
-  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun' | 'chain';
+  special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun' | 'lureChain';
   /**
    * Bypasses enemy armor/damage-reduction. Currently inert — no enemy in
    * the game has armor yet. Docs is flagged now so that whenever an
@@ -89,13 +88,12 @@ export interface TowerVariantStats {
 
 // Order matches how right-click / 1-6 / HUD-tap cycle through variants.
 export const TOWER_VARIANT_KEYS: readonly TowerVariant[] =
-  ['script', 'router', 'docs', 'coffee', 'chair', 'aircon'];
+  ['cooler', 'router', 'docs', 'coffee', 'chair', 'aircon'];
 
 export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
-  // "Автоматизация": basic rapid-fire gun, sprays matrix-green 0s and 1s.
-  // A kill chain-reacts into the nearest other enemy in range for half
-  // damage — great at mowing down a crowd of weak targets.
-  script: { label: 'Script',  icon: '📜', color: 0x0984e3, range: 110, fireRate: 500,  damage: 1, cost: 45, special: 'chain' },
+  // "Кулер": Lures enemies to take a break.
+  // Once an enemy reaches it, it deals damage that chain-reacts to others in range.
+  cooler: { label: 'Кулер',   icon: '🚰', color: 0x0984e3, range: 110, fireRate: 0,    damage: 1, cost: 45, special: 'lureChain' },
   // "Плохой коннект": pure crowd control, no real damage. Ring-shaped
   // Wi-Fi pulse from the tower itself — everyone in range "hangs loading
   // the page" (slowed), holding them in other towers' kill zones.
