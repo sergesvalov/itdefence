@@ -285,7 +285,7 @@ export class HUD extends Phaser.Events.EventEmitter {
       wordWrap: { width: 320 },
     }).setOrigin(0.5);
 
-    const hint = scene.add.text(0, 100, 'Press R to try again', {
+    const hint = scene.add.text(0, 100, 'Press R or Tap to try again', {
       fontFamily: 'Courier, monospace',
       fontSize: '20px', color: '#74b9ff', fontStyle: 'bold',
     }).setOrigin(0.5);
@@ -300,6 +300,10 @@ export class HUD extends Phaser.Events.EventEmitter {
     });
 
     overlay.add([veil, panel, text, subText, hint]);
+    
+    veil.setInteractive()
+        .on('pointerdown', () => this.emit('restart-tap'));
+
     return overlay;
   }
 }

@@ -77,6 +77,7 @@ export class MainScene extends Phaser.Scene {
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
 
+    this.hud.on('restart-tap', () => { if (this.isGameOver) this.restartGame(); });
     this.input.keyboard?.on('keydown-R', () => { if (this.isGameOver) this.restartGame(); });
   }
 
