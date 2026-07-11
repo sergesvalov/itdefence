@@ -8,7 +8,7 @@ import {
   CHAIN_DAMAGE_MULT, CHAIN_MAX_BOUNCES,
 } from '../config';
 
-export const TOWER_SIZE = 26; // half-width of the square body
+export const TOWER_SIZE = 31; // half-width of the square body
 
 type TowerSpecial = TowerVariantStats['special'];
 

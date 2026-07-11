@@ -8,7 +8,7 @@ export interface Waypoint {
   y: number;
 }
 
-const RADIUS = 14;
+const RADIUS = 17;
 const BASE_SPEED = 65;
 const BASE_HP = 4;
 

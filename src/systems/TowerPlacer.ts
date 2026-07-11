@@ -66,7 +66,7 @@ export class TowerPlacer {
   }
 
   private snap(val: number): number {
-    return Math.round(val / 52) * 52;
+    return Math.round(val / 62) * 62;
   }
 
   tick(delta: number, enemies: Coworker[]): void {
@@ -206,7 +206,7 @@ export class TowerPlacer {
       y < OFFICE_Y_BOTTOM - margin &&
       x > margin &&
       x < GAME_WIDTH - margin &&
-      Phaser.Math.Distance.Between(x, y, DESK_X, DESK_Y) > 70  // don't block the desk itself
+      Phaser.Math.Distance.Between(x, y, DESK_X, DESK_Y) > 84  // don't block the desk itself
     );
   }
 

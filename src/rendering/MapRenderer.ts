@@ -49,7 +49,7 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
     // Placeholder floor tile grid — a real floor texture already has its
     // own pattern, so only draw this when there isn't one.
     gfx.lineStyle(1, 0x4a6b8a, 0.25);
-    const tileSize = 40;
+    const tileSize = 48;
     for (let x = 0; x < GAME_WIDTH; x += tileSize) {
       gfx.lineBetween(x, OFFICE_Y_TOP, x, OFFICE_Y_BOTTOM);
     }
@@ -67,7 +67,7 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   const hasDoorSprite = scene.textures.exists('sprite-door');
   for (const door of SPAWN_DOORS) {
     if (hasDoorSprite) {
-      const img = scene.add.image(door.x, door.y, 'sprite-door').setDisplaySize(40, 44);
+      const img = scene.add.image(door.x, door.y, 'sprite-door').setDisplaySize(48, 53);
       doorSprites.set(door, img);
     } else {
       doorSprites.set(door, null);
@@ -97,11 +97,11 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
 
   // Desk zone warning glow (towers can't be placed too close, always drawn)
   gfx.lineStyle(1, 0xe74c3c, 0.4);
-  gfx.strokeCircle(DESK_X, DESK_Y, 60);
+  gfx.strokeCircle(DESK_X, DESK_Y, 72);
 
   // Desk (+ monitor + Petya himself, all baked into the sprite if one is supplied)
   if (scene.textures.exists('sprite-desk')) {
-    scene.add.image(DESK_X, DESK_Y - 10, 'sprite-desk').setDisplaySize(100, 90);
+    scene.add.image(DESK_X, DESK_Y - 10, 'sprite-desk').setDisplaySize(120, 108);
   } else {
     gfx.fillStyle(0x8b4513);
     gfx.fillRect(DESK_X - 45, DESK_Y - 25, 90, 50);
