@@ -58,6 +58,16 @@ RUN wget -q https://github.com/Commit451/android-arm-build-tools/releases/downlo
     echo "a41b31103da2bac2fadb53017b57e8d1f11499b8e2ff9ed89d5e31158406ae4d  /usr/local/bin/aapt2" | sha256sum -c - && \
     chmod +x /usr/local/bin/aapt2
 
+# ─── ARM64 zipalign ──────────────────────────────────────────────────────
+# Same problem as aapt2 above: the SDK's build-tools;35.0.0 only ships an
+# x86_64 zipalign, which fails with "Exec format error" on this arm64 host.
+# Using the same trusted source (Commit451/android-arm-build-tools) and
+# release tag as the aapt2 override, checksum-pinned.
+RUN wget -q https://github.com/Commit451/android-arm-build-tools/releases/download/platform-tools-37.0.0/zipalign \
+         -O /usr/local/bin/zipalign && \
+    echo "8d04801629e7021c10ee419a3e22a9ebc382289911ac366a94a09db798eb5d07  /usr/local/bin/zipalign" | sha256sum -c - && \
+    chmod +x /usr/local/bin/zipalign
+
 # No npm ci / COPY here on purpose: Jenkins bind-mounts the workspace over
 # this container via docker.inside(), and node_modules is already installed
 # there by the "Install Dependencies" stage (Node image) before this one

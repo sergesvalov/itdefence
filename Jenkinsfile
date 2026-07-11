@@ -154,7 +154,10 @@ pipeline {
 
                             if [ -f "$UNSIGNED_APK" ]; then
                                 echo "Выравнивание APK (zipalign)..."
-                                $BUILD_TOOLS/zipalign -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
+                                # SDK build-tools zipalign is x86_64-only ("Exec format
+                                # error" on this arm64 host) — use the arm64 build from
+                                # Dockerfile.android instead (same source as aapt2 override).
+                                /usr/local/bin/zipalign -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
                                 
                                 echo "Подписание APK (apksigner)..."
                                 $BUILD_TOOLS/apksigner sign --ks keystore/release.keystore --ks-pass pass:password --ks-key-alias release --key-pass pass:password --out "$SIGNED_APK" "$ALIGNED_APK"
