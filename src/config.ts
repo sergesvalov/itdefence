@@ -194,6 +194,7 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   { key: 'tile-office-floor',   path: 'assets/tiles/office-floor.png',   kind: 'tile' },
   { key: 'tile-wall',           path: 'assets/tiles/wall.png',           kind: 'tile' },
   { key: 'sprite-door',         path: 'assets/sprites/door.png',         kind: 'sprite' },
+  { key: 'sprite-door-open',    path: 'assets/sprites/door-open.png',    kind: 'sprite' },
   { key: 'sprite-desk',         path: 'assets/sprites/desk.png',         kind: 'sprite' },
   { key: 'sprite-coworker',     path: 'assets/sprites/coworker.png',     kind: 'sprite' },
   // One sprite slot per tower variant — sprite-tower-script, sprite-tower-router, ...

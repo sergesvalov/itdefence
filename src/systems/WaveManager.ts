@@ -47,6 +47,7 @@ export class WaveManager {
     private scene: Phaser.Scene,
     private economy: Economy,
     private hud: HUD,
+    private doorSprites: Map<DoorDef, Phaser.GameObjects.Image | null>,
     private onTaskArrived: (urgent: boolean) => void,
     private isDoorShielded: () => boolean,
     private getFurniture: () => Furniture[],
@@ -115,6 +116,15 @@ export class WaveManager {
     const cw = new Coworker(this.scene, buildPath(door), urgent);
     this.enemies.push(cw);
     this.spawnedThisWave++;
+
+    // Animate the door opening
+    const doorSprite = this.doorSprites.get(door);
+    if (doorSprite && this.scene.textures.exists('sprite-door-open')) {
+      doorSprite.setTexture('sprite-door-open');
+      this.scene.time.delayedCall(400, () => {
+        if (doorSprite.active) doorSprite.setTexture('sprite-door');
+      });
+    }
   }
 
   // ── Wave loop & money ─────────────────────────────────────────────────

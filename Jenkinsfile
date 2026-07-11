@@ -150,13 +150,7 @@ pipeline {
             }
         }
 
-        // ── ДЕПЛОЙ ───────────────────────────────────────────────────────
-        stage('Archive Web') {
-            when { expression { return params.BUILD_WEB } }
-            steps {
-                archiveArtifacts artifacts: 'dist/**/*', fingerprint: true
-            }
-        }
+
 
         stage('Deploy Web') {
             when {

@@ -6,13 +6,17 @@ import {
   SPAWN_DOORS,
 } from '../config';
 
+import type { DoorDef } from '../config';
+
 /**
  * Draws the static map once per game: reception strip (doors) on top,
  * Petya's office (the battlefield) below, desk at the bottom. Uses a
  * texture for any slot whose asset was loaded (see TEXTURE_ASSETS in
  * config.ts), otherwise falls back to programmatic Graphics.
+ * Returns a map of door definitions to their created image sprites (if any).
  */
-export function drawMap(scene: Phaser.Scene): void {
+export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Image | null> {
+  const doorSprites = new Map<DoorDef, Phaser.GameObjects.Image | null>();
   const gfx = scene.add.graphics();
 
   // ── Floor background (base layer, always drawn) ─────────────────────
@@ -63,8 +67,10 @@ export function drawMap(scene: Phaser.Scene): void {
   const hasDoorSprite = scene.textures.exists('sprite-door');
   for (const door of SPAWN_DOORS) {
     if (hasDoorSprite) {
-      scene.add.image(door.x, door.y, 'sprite-door').setDisplaySize(40, 44);
+      const img = scene.add.image(door.x, door.y, 'sprite-door').setDisplaySize(40, 44);
+      doorSprites.set(door, img);
     } else {
+      doorSprites.set(door, null);
       // Door frame
       gfx.fillStyle(0xe74c3c, 0.9);
       gfx.fillRect(door.x - 20, door.y - 16, 40, 32);
@@ -117,4 +123,6 @@ export function drawMap(scene: Phaser.Scene): void {
     color: '#74b9ff',
     fontStyle: 'bold',
   }).setOrigin(0.5, 0);
+
+  return doorSprites;
 }

@@ -58,14 +58,14 @@ export class MainScene extends Phaser.Scene {
     // module below is freshly constructed too.
     this.isGameOver = false;
 
-    drawMap(this);
+    const doorSprites = drawMap(this);
 
     this.hud = new HUD(this, STARTING_MONEY, INBOX_LIMIT);
     this.economy = new Economy(this.hud, STARTING_MONEY);
     this.towerPlacer = new TowerPlacer(this, this.economy, this.hud);
     this.inbox = new Inbox(this, this.hud, INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, () => this.triggerGameOver());
     this.waveManager = new WaveManager(
-      this, this.economy, this.hud,
+      this, this.economy, this.hud, doorSprites,
       (urgent) => this.inbox.enqueue(urgent),
       () => this.shield.isActive,
       () => this.towerPlacer.furniture,
