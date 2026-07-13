@@ -155,8 +155,8 @@ export class HUD extends Phaser.Events.EventEmitter {
     dockBg.strokeRoundedRect(x - slotSize / 2 - 8, startY - slotSize / 2 - 8, slotSize + 16, totalHeight + 16, 12);
     dockBg.setDepth(15);
 
-    // Toolbar info text (placed near the bottom of the screen, just above the hint)
-    const infoY = GAME_HEIGHT - 44;
+    // Toolbar info text (placed near the top of the screen, just below the wave indicator)
+    const infoY = 86;
     this.toolbarInfoBg = scene.add.graphics().setDepth(15);
     this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.9);
     this.toolbarInfoBg.fillRoundedRect(GAME_WIDTH / 2 - 180, infoY - 16, 360, 32, 8);
