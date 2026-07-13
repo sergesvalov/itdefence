@@ -32,8 +32,8 @@ export class HUD extends Phaser.Events.EventEmitter {
   
   // Toolbar state
   private toolbarSlots: ToolbarSlot[] = [];
-  private toolbarInfoText: Phaser.GameObjects.Text;
-  private toolbarInfoBg: Phaser.GameObjects.Graphics;
+  private toolbarInfoText!: Phaser.GameObjects.Text;
+  private toolbarInfoBg!: Phaser.GameObjects.Graphics;
 
   private gameOverOverlay: Phaser.GameObjects.Container;
   private ultimateButton: AbilityButton;
