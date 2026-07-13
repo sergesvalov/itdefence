@@ -21,18 +21,19 @@ interface ToolbarSlot {
 
 /**
  * HUD — the top-left stats panel, the two ability buttons (ultimate +
- * shield), bottom toolbar dock for selecting towers, and BSOD Game Over overlay.
+ * shield), left vertical toolbar dock for selecting towers, and BSOD Game Over overlay.
  */
 export class HUD extends Phaser.Events.EventEmitter {
   private scene: Phaser.Scene;
   private moneyText: Phaser.GameObjects.Text;
   private inboxCountText: Phaser.GameObjects.Text;
-  private inboxQueueText: Phaser.GameObjects.Text;
+  private inboxQueueGraphics: Phaser.GameObjects.Graphics;
   private waveText: Phaser.GameObjects.Text;
   
   // Toolbar state
   private toolbarSlots: ToolbarSlot[] = [];
-  private toolbarInfoText!: Phaser.GameObjects.Text;
+  private toolbarInfoText: Phaser.GameObjects.Text;
+  private toolbarInfoBg: Phaser.GameObjects.Graphics;
 
   private gameOverOverlay: Phaser.GameObjects.Container;
   private ultimateButton: AbilityButton;
@@ -46,67 +47,76 @@ export class HUD extends Phaser.Events.EventEmitter {
     const pad = 12;
 
     const fontStyle = 'Inter, system-ui, sans-serif';
-    const textStyle = { fontFamily: fontStyle, fontSize: '14px', color: '#ecf0f1' };
+    const textStyle = { fontFamily: fontStyle, fontSize: '16px', color: '#ecf0f1' };
     const boldStyle = { ...textStyle, fontStyle: 'bold' };
 
     // ── Corporate Dashboard (Top-Left HUD panel) ───────────────────────
     const hudBg = scene.add.graphics();
-    hudBg.fillStyle(0x1e2a3a, 0.85);
-    hudBg.fillRoundedRect(pad, pad, 250, 100, 12);
-    hudBg.lineStyle(1, 0x3498db, 0.4);
-    hudBg.strokeRoundedRect(pad, pad, 250, 100, 12);
+    hudBg.fillStyle(0x1e2a3a, 0.9);
+    hudBg.fillRoundedRect(pad, pad, 260, 110, 12);
+    hudBg.lineStyle(2, 0x3498db, 0.6);
+    hudBg.strokeRoundedRect(pad, pad, 260, 110, 12);
     hudBg.setDepth(15);
 
     // Money
     this.moneyText = scene.add.text(pad + 16, pad + 16, `💰 0`, {
-      ...boldStyle, color: '#f1c40f', fontSize: '18px'
+      ...boldStyle, color: '#f1c40f', fontSize: '26px'
     }).setDepth(16);
     this.setMoney(startingMoney);
 
     // Inbox counter
-    this.inboxCountText = scene.add.text(pad + 16, pad + 44, `📥 Inbox: 0 / ${inboxLimit}`, boldStyle).setDepth(16);
+    this.inboxCountText = scene.add.text(pad + 16, pad + 52, `📥 Inbox: 0 / ${inboxLimit}`, {
+      ...boldStyle, fontSize: '18px'
+    }).setDepth(16);
 
-    // Inbox queue
-    this.inboxQueueText = scene.add.text(pad + 16, pad + 66, '', { ...textStyle, fontSize: '12px', letterSpacing: 2 }).setDepth(16);
+    // Inbox queue (graphics instead of text emojis)
+    this.inboxQueueGraphics = scene.add.graphics().setDepth(16);
+    // Draw initial empty circles
+    this.setInbox([], inboxLimit);
 
     // Wave indicator (Top-Center)
     const waveBg = scene.add.graphics();
-    waveBg.fillStyle(0x1e2a3a, 0.85);
-    waveBg.fillRoundedRect(GAME_WIDTH / 2 - 60, pad, 120, 32, 8);
-    waveBg.lineStyle(1, 0x3498db, 0.4);
-    waveBg.strokeRoundedRect(GAME_WIDTH / 2 - 60, pad, 120, 32, 8);
+    waveBg.fillStyle(0x1e2a3a, 0.9);
+    waveBg.fillRoundedRect(GAME_WIDTH / 2 - 70, pad, 140, 40, 8);
+    waveBg.lineStyle(2, 0x3498db, 0.6);
+    waveBg.strokeRoundedRect(GAME_WIDTH / 2 - 70, pad, 140, 40, 8);
     waveBg.setDepth(15);
 
-    this.waveText = scene.add.text(GAME_WIDTH / 2, pad + 16, '', { ...boldStyle, fontSize: '14px', color: '#3498db' })
+    this.waveText = scene.add.text(GAME_WIDTH / 2, pad + 20, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
       .setOrigin(0.5)
       .setDepth(16);
 
-    // ── Bottom Toolbar (Dock) ──────────────────────────────────────────
+    // ── Left Vertical Toolbar (Dock) ───────────────────────────────────
     this.buildToolbar();
     
-    // Hint text (just above toolbar)
-    scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 74, 'Тап: кабинет — постройка, постройка — апгрейд/перестановка', {
+    // Hint text (at the very bottom)
+    const hintBg = scene.add.graphics();
+    hintBg.fillStyle(0x000000, 0.5);
+    hintBg.fillRect(0, GAME_HEIGHT - 28, GAME_WIDTH, 28);
+    hintBg.setDepth(14);
+    
+    scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 14, 'Тап: кабинет — строить, предмет — апгрейд/переместить', {
       fontFamily: fontStyle,
-      fontSize: '11px',
+      fontSize: '14px',
       color: '#bdc3c7',
-    }).setOrigin(0.5).setDepth(16).setAlpha(0.8);
+    }).setOrigin(0.5).setDepth(16);
 
     // ── Ability buttons — top-right corner ──────────────────────────────
-    this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 96, 48, '🎫', 'Тикет', 'ultimate-tap');
-    this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 40, 48, '🛡️', 'Митинг', 'shield-tap');
+    this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 110, 56, '🎫', 'Тикет', 'ultimate-tap');
+    this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 44, 56, '🛡️', 'Митинг', 'shield-tap');
 
     // ── "Start Wave" button ───────────────────────────────────────────
-    const swX = GAME_WIDTH - 68;
-    const swY = 112;
-    const swBg = scene.add.circle(0, 0, 26, 0x27ae60, 0.95);
+    const swX = GAME_WIDTH - 76;
+    const swY = 136;
+    const swBg = scene.add.circle(0, 0, 32, 0x27ae60, 0.95);
     swBg.setStrokeStyle(3, 0xffffff, 0.9);
-    const swIcon = scene.add.text(0, 0, '▶️', { fontSize: '18px' }).setOrigin(0.5);
+    const swIcon = scene.add.text(0, 0, '▶️', { fontSize: '24px' }).setOrigin(0.5);
     this.startWaveButton = scene.add.container(swX, swY, [swBg, swIcon])
       .setDepth(17)
-      .setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains)
+      .setInteractive(new Phaser.Geom.Circle(0, 0, 36), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit('start-wave-tap'));
-    this.startWaveText = scene.add.text(swX, swY + 34, '', {
-      fontFamily: fontStyle, fontSize: '11px', color: '#2ecc71', fontStyle: 'bold', align: 'center',
+    this.startWaveText = scene.add.text(swX, swY + 42, '', {
+      fontFamily: fontStyle, fontSize: '14px', color: '#2ecc71', fontStyle: 'bold', align: 'center',
     }).setOrigin(0.5).setDepth(17);
     scene.tweens.add({
       targets: this.startWaveButton,
@@ -130,37 +140,48 @@ export class HUD extends Phaser.Events.EventEmitter {
       ...FURNITURE_TYPE_KEYS.map(key => ({ ...FURNITURE_TYPES_DATA[key], type: 'furniture' }))
     ];
 
-    const slotSize = 44;
-    const gap = 6;
-    const totalWidth = items.length * slotSize + (items.length - 1) * gap;
-    const startX = (GAME_WIDTH - totalWidth) / 2 + slotSize / 2;
-    const y = GAME_HEIGHT - slotSize / 2 - 12;
+    const slotSize = 60;
+    const gap = 8;
+    // Left edge layout
+    const x = 12 + slotSize / 2;
+    const startY = 140 + slotSize / 2;
+
+    const totalHeight = items.length * slotSize + (items.length - 1) * gap;
 
     const dockBg = scene.add.graphics();
-    dockBg.fillStyle(0x1e2a3a, 0.85);
-    dockBg.fillRoundedRect((GAME_WIDTH - totalWidth) / 2 - 12, y - slotSize / 2 - 8, totalWidth + 24, slotSize + 16, 12);
-    dockBg.lineStyle(1, 0x3498db, 0.4);
-    dockBg.strokeRoundedRect((GAME_WIDTH - totalWidth) / 2 - 12, y - slotSize / 2 - 8, totalWidth + 24, slotSize + 16, 12);
+    dockBg.fillStyle(0x1e2a3a, 0.9);
+    dockBg.fillRoundedRect(x - slotSize / 2 - 8, startY - slotSize / 2 - 8, slotSize + 16, totalHeight + 16, 12);
+    dockBg.lineStyle(2, 0x3498db, 0.6);
+    dockBg.strokeRoundedRect(x - slotSize / 2 - 8, startY - slotSize / 2 - 8, slotSize + 16, totalHeight + 16, 12);
     dockBg.setDepth(15);
 
-    this.toolbarInfoText = scene.add.text(GAME_WIDTH / 2, y - slotSize / 2 - 20, '', {
-      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px', color: '#3498db', fontStyle: 'bold'
-    }).setOrigin(0.5, 1).setDepth(16);
+    // Toolbar info text (placed near the bottom of the screen, just above the hint)
+    const infoY = GAME_HEIGHT - 44;
+    this.toolbarInfoBg = scene.add.graphics().setDepth(15);
+    this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.9);
+    this.toolbarInfoBg.fillRoundedRect(GAME_WIDTH / 2 - 180, infoY - 16, 360, 32, 8);
+    this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.6);
+    this.toolbarInfoBg.strokeRoundedRect(GAME_WIDTH / 2 - 180, infoY - 16, 360, 32, 8);
+    this.toolbarInfoBg.setVisible(false);
+
+    this.toolbarInfoText = scene.add.text(GAME_WIDTH / 2, infoY, '', {
+      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '15px', color: '#3498db', fontStyle: 'bold'
+    }).setOrigin(0.5).setDepth(16);
 
     items.forEach((item, index) => {
-      const cx = startX + index * (slotSize + gap);
+      const cy = startY + index * (slotSize + gap);
       
       const bg = scene.add.graphics();
       bg.fillStyle(0x2c3e50, 1);
       bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
       
-      const icon = scene.add.text(0, -6, item.icon, { fontSize: '22px' }).setOrigin(0.5);
+      const icon = scene.add.text(0, -8, item.icon, { fontSize: '28px' }).setOrigin(0.5);
       const priceText = item.type === 'tower' ? `💰${(item as any).cost}` : '🆓';
-      const price = scene.add.text(0, 12, priceText, { 
-        fontFamily: 'Inter, system-ui, sans-serif', fontSize: '10px', color: '#f1c40f', fontStyle: 'bold' 
+      const price = scene.add.text(0, 16, priceText, { 
+        fontFamily: 'Inter, system-ui, sans-serif', fontSize: '12px', color: '#f1c40f', fontStyle: 'bold' 
       }).setOrigin(0.5);
 
-      const container = scene.add.container(cx, y, [bg, icon, price])
+      const container = scene.add.container(x, cy, [bg, icon, price])
         .setDepth(16)
         .setInteractive(new Phaser.Geom.Rectangle(-slotSize/2, -slotSize/2, slotSize, slotSize), Phaser.Geom.Rectangle.Contains)
         .on('pointerdown', () => this.emit('select-index', index));
@@ -173,13 +194,13 @@ export class HUD extends Phaser.Events.EventEmitter {
           if (selected) {
             bg.fillStyle(0x34495e, 1);
             bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            bg.lineStyle(2, 0x3498db, 1);
+            bg.lineStyle(3, 0x3498db, 1);
             bg.strokeRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
             container.setScale(1.1);
           } else {
             bg.fillStyle(0x2c3e50, disabled ? 0.5 : 1);
             bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            bg.lineStyle(1, 0x7f8c8d, 0.5);
+            bg.lineStyle(2, 0x7f8c8d, 0.5);
             bg.strokeRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
             container.setScale(1.0);
             container.setAlpha(disabled ? 0.5 : 1);
@@ -206,9 +227,23 @@ export class HUD extends Phaser.Events.EventEmitter {
 
   setInbox(tasks: readonly Task[], limit: number): void {
     this.inboxCountText.setText(`📥 Inbox: ${tasks.length} / ${limit}`);
-    const glyphs = tasks.map(t => t ? (t.urgent ? '🔴' : '🟡') : '▫️');
-    while (glyphs.length < limit) glyphs.push('▫️');
-    this.inboxQueueText.setText(glyphs.join(' '));
+    
+    this.inboxQueueGraphics.clear();
+    const startX = 36;
+    const startY = 96;
+    const spacing = 18;
+    
+    for (let i = 0; i < limit; i++) {
+      const task = tasks[i];
+      const cx = startX + i * spacing;
+      if (task) {
+        this.inboxQueueGraphics.fillStyle(task.urgent ? 0xe74c3c : 0xf1c40f, 1);
+        this.inboxQueueGraphics.fillCircle(cx, startY, 7);
+      } else {
+        this.inboxQueueGraphics.lineStyle(2, 0x7f8c8d, 0.6);
+        this.inboxQueueGraphics.strokeCircle(cx, startY, 6);
+      }
+    }
 
     this.scene.tweens.add({
       targets: this.inboxCountText,
@@ -236,12 +271,14 @@ export class HUD extends Phaser.Events.EventEmitter {
 
   setTowerSelect(index: number, stats: TowerVariantStats): void {
     this.updateToolbarHighlight(index);
-    this.toolbarInfoText.setText(`${stats.icon} ${stats.label} — Урон: ${stats.damage || 0}, Радиус: ${stats.radius}`);
+    this.toolbarInfoBg.setVisible(true);
+    this.toolbarInfoText.setText(`${stats.icon} ${stats.label} — Урон: ${stats.damage || 0}, Дальность: ${stats.range || 0}`);
   }
 
   setFurnitureSelect(index: number, stats: FurnitureTypeStats, left: number): void {
     this.updateToolbarHighlight(index, left <= 0);
-    this.toolbarInfoText.setText(`${stats.icon} ${stats.label} — Осталось: ${left}`);
+    this.toolbarInfoBg.setVisible(true);
+    this.toolbarInfoText.setText(`${stats.icon} ${stats.label} — На складе: ${left} / ${stats.maxCount}`);
   }
 
   private updateToolbarHighlight(selectedIndex: number, disabled = false): void {
@@ -274,18 +311,18 @@ export class HUD extends Phaser.Events.EventEmitter {
     const scene = this.scene;
     const fontStyle = 'Inter, system-ui, sans-serif';
 
-    const bg = scene.add.circle(0, 0, 22, 0x1e2a3a, 0.9);
-    bg.setStrokeStyle(2, 0x3498db, 0.8);
+    const bg = scene.add.circle(0, 0, 26, 0x1e2a3a, 0.9);
+    bg.setStrokeStyle(3, 0x3498db, 0.8);
 
     const ring = scene.add.graphics();
-    const t = scene.add.text(0, 0, icon, { fontSize: '20px' }).setOrigin(0.5);
+    const t = scene.add.text(0, 0, icon, { fontSize: '24px' }).setOrigin(0.5);
     const container = scene.add.container(x, y, [bg, ring, t])
       .setDepth(16)
-      .setInteractive(new Phaser.Geom.Circle(0, 0, 26), Phaser.Geom.Circle.Contains)
+      .setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit(tapEvent));
       
-    scene.add.text(x, y + 32, buttonLabel, {
-      fontFamily: fontStyle, fontSize: '11px', color: '#ecf0f1', fontStyle: 'bold',
+    scene.add.text(x, y + 36, buttonLabel, {
+      fontFamily: fontStyle, fontSize: '13px', color: '#ecf0f1', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(16);
     
     return { container, bg, ring };
@@ -294,17 +331,17 @@ export class HUD extends Phaser.Events.EventEmitter {
   private redrawChargeRing(ring: Phaser.GameObjects.Graphics, fraction: number, color: number): void {
     ring.clear();
     if (fraction <= 0) return;
-    ring.lineStyle(4, color, 1);
+    ring.lineStyle(5, color, 1);
     const start = -Math.PI / 2;
     const end = start + Math.PI * 2 * Math.min(1, fraction);
     ring.beginPath();
-    ring.arc(0, 0, 24, start, end, false);
+    ring.arc(0, 0, 28, start, end, false);
     ring.strokePath();
   }
 
   private setButtonReady(button: AbilityButton, ready: boolean, readyFill: number, readyStroke: number): void {
     button.bg.setFillStyle(ready ? readyFill : 0x1e2a3a, 0.9);
-    button.bg.setStrokeStyle(2, ready ? readyStroke : 0x3498db, 1);
+    button.bg.setStrokeStyle(3, ready ? readyStroke : 0x3498db, 1);
     this.scene.tweens.killTweensOf(button.container);
     if (ready) {
       this.scene.tweens.add({
