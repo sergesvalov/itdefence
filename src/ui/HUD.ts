@@ -32,7 +32,7 @@ export class HUD extends Phaser.Events.EventEmitter {
   
   // Toolbar state
   private toolbarSlots: ToolbarSlot[] = [];
-  private toolbarInfoText: Phaser.GameObjects.Text;
+  private toolbarInfoText!: Phaser.GameObjects.Text;
 
   private gameOverOverlay: Phaser.GameObjects.Container;
   private ultimateButton: AbilityButton;
@@ -333,8 +333,8 @@ export class HUD extends Phaser.Events.EventEmitter {
     }).setOrigin(0.5);
 
     const hint = scene.add.text(0, 100, 'Press R or Tap to reboot', {
-      fontFamily: fontStyle, fontSize: '14px', color: '#ffffff', alpha: 0.7
-    }).setOrigin(0.5);
+      fontFamily: fontStyle, fontSize: '14px', color: '#ffffff'
+    }).setOrigin(0.5).setAlpha(0.7);
 
     scene.tweens.add({ targets: hint, alpha: 1, duration: 800, yoyo: true, repeat: -1 });
 
