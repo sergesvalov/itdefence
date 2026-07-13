@@ -45,7 +45,7 @@ export class TowerPlacer {
     this.placementPreview.setVisible(false);
     this.placementPreview.setDepth(10);
 
-    hud.on('variant-tap', () => this.cycleSelection());
+    hud.on('select-index', (index: number) => this.selectIndex(index));
     this.refreshHudSelection();
     this.updatePreviewStyle();
 
@@ -161,11 +161,11 @@ export class TowerPlacer {
   public refreshHudSelection(): void {
     const item = this.currentItem;
     if (item.kind === 'tower') {
-      this.hud.setTowerSelect(TOWER_VARIANTS_DATA[item.variant]);
+      this.hud.setTowerSelect(this.selectedIndex, TOWER_VARIANTS_DATA[item.variant]);
     } else {
       const stats = FURNITURE_TYPES_DATA[item.type];
       const left = stats.maxCount - this.manager.countFurniture(item.type);
-      this.hud.setFurnitureSelect(stats, left);
+      this.hud.setFurnitureSelect(this.selectedIndex, stats, left);
     }
   }
 
