@@ -85,12 +85,12 @@ export class MainScene extends Phaser.Scene {
 
     this.hud.on('restart-tap', () => { 
       if (this.isGameOver) {
-        this.scene.start('UpgradeScene');
+        this.scene.start('MainMenuScene');
       }
     });
     this.input.keyboard?.on('keydown-R', () => { 
       if (this.isGameOver) {
-        this.scene.start('UpgradeScene');
+        this.scene.start('MainMenuScene');
       }
     });
   }

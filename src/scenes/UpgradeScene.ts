@@ -16,7 +16,7 @@ export class UpgradeScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1e2a3a).setOrigin(0);
 
     // Title
-    this.add.text(GAME_WIDTH / 2, 80, 'ПРОКАЧКА ПЕТИ', {
+    this.add.text(GAME_WIDTH / 2, 80, 'МАГАЗИН', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '32px',
       color: '#f1c40f',
@@ -37,10 +37,10 @@ export class UpgradeScene extends Phaser.Scene {
     this.createUpgradeRow('moneyLevel', 'Финансовая Подушка (+50$ старт)', 150, startY + spacing);
     this.createUpgradeRow('damageLevel', 'Крепкие Нервы (+10% урон)', 150, startY + spacing * 2);
 
-    // Play Button
+    // Back Button
     const playBtn = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT - 100);
     const playBg = this.add.rectangle(0, 0, 200, 60, 0x3498db).setInteractive({ useHandCursor: true });
-    const playText = this.add.text(0, 0, 'НАЧАТЬ РАБОТУ', {
+    const playText = this.add.text(0, 0, 'НАЗАД В МЕНЮ', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '20px',
       color: '#ffffff',
@@ -50,7 +50,7 @@ export class UpgradeScene extends Phaser.Scene {
     playBtn.add([playBg, playText]);
     
     playBg.on('pointerdown', () => {
-      this.scene.start('MainScene');
+      this.scene.start('MainMenuScene');
     });
   }
 

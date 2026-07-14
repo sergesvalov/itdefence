@@ -371,7 +371,7 @@ export class HUD extends Phaser.Events.EventEmitter {
       fontFamily: fontStyle, fontSize: '20px', color: '#ffffff', align: 'center', wordWrap: { width: 340 },
     }).setOrigin(0.5);
 
-    const hint = scene.add.text(0, 140, 'Тапните, чтобы вернуться в меню прокачки', {
+    const hint = scene.add.text(0, 140, 'Тапните, чтобы вернуться в меню', {
       fontFamily: fontStyle, fontSize: '14px', color: '#ffffff'
     }).setOrigin(0.5).setAlpha(0.7);
 
