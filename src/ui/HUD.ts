@@ -50,39 +50,35 @@ export class HUD extends Phaser.Events.EventEmitter {
     const textStyle = { fontFamily: fontStyle, fontSize: '16px', color: '#ecf0f1' };
     const boldStyle = { ...textStyle, fontStyle: 'bold' };
 
-    // ── Corporate Dashboard (Top-Left HUD panel) ───────────────────────
+    // ── Corporate Dashboard (Top Bar) ───────────────────────
     const hudBg = scene.add.graphics();
     hudBg.fillStyle(0x1e2a3a, 0.9);
-    hudBg.fillRoundedRect(pad, pad, 260, 110, 12);
+    hudBg.fillRect(0, 0, GAME_WIDTH, 56);
     hudBg.lineStyle(2, 0x3498db, 0.6);
-    hudBg.strokeRoundedRect(pad, pad, 260, 110, 12);
+    hudBg.beginPath();
+    hudBg.moveTo(0, 56);
+    hudBg.lineTo(GAME_WIDTH, 56);
+    hudBg.strokePath();
     hudBg.setDepth(15);
 
     // Money
-    this.moneyText = scene.add.text(pad + 16, pad + 16, `💰 0`, {
-      ...boldStyle, color: '#f1c40f', fontSize: '26px'
+    this.moneyText = scene.add.text(12, 10, `💰 0`, {
+      ...boldStyle, color: '#f1c40f', fontSize: '18px'
     }).setDepth(16);
     this.setMoney(startingMoney);
 
     // Inbox counter
-    this.inboxCountText = scene.add.text(pad + 16, pad + 52, `📥 Inbox: 0 / ${inboxLimit}`, {
-      ...boldStyle, fontSize: '18px'
+    this.inboxCountText = scene.add.text(80, 12, `📥 0 / ${inboxLimit}`, {
+      ...boldStyle, fontSize: '13px'
     }).setDepth(16);
 
-    // Inbox queue (graphics instead of text emojis)
+    // Inbox queue (graphics)
     this.inboxQueueGraphics = scene.add.graphics().setDepth(16);
     // Draw initial empty circles
     this.setInbox([], inboxLimit);
 
     // Wave indicator (Top-Center)
-    const waveBg = scene.add.graphics();
-    waveBg.fillStyle(0x1e2a3a, 0.9);
-    waveBg.fillRoundedRect(GAME_WIDTH / 2 - 70, pad, 140, 40, 8);
-    waveBg.lineStyle(2, 0x3498db, 0.6);
-    waveBg.strokeRoundedRect(GAME_WIDTH / 2 - 70, pad, 140, 40, 8);
-    waveBg.setDepth(15);
-
-    this.waveText = scene.add.text(GAME_WIDTH / 2, pad + 20, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
+    this.waveText = scene.add.text(GAME_WIDTH / 2, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
       .setOrigin(0.5)
       .setDepth(16);
 
@@ -102,8 +98,8 @@ export class HUD extends Phaser.Events.EventEmitter {
     }).setOrigin(0.5).setDepth(16);
 
     // ── Ability buttons — top-right corner ──────────────────────────────
-    this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 110, 56, '🎫', 'Тикет', 'ultimate-tap');
-    this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 44, 56, '🛡️', 'Митинг', 'shield-tap');
+    this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 80, 28, '🎫', '', 'ultimate-tap');
+    this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 30, 28, '🛡️', '', 'shield-tap');
 
     // ── "Start Wave" button ───────────────────────────────────────────
     const swX = GAME_WIDTH - 76;
@@ -155,17 +151,17 @@ export class HUD extends Phaser.Events.EventEmitter {
     dockBg.strokeRoundedRect(x - slotSize / 2 - 8, startY - slotSize / 2 - 8, slotSize + 16, totalHeight + 16, 12);
     dockBg.setDepth(15);
 
-    // Toolbar info text (placed near the top of the screen, just below the wave indicator)
-    const infoY = 86;
+    // Toolbar info text (placed near the bottom of the screen)
+    const infoY = GAME_HEIGHT - 65;
     this.toolbarInfoBg = scene.add.graphics().setDepth(15);
-    this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.9);
-    this.toolbarInfoBg.fillRoundedRect(GAME_WIDTH / 2 - 180, infoY - 16, 360, 32, 8);
-    this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.6);
-    this.toolbarInfoBg.strokeRoundedRect(GAME_WIDTH / 2 - 180, infoY - 16, 360, 32, 8);
+    this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.95);
+    this.toolbarInfoBg.fillRoundedRect(GAME_WIDTH / 2 - 180, infoY - 14, 360, 28, 6);
+    this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.8);
+    this.toolbarInfoBg.strokeRoundedRect(GAME_WIDTH / 2 - 180, infoY - 14, 360, 28, 6);
     this.toolbarInfoBg.setVisible(false);
 
     this.toolbarInfoText = scene.add.text(GAME_WIDTH / 2, infoY, '', {
-      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '15px', color: '#3498db', fontStyle: 'bold'
+      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px', color: '#3498db', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(16);
 
     items.forEach((item, index) => {
@@ -226,22 +222,22 @@ export class HUD extends Phaser.Events.EventEmitter {
   }
 
   setInbox(tasks: readonly Task[], limit: number): void {
-    this.inboxCountText.setText(`📥 Inbox: ${tasks.length} / ${limit}`);
+    this.inboxCountText.setText(`📥 ${tasks.length}/${limit}`);
     
     this.inboxQueueGraphics.clear();
-    const startX = 36;
-    const startY = 96;
-    const spacing = 18;
+    const startX = 82;
+    const startY = 36;
+    const spacing = 12;
     
     for (let i = 0; i < limit; i++) {
       const task = tasks[i];
       const cx = startX + i * spacing;
       if (task) {
         this.inboxQueueGraphics.fillStyle(task.urgent ? 0xe74c3c : 0xf1c40f, 1);
-        this.inboxQueueGraphics.fillCircle(cx, startY, 7);
+        this.inboxQueueGraphics.fillCircle(cx, startY, 4);
       } else {
         this.inboxQueueGraphics.lineStyle(2, 0x7f8c8d, 0.6);
-        this.inboxQueueGraphics.strokeCircle(cx, startY, 6);
+        this.inboxQueueGraphics.strokeCircle(cx, startY, 3.5);
       }
     }
 
@@ -311,19 +307,22 @@ export class HUD extends Phaser.Events.EventEmitter {
     const scene = this.scene;
     const fontStyle = 'Inter, system-ui, sans-serif';
 
-    const bg = scene.add.circle(0, 0, 26, 0x1e2a3a, 0.9);
-    bg.setStrokeStyle(3, 0x3498db, 0.8);
+    const radius = 20;
+    const bg = scene.add.circle(0, 0, radius, 0x1e2a3a, 0.9);
+    bg.setStrokeStyle(2, 0x3498db, 0.8);
 
     const ring = scene.add.graphics();
-    const t = scene.add.text(0, 0, icon, { fontSize: '24px' }).setOrigin(0.5);
+    const t = scene.add.text(0, 0, icon, { fontSize: '18px' }).setOrigin(0.5);
     const container = scene.add.container(x, y, [bg, ring, t])
       .setDepth(16)
-      .setInteractive(new Phaser.Geom.Circle(0, 0, 30), Phaser.Geom.Circle.Contains)
+      .setInteractive(new Phaser.Geom.Circle(0, 0, radius + 4), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit(tapEvent));
       
-    scene.add.text(x, y + 36, buttonLabel, {
-      fontFamily: fontStyle, fontSize: '13px', color: '#ecf0f1', fontStyle: 'bold',
-    }).setOrigin(0.5).setDepth(16);
+    if (buttonLabel) {
+      scene.add.text(x, y + radius + 10, buttonLabel, {
+        fontFamily: fontStyle, fontSize: '11px', color: '#ecf0f1', fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(16);
+    }
     
     return { container, bg, ring };
   }
@@ -331,11 +330,11 @@ export class HUD extends Phaser.Events.EventEmitter {
   private redrawChargeRing(ring: Phaser.GameObjects.Graphics, fraction: number, color: number): void {
     ring.clear();
     if (fraction <= 0) return;
-    ring.lineStyle(5, color, 1);
+    ring.lineStyle(3, color, 1);
     const start = -Math.PI / 2;
     const end = start + Math.PI * 2 * Math.min(1, fraction);
     ring.beginPath();
-    ring.arc(0, 0, 28, start, end, false);
+    ring.arc(0, 0, 22, start, end, false);
     ring.strokePath();
   }
 
