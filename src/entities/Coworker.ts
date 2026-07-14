@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS } from '../config';
+import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS, type CoworkerVariant, COWORKER_VARIANTS } from '../config';
 import type { Furniture } from './Furniture';
 import type { ToolTower } from './ToolTower';
 import { CoworkerView, RADIUS } from './CoworkerView';
@@ -23,8 +23,9 @@ export class Coworker extends Phaser.GameObjects.Container {
   public hasReachedDesk = false;
   /** Red/urgent task — jumps the Inbox queue on arrival (see Inbox.enqueue()). */
   public readonly urgent: boolean;
+  public readonly variant: CoworkerVariant;
 
-  private readonly waypoints: Waypoint[];
+  private waypoints: Waypoint[];
   private waypointIndex = 0;
   private readonly speed: number;
   private slowMultiplier = 1;
@@ -47,21 +48,33 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   private view: CoworkerView;
 
-  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false) {
+  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal') {
     const start = waypoints[0];
     super(scene, start.x, start.y);
 
+    const stats = COWORKER_VARIANTS[variant];
+    this.variant      = variant;
     this.waypoints    = waypoints;
     this.waypointIndex = 1; // head towards waypoint[1] immediately
-    this.speed        = BASE_SPEED + Phaser.Math.Between(-8, 16);
-    this.maxHp        = BASE_HP;
+    this.speed        = (BASE_SPEED + Phaser.Math.Between(-8, 16)) * stats.speedMult;
+    this.maxHp        = BASE_HP * stats.hpMult;
     this.hp           = this.maxHp;
     this.urgent       = urgent;
 
-    this.view = new CoworkerView(scene, this, urgent);
+    this.view = new CoworkerView(scene, this, urgent, variant, stats);
     this.view.redrawHpBar(this.hp, this.maxHp);
 
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
+  }
+
+  public setWaypoints(waypoints: Waypoint[]): void {
+    if (!waypoints || waypoints.length < 2) return;
+    this.waypoints = waypoints;
+    this.waypointIndex = 1;
+  }
+
+  public setPartnerTarget(partner: ToolTower | null): void {
+    this.partnerTarget = partner;
   }
 
   // ── Public API ─────────────────────────────────────────────────────────
@@ -256,12 +269,6 @@ export class Coworker extends Phaser.GameObjects.Container {
         this.sitDown(f);
         return;
       }
-
-      const pushAngle = fd > 0.01
-        ? Phaser.Math.Angle.Between(f.x, f.y, nx, ny)
-        : Phaser.Math.Angle.Between(f.x, f.y, targetX, targetY);
-      nx = f.x + Math.cos(pushAngle) * minDist;
-      ny = f.y + Math.sin(pushAngle) * minDist;
     }
 
     this.x = nx;

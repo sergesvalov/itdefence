@@ -167,22 +167,33 @@ export const ULTIMATE_COOLDOWN_MS = 30000;
 export const ULTIMATE_KILL_FRACTION = 0.5;
 
 // ─── Shield: "Я на митинге" ──────────────────────────────────────────────
-// Temporary invulnerability for Petya's office door. While active, anyone
-// who reaches the desk instead gets stuck at the "Не беспокоить" sign and
-// takes periodic damage from waiting — towers can still finish them off.
-// If the shield expires before they die, they barge in immediately.
 export const SHIELD_COOLDOWN_MS = 25000;
-/** How long one activation stays up */
-export const SHIELD_DURATION_MS = 5000;
+export const SHIELD_DURATION_MS = 6000;
 export const SHIELD_DOT_DAMAGE = 1;
-export const SHIELD_DOT_INTERVAL_MS = 1000;
+export const SHIELD_DOT_INTERVAL_MS = 800;
+
+// ── Coworker Variants (Enemies) ────────────────────────────────────────────────────────
+
+export type CoworkerVariant = 'normal' | 'fast' | 'tank' | 'swarm' | 'boss';
+
+export interface CoworkerStats {
+  hpMult: number;
+  speedMult: number;
+  scale: number;
+  tint: number;
+  emoji: string;
+  name: string;
+}
+
+export const COWORKER_VARIANTS: Record<CoworkerVariant, CoworkerStats> = {
+  normal: { hpMult: 1, speedMult: 1, scale: 1, tint: 0xffffff, emoji: '', name: 'Коллега' },
+  fast:   { hpMult: 0.7, speedMult: 1.5, scale: 0.9, tint: 0xf39c12, emoji: '⚡', name: 'Agile Коуч' },
+  tank:   { hpMult: 3, speedMult: 0.65, scale: 1.15, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер' },
+  swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.8, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер' },
+  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.6, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик' },
+};
 
 // ─── Map textures ───────────────────────────────────────────────────────
-// Drop matching files under public/assets/... (see the README files there)
-// and MainScene will use them automatically — nothing else to wire up.
-// Until a file exists, that slot silently falls back to the current
-// programmatic Graphics drawing, so the game works with none, some, or
-// all of these present.
 export interface TextureAsset {
   key: string;
   path: string;

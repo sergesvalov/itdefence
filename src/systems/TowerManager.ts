@@ -1,5 +1,6 @@
 import { ToolTower } from '../entities/ToolTower';
 import { Furniture } from '../entities/Furniture';
+import { EventBus } from '../events/EventBus';
 import type { Coworker } from '../entities/Coworker';
 import { FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, GAME_WIDTH, OFFICE_Y_BOTTOM, OFFICE_Y_TOP, type FurnitureType } from '../config';
 
@@ -30,8 +31,9 @@ export class TowerManager {
     this.towers.push(tower);
   }
 
-  public addFurniture(furniture: Furniture): void {
-    this.furniture.push(furniture);
+  public addFurniture(f: Furniture): void {
+    this.furniture.push(f);
+    EventBus.emit('furniture_changed');
   }
 
   public autoSpawnFurniture(count: number, isValidPlacement: (x: number, y: number, radius: number) => boolean, snap: (val: number) => number): void {
@@ -53,5 +55,6 @@ export class TowerManager {
         spawned++;
       }
     }
+    EventBus.emit('furniture_changed');
   }
 }

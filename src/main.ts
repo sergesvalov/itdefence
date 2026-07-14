@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { MainScene } from './scenes/MainScene';
+import { UpgradeScene } from './scenes/UpgradeScene';
 import { GAME_WIDTH, GAME_HEIGHT } from './config';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -8,7 +9,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: GAME_HEIGHT,
   backgroundColor: '#1e2a3a',
   parent: 'game-container',
-  scene: [MainScene],
+  scene: [UpgradeScene, MainScene],
   render: {
     antialias: true,
     pixelArt: false,

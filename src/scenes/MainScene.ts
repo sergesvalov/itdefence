@@ -10,6 +10,7 @@ import { Ultimate } from '../systems/Ultimate';
 import { Shield } from '../systems/Shield';
 import { Inbox } from '../systems/Inbox';
 import { EventBus, GameEvents } from '../events/EventBus';
+import { MetaProgression } from '../systems/MetaProgression';
 
 /**
  * MainScene — thin coordinator. Owns overall game/round state (game-over)
@@ -43,11 +44,16 @@ export class MainScene extends Phaser.Scene {
 
   create(): void {
     this.isGameOver = false;
+    
+    MetaProgression.load();
+    const meta = MetaProgression.get();
+    const startMoney = STARTING_MONEY + meta.moneyLevel * 50;
+    const maxInbox = INBOX_LIMIT + meta.inboxLevel * 2;
 
     const doorSprites = drawMap(this);
 
-    this.hud = new HUD(this, STARTING_MONEY, INBOX_LIMIT);
-    this.economy = new Economy(this.hud, STARTING_MONEY);
+    this.hud = new HUD(this, startMoney, maxInbox);
+    this.economy = new Economy(this.hud, startMoney);
     
     this.towerManager = new TowerManager(this);
     this.towerPlacer = new TowerPlacer(this, this.economy, this.hud, this.towerManager);
@@ -59,7 +65,7 @@ export class MainScene extends Phaser.Scene {
     );
     this.towerPlacer.refreshHudSelection();
 
-    this.inbox = new Inbox(this, this.hud, INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS);
+    this.inbox = new Inbox(this, this.hud, maxInbox, INBOX_RESOLVE_INTERVAL_MS);
     
     EventBus.on(GameEvents.GAME_OVER, this.triggerGameOver, this);
     this.events.once('shutdown', () => {
@@ -77,8 +83,16 @@ export class MainScene extends Phaser.Scene {
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
 
-    this.hud.on('restart-tap', () => { if (this.isGameOver) this.restartGame(); });
-    this.input.keyboard?.on('keydown-R', () => { if (this.isGameOver) this.restartGame(); });
+    this.hud.on('restart-tap', () => { 
+      if (this.isGameOver) {
+        this.scene.start('UpgradeScene');
+      }
+    });
+    this.input.keyboard?.on('keydown-R', () => { 
+      if (this.isGameOver) {
+        this.scene.start('UpgradeScene');
+      }
+    });
   }
 
   update(_time: number, delta: number): void {
@@ -96,12 +110,18 @@ export class MainScene extends Phaser.Scene {
   // ──────────────────────────────────────────────────────────────────────
 
   private triggerGameOver(): void {
+    if (this.isGameOver) return;
     this.isGameOver = true;
+
+    const wave = this.waveManager.getWave();
+    const earnedMeta = wave * 10;
+    MetaProgression.earnMoney(earnedMeta);
+
     this.towerPlacer.enabled = false;
     this.ultimate.enabled = false;
     this.shield.enabled = false;
     console.log('Game Over – the Inbox overflowed!');
-    this.hud.showGameOver();
+    this.hud.showGameOver(earnedMeta);
     this.cameras.main.shake(600, 0.012);
   }
 

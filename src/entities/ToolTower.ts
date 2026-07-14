@@ -4,6 +4,7 @@ import {
   TOWER_VARIANTS_DATA, type TowerVariant, type TowerVariantStats,
   TOWER_MAX_LEVEL, TOWER_UPGRADE_DAMAGE_BONUS, TOWER_UPGRADE_RANGE_BONUS, TOWER_UPGRADE_FIRE_RATE_MULT,
 } from '../config';
+import { MetaProgression } from '../systems/MetaProgression';
 import { TowerView, TOWER_SIZE } from './TowerView';
 import type { ITowerBehavior } from './behaviors/ITowerBehavior';
 import { PartnerBehavior } from './behaviors/PartnerBehavior';
@@ -41,9 +42,12 @@ export class ToolTower extends Phaser.GameObjects.Container {
     this.variant = variant;
 
     const stats = TOWER_VARIANTS_DATA[variant];
+    const meta = MetaProgression.get();
+    const metaDamageBonus = 1 + meta.damageLevel * 0.10;
+    
     this.baseRange    = stats.range;
     this.baseFireRate = stats.fireRate;
-    this.baseDamage   = stats.damage;
+    this.baseDamage   = Math.round(stats.damage * metaDamageBonus);
     this.baseCost     = stats.cost;
     this.special      = stats.special;
     this.range    = this.baseRange;

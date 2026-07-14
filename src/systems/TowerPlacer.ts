@@ -4,8 +4,9 @@ import { Furniture } from '../entities/Furniture';
 import {
   TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS, type TowerVariant,
   FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, type FurnitureType,
-  OFFICE_Y_TOP, OFFICE_Y_BOTTOM, GAME_WIDTH, DESK_X, DESK_Y,
+  OFFICE_Y_TOP, OFFICE_Y_BOTTOM, GAME_WIDTH, DESK_X, DESK_Y, SPAWN_DOORS,
 } from '../config';
+import { Pathfinder } from './Pathfinder';
 import type { Economy } from './Economy';
 import type { HUD } from '../ui/HUD';
 import { showFloatingText } from '../ui/FloatingText';
@@ -190,6 +191,18 @@ export class TowerPlacer {
       if (f === this.carrying) continue;
       if (Phaser.Math.Distance.Between(f.x, f.y, x, y) < f.radius + ownRadius + 6) return false;
     }
+
+    // Ensure path to desk is not completely blocked
+    const tempFurniture = { x, y, radius: ownRadius };
+    const furnitureArr = this.manager.furniture.filter(f => f !== this.carrying);
+    const pathfinder = new Pathfinder(furnitureArr, tempFurniture);
+    
+    for (const door of SPAWN_DOORS) {
+      if (!pathfinder.findPath(door.x, door.y, DESK_X, DESK_Y)) {
+        return false;
+      }
+    }
+
     return true;
   }
 

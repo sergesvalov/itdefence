@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Coworker, type Waypoint } from '../entities/Coworker';
+import type { CoworkerVariant } from '../config';
 import type { Furniture } from '../entities/Furniture';
 import type { ToolTower } from '../entities/ToolTower';
 import {
@@ -15,14 +16,7 @@ import type { HUD } from '../ui/HUD';
 import { showFloatingText } from '../ui/FloatingText';
 import { EventBus, GameEvents } from '../events/EventBus';
 
-function buildPath(door: DoorDef): Waypoint[] {
-  return [
-    { x: door.x, y: door.y },
-    { x: door.x, y: OFFICE_Y_TOP },
-    { x: DESK_X, y: OFFICE_Y_TOP },
-    { x: DESK_X, y: DESK_Y },
-  ];
-}
+import { Pathfinder } from './Pathfinder';
 
 export class WaveManager {
   public readonly enemies: Coworker[] = [];
@@ -44,6 +38,30 @@ export class WaveManager {
     this.scheduleNextSpawn();
     this.hud.setWave(this.wave);
     this.hud.on('start-wave-tap', () => this.startNextWave());
+    
+    EventBus.on('furniture_changed', () => this.recalculatePaths());
+  }
+
+  public recalculatePaths(): void {
+    const furniture = this.getFurniture();
+    const pf = new Pathfinder(furniture);
+    for (const cw of this.enemies) {
+      if (cw.isDead || cw.hasReachedDesk) continue;
+      const path = pf.findPath(cw.x, cw.y, DESK_X, DESK_Y);
+      if (path) {
+        cw.setWaypoints(path);
+      }
+    }
+  }
+
+  private buildPath(startX: number, startY: number): Waypoint[] {
+    const pf = new Pathfinder(this.getFurniture());
+    return pf.findPath(startX, startY, DESK_X, DESK_Y) || [
+      { x: startX, y: startY },
+      { x: startX, y: OFFICE_Y_TOP },
+      { x: DESK_X, y: OFFICE_Y_TOP },
+      { x: DESK_X, y: DESK_Y },
+    ];
   }
 
   public getWave(): number { return this.wave; }
@@ -103,7 +121,19 @@ export class WaveManager {
   private spawnCoworker(): void {
     const door = SPAWN_DOORS[Phaser.Math.Between(0, SPAWN_DOORS.length - 1)];
     const urgent = Math.random() < URGENT_TASK_CHANCE;
-    const cw = new Coworker(this.scene, buildPath(door), urgent);
+    
+    let variant: CoworkerVariant = 'normal';
+    // Every 5th wave starts with a Boss!
+    if (this.spawnedThisWave === 0 && this.wave % 5 === 0) {
+      variant = 'boss';
+    } else {
+      const roll = Math.random();
+      if (this.wave >= 4 && roll < 0.15) variant = 'tank';
+      else if (this.wave >= 3 && roll < 0.35) variant = 'fast';
+      else if (this.wave >= 2 && roll < 0.5) variant = 'swarm';
+    }
+
+    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y), urgent, variant);
     this.enemies.push(cw);
     this.spawnedThisWave++;
 

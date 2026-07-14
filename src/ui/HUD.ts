@@ -283,8 +283,11 @@ export class HUD extends Phaser.Events.EventEmitter {
     });
   }
 
-  showGameOver(): void {
+  showGameOver(earnedMeta: number = 0): void {
     this.gameOverOverlay.setVisible(true);
+    if ((this as any).earnedMetaText) {
+      (this as any).earnedMetaText.setText(`Получено премии: ${earnedMeta} 💰`);
+    }
   }
 
   setUltimateCharge(fraction: number): void {
@@ -368,13 +371,18 @@ export class HUD extends Phaser.Events.EventEmitter {
       fontFamily: fontStyle, fontSize: '20px', color: '#ffffff', align: 'center', wordWrap: { width: 340 },
     }).setOrigin(0.5);
 
-    const hint = scene.add.text(0, 100, 'Press R or Tap to reboot', {
+    const hint = scene.add.text(0, 140, 'Тапните, чтобы вернуться в меню прокачки', {
       fontFamily: fontStyle, fontSize: '14px', color: '#ffffff'
     }).setOrigin(0.5).setAlpha(0.7);
 
+    const earnedText = this.scene.add.text(0, 80, '', {
+      fontFamily: fontStyle, fontSize: '24px', color: '#f1c40f', fontStyle: 'bold'
+    }).setOrigin(0.5);
+    (this as any).earnedMetaText = earnedText;
+
     scene.tweens.add({ targets: hint, alpha: 1, duration: 800, yoyo: true, repeat: -1 });
 
-    overlay.add([veil, text, subText, hint]);
+    overlay.add([veil, text, subText, hint, earnedText]);
     veil.setInteractive().on('pointerdown', () => this.emit('restart-tap'));
 
     return overlay;

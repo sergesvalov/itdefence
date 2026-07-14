@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { CoworkerVariant, CoworkerStats } from '../config';
 
 export const RADIUS = 17;
 
@@ -13,20 +14,26 @@ export class CoworkerView {
   constructor(
     private scene: Phaser.Scene,
     private container: Phaser.GameObjects.Container,
-    private urgent: boolean
+    private urgent: boolean,
+    private variant: CoworkerVariant,
+    private stats: CoworkerStats
   ) {
     this.useSprite = scene.textures.exists('sprite-coworker');
     const bodyParts: Phaser.GameObjects.GameObject[] = [];
 
     if (this.useSprite) {
-      this.coBody = scene.add.image(0, 0, 'sprite-coworker').setDisplaySize(RADIUS * 2, RADIUS * 2.4);
+      this.coBody = scene.add.image(0, 0, 'sprite-coworker').setDisplaySize(RADIUS * 2 * stats.scale, RADIUS * 2.4 * stats.scale);
       bodyParts.push(this.coBody);
     } else {
-      this.coBody = scene.add.arc(0, 0, RADIUS, 0, 360, false, 0xff7675);
+      this.coBody = scene.add.arc(0, 0, RADIUS * stats.scale, 0, 360, false, stats.tint);
       this.coBody.setStrokeStyle(2, 0xd63031);
       bodyParts.push(this.coBody);
-      // Face emoji — only for the placeholder body; a real sprite draws its own face.
+      // Face emoji
       bodyParts.push(scene.add.text(0, -2, '😤', { fontSize: '13px' }).setOrigin(0.5, 0.5));
+    }
+    
+    if (stats.emoji) {
+      bodyParts.push(scene.add.text(0, -RADIUS * stats.scale - 12, stats.emoji, { fontSize: '16px' }).setOrigin(0.5));
     }
 
     // ── Ticket (carried "task") ──────────────────────────────────────────
@@ -94,7 +101,7 @@ export class CoworkerView {
     } else if (slowMultiplier < 1) {
       this.tintBody(0x74b9ff);
     } else {
-      this.tintBody(this.useSprite ? 0xffffff : 0xff7675);
+      this.tintBody(this.stats.tint);
     }
   }
 
