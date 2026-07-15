@@ -38,7 +38,8 @@ export class MainScene extends Phaser.Scene {
 
   preload(): void {
     for (const asset of TEXTURE_ASSETS) {
-      this.load.image(asset.key, asset.path);
+      // Append a cache-buster query parameter to force reloading assets
+      this.load.image(asset.key, `${asset.path}?v=${Date.now()}`);
     }
   }
 

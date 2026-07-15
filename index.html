@@ -8,6 +8,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Enikey Defense – Save Petya from the Tasks!</title>
     <meta name="description" content="A funny tower-defense game set in a corporate office. Help Petya fend off coworkers bringing task-tickets!" />
+    <script>
+      // Force unregister all service workers and clear CacheStorage
+      // to prevent localhost cache poisoning from other projects
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let r of registrations) r.unregister();
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) caches.delete(name);
+        });
+      }
+    </script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
