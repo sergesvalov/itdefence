@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT, TOOLBAR_WIDTH } from '../config';
 import type { Task } from '../systems/Inbox';
 import type { TowerVariantStats, FurnitureTypeStats } from '../config';
 import { TopBar } from './TopBar';
