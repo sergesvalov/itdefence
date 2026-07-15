@@ -21,23 +21,23 @@ export class TopBar {
     hudBg.moveTo(TOOLBAR_WIDTH, 56);
     hudBg.lineTo(GAME_WIDTH, 56);
     hudBg.strokePath();
-    hudBg.setDepth(15);
+    hudBg.setDepth(10000);
 
     this.moneyText = scene.add.text(TOOLBAR_WIDTH + 12, 10, `💰 0`, {
       ...boldStyle, color: '#f1c40f', fontSize: '18px'
-    }).setDepth(16);
+    }).setDepth(10001);
     this.setMoney(startingMoney);
 
-    this.inboxCountText = scene.add.text(TOOLBAR_WIDTH + 80, 12, `📥 0 / ${inboxLimit}`, {
-      ...boldStyle, fontSize: '13px'
-    }).setDepth(16);
-
-    this.inboxQueueGraphics = scene.add.graphics().setDepth(16);
-    this.setInbox([]);
-
-    this.waveText = scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
+    const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
+    this.waveText = scene.add.text(centerX, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
       .setOrigin(0.5)
-      .setDepth(16);
+      .setDepth(10001);
+
+    this.inboxCountText = scene.add.text(GAME_WIDTH - 150, 10, `📥 0 / ${inboxLimit}`, {
+      ...boldStyle, fontSize: '13px'
+    }).setDepth(10001);
+
+    this.inboxQueueGraphics = scene.add.graphics().setDepth(10001);
   }
 
   public setMoney(amount: number): void {
@@ -60,7 +60,7 @@ export class TopBar {
     this.inboxCountText.setText(`📥 ${tasks.length}/${limit}`);
     
     this.inboxQueueGraphics.clear();
-    const baseX = TOOLBAR_WIDTH + 140;
+    const baseX = GAME_WIDTH - 150;
     const baseY = 36;
     const spacing = 12;
     

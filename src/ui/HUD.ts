@@ -38,13 +38,13 @@ export class HUD extends Phaser.Events.EventEmitter {
     const hintBg = scene.add.graphics();
     hintBg.fillStyle(0x000000, 0.5);
     hintBg.fillRect(0, GAME_HEIGHT - 28, GAME_WIDTH, 28);
-    hintBg.setDepth(14);
+    hintBg.setDepth(10000);
     
-    scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 14, 'Тап: кабинет — строить, предмет — апгрейд/переместить', {
+    scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, GAME_HEIGHT - 14, 'Тап: кабинет — строить, предмет — апгрейд/переместить', {
       fontFamily: fontStyle,
       fontSize: '14px',
       color: '#bdc3c7',
-    }).setOrigin(0.5).setDepth(16);
+    }).setOrigin(0.5).setDepth(10001);
 
     // ── Ability buttons — top-right corner ──────────────────────────────
     this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 80, 28, '🎫', '', 'ultimate-tap');
@@ -57,12 +57,12 @@ export class HUD extends Phaser.Events.EventEmitter {
     swBg.setStrokeStyle(3, 0xffffff, 0.9);
     const swIcon = scene.add.text(0, 0, '▶️', { fontSize: '24px' }).setOrigin(0.5);
     this.startWaveButton = scene.add.container(swX, swY, [swBg, swIcon])
-      .setDepth(17)
+      .setDepth(10001)
       .setInteractive(new Phaser.Geom.Circle(0, 0, 36), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit('start-wave-tap'));
     this.startWaveText = scene.add.text(swX, swY + 42, '', {
       fontFamily: fontStyle, fontSize: '14px', color: '#2ecc71', fontStyle: 'bold', align: 'center',
-    }).setOrigin(0.5).setDepth(17);
+    }).setOrigin(0.5).setDepth(10001);
     scene.tweens.add({
       targets: this.startWaveButton,
       scaleX: 1.12, scaleY: 1.12,
@@ -168,15 +168,15 @@ export class HUD extends Phaser.Events.EventEmitter {
 
     const ring = scene.add.graphics();
     const t = scene.add.text(0, 0, icon, { fontSize: '18px' }).setOrigin(0.5);
-    const container = scene.add.container(x, y, [bg, ring, t])
-      .setDepth(16)
+    const container = this.scene.add.container(x, y, [bg, ring, t])
+      .setDepth(10001)
       .setInteractive(new Phaser.Geom.Circle(0, 0, radius + 4), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit(tapEvent));
       
     if (buttonLabel) {
-      scene.add.text(x, y + radius + 10, buttonLabel, {
+      this.scene.add.text(x, y + radius + 10, buttonLabel, {
         fontFamily: fontStyle, fontSize: '11px', color: '#ecf0f1', fontStyle: 'bold',
-      }).setOrigin(0.5).setDepth(16);
+      }).setOrigin(0.5).setDepth(10001);
     }
     
     return { container, bg, ring };

@@ -32,7 +32,7 @@ export class GameOverOverlay {
     this.overlay.add([veil, text, subText, hint, this.earnedMetaText]);
     this.overlay.setPosition(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.overlay.setVisible(false);
-    this.overlay.setDepth(50);
+    this.overlay.setDepth(20000);
 
     veil.setInteractive().on('pointerdown', () => events.emit('restart-tap'));
   }

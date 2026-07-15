@@ -4,7 +4,7 @@ import { Furniture } from '../entities/Furniture';
 import {
   TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS, type TowerVariant,
   FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, type FurnitureType,
-  OFFICE_Y_TOP, OFFICE_Y_BOTTOM, GAME_WIDTH, DESK_X, DESK_Y, SPAWN_DOORS,
+  OFFICE_Y_TOP, OFFICE_Y_BOTTOM, GAME_WIDTH, DESK_X, DESK_Y, SPAWN_DOORS, TOOLBAR_WIDTH,
 } from '../config';
 import { Pathfinder } from './Pathfinder';
 import type { Economy } from './Economy';
@@ -175,7 +175,7 @@ export class TowerPlacer {
     return (
       y > OFFICE_Y_TOP + margin &&
       y < OFFICE_Y_BOTTOM - margin &&
-      x > margin &&
+      x > TOOLBAR_WIDTH + margin &&
       x < GAME_WIDTH - margin &&
       Phaser.Math.Distance.Between(x, y, DESK_X, DESK_Y) > 84
     );

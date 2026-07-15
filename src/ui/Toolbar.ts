@@ -35,19 +35,21 @@ export class Toolbar {
     dockBg.moveTo(TOOLBAR_WIDTH, 0);
     dockBg.lineTo(TOOLBAR_WIDTH, GAME_HEIGHT);
     dockBg.strokePath();
-    dockBg.setDepth(15);
+    dockBg.setDepth(10000);
 
     const infoY = GAME_HEIGHT - 65;
-    this.toolbarInfoBg = scene.add.graphics().setDepth(15);
+    this.toolbarInfoBg = scene.add.graphics().setDepth(10000);
     this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.95);
-    this.toolbarInfoBg.fillRoundedRect(GAME_WIDTH / 2 - 180, infoY - 14, 360, 28, 6);
+    const bgWidth = 360;
+    const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
+    this.toolbarInfoBg.fillRoundedRect(centerX - bgWidth / 2, infoY - 14, bgWidth, 28, 6);
     this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.8);
-    this.toolbarInfoBg.strokeRoundedRect(GAME_WIDTH / 2 - 180, infoY - 14, 360, 28, 6);
+    this.toolbarInfoBg.strokeRoundedRect(centerX - bgWidth / 2, infoY - 14, bgWidth, 28, 6);
     this.toolbarInfoBg.setVisible(false);
 
-    this.toolbarInfoText = scene.add.text(GAME_WIDTH / 2, infoY, '', {
+    this.toolbarInfoText = scene.add.text(centerX, infoY, '', {
       fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px', color: '#3498db', fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(16);
+    }).setOrigin(0.5).setDepth(10001);
 
     items.forEach((item, index) => {
       const cy = startY + index * (slotSize + gap);
@@ -63,7 +65,7 @@ export class Toolbar {
       }).setOrigin(0.5);
 
       const container = scene.add.container(x, cy, [bg, icon, price])
-        .setDepth(16)
+        .setDepth(10001)
         .setInteractive(new Phaser.Geom.Rectangle(-slotSize/2, -slotSize/2, slotSize, slotSize), Phaser.Geom.Rectangle.Contains)
         .on('pointerdown', () => this.events.emit('select-index', index));
 
