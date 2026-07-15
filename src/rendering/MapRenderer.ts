@@ -67,18 +67,18 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   const hasDoorSprite = scene.textures.exists('sprite-door');
   for (const door of SPAWN_DOORS) {
     if (hasDoorSprite) {
-      const img = scene.add.image(door.x, door.y, 'sprite-door').setDisplaySize(48, 53);
+      const img = scene.add.image(door.x, door.y, 'sprite-door').setDisplaySize(62, 69);
       doorSprites.set(door, img);
     } else {
       doorSprites.set(door, null);
       // Door frame
       gfx.fillStyle(0xe74c3c, 0.9);
-      gfx.fillRect(door.x - 20, door.y - 16, 40, 32);
+      gfx.fillRect(door.x - 26, door.y - 21, 52, 42);
       gfx.lineStyle(2, 0xff6b6b);
-      gfx.strokeRect(door.x - 20, door.y - 16, 40, 32);
+      gfx.strokeRect(door.x - 26, door.y - 21, 52, 42);
       // Door knob
       gfx.fillStyle(0xf1c40f);
-      gfx.fillCircle(door.x + 12, door.y, 4);
+      gfx.fillCircle(door.x + 16, door.y, 5);
     }
     // Label
     const text = scene.add.text(door.x, door.y + 20, door.label, {
@@ -105,20 +105,20 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
 
   // Desk (+ monitor + Petya himself, all baked into the sprite if one is supplied)
   if (scene.textures.exists('sprite-desk')) {
-    scene.add.image(DESK_X, DESK_Y - 10, 'sprite-desk').setDisplaySize(120, 108);
+    scene.add.image(DESK_X, DESK_Y - 13, 'sprite-desk').setDisplaySize(156, 140);
   } else {
     gfx.fillStyle(0x8b4513);
-    gfx.fillRect(DESK_X - 45, DESK_Y - 25, 90, 50);
+    gfx.fillRect(DESK_X - 58, DESK_Y - 32, 117, 65);
     gfx.lineStyle(2, 0xa0522d);
-    gfx.strokeRect(DESK_X - 45, DESK_Y - 25, 90, 50);
+    gfx.strokeRect(DESK_X - 58, DESK_Y - 32, 117, 65);
 
     // Computer monitor on desk
     gfx.fillStyle(0x2c3e50);
-    gfx.fillRect(DESK_X - 19, DESK_Y - 46, 38, 26);
+    gfx.fillRect(DESK_X - 25, DESK_Y - 60, 49, 34);
     gfx.fillStyle(0x1abc9c, 0.8);
-    gfx.fillRect(DESK_X - 15, DESK_Y - 42, 30, 18);
+    gfx.fillRect(DESK_X - 20, DESK_Y - 55, 39, 23);
     gfx.fillStyle(0x7f8c8d);
-    gfx.fillRect(DESK_X - 4, DESK_Y - 20, 8, 6);
+    gfx.fillRect(DESK_X - 5, DESK_Y - 26, 10, 8);
   }
 
   // Petya label

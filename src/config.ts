@@ -110,7 +110,7 @@ export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   // Blast of cold air — splash-damages everyone near the impact point.
   aircon: { label: 'AC',      icon: '🌬️', color: 0x81ecec, range: 140, fireRate: 1600, damage: 1, cost: 80, special: 'aoe' },
   // Partner desk — absorbs 10 tasks, 50% chance to intercept enemies.
-  partner:{ label: 'Напарник',icon: '🧑‍💻', color: 0x55efc4, range: 0, fireRate: 0, damage: 0, cost: 200, special: 'partner', radius: 54 },
+  partner:{ label: 'Напарник',icon: '🧑‍💻', color: 0x55efc4, range: 0, fireRate: 0, damage: 0, cost: 200, special: 'partner', radius: 70 },
 };
 
 /** Coffee/Router: how much a slow reduces speed, and for how long */
@@ -149,9 +149,9 @@ export interface FurnitureTypeStats {
 export const FURNITURE_TYPE_KEYS: readonly FurnitureType[] = ['cabinet', 'drawer', 'sofa'];
 
 export const FURNITURE_TYPES_DATA: Record<FurnitureType, FurnitureTypeStats> = {
-  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x795548, radius: 26, maxCount: 5 },
-  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0xa1887f, radius: 19, maxCount: 6 },
-  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x8e44ad, radius: 29, maxCount: 3 },
+  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x795548, radius: 34, maxCount: 5 },
+  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0xa1887f, radius: 25, maxCount: 6 },
+  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x8e44ad, radius: 38, maxCount: 3 },
 };
 
 /** How long a coworker sits on a sofa before standing back up and continuing */

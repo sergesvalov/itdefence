@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { TOWER_VARIANTS_DATA, type TowerVariant } from '../config';
-
-export const TOWER_SIZE = 31;
+export const TOWER_SIZE = 40;
 
 export class TowerView {
   private base?: Phaser.GameObjects.Rectangle;

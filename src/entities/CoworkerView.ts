@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import type { CoworkerVariant, CoworkerStats } from '../config';
-
-export const RADIUS = 17;
+export const RADIUS = 22;
 
 export class CoworkerView {
   private coBody: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;

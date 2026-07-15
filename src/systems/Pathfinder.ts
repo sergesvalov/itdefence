@@ -1,8 +1,7 @@
 import { Waypoint } from '../entities/Coworker';
 import { Furniture } from '../entities/Furniture';
 import { GAME_WIDTH, GAME_HEIGHT, OFFICE_Y_TOP } from '../config';
-
-const CELL_SIZE = 24;
+const CELL_SIZE = 30;
 const COLS = Math.ceil(GAME_WIDTH / CELL_SIZE);
 const ROWS = Math.ceil(GAME_HEIGHT / CELL_SIZE);
 

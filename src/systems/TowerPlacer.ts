@@ -58,7 +58,7 @@ export class TowerPlacer {
   }
 
   public snap(val: number): number {
-    return Math.round(val / 62) * 62;
+    return Math.round(val / 80) * 80;
   }
 
   private setupInput(): void {
