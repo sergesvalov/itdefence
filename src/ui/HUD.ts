@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import { 
-  GAME_WIDTH, GAME_HEIGHT, 
-  TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS, 
+import {
+  TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS,
   FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS,
+  GAME_WIDTH, GAME_HEIGHT, ULTIMATE_COOLDOWN_MS, SHIELD_COOLDOWN_MS,
+  TOOLBAR_WIDTH,
   type TowerVariantStats, type FurnitureTypeStats 
 } from '../config';
 import type { Task } from '../systems/Inbox';
@@ -53,22 +54,22 @@ export class HUD extends Phaser.Events.EventEmitter {
     // ── Corporate Dashboard (Top Bar) ───────────────────────
     const hudBg = scene.add.graphics();
     hudBg.fillStyle(0x1e2a3a, 0.9);
-    hudBg.fillRect(0, 0, GAME_WIDTH, 56);
+    hudBg.fillRect(TOOLBAR_WIDTH, 0, GAME_WIDTH - TOOLBAR_WIDTH, 56);
     hudBg.lineStyle(2, 0x3498db, 0.6);
     hudBg.beginPath();
-    hudBg.moveTo(0, 56);
+    hudBg.moveTo(TOOLBAR_WIDTH, 56);
     hudBg.lineTo(GAME_WIDTH, 56);
     hudBg.strokePath();
     hudBg.setDepth(15);
 
     // Money
-    this.moneyText = scene.add.text(12, 10, `💰 0`, {
+    this.moneyText = scene.add.text(TOOLBAR_WIDTH + 12, 10, `💰 0`, {
       ...boldStyle, color: '#f1c40f', fontSize: '18px'
     }).setDepth(16);
     this.setMoney(startingMoney);
 
     // Inbox counter
-    this.inboxCountText = scene.add.text(80, 12, `📥 0 / ${inboxLimit}`, {
+    this.inboxCountText = scene.add.text(TOOLBAR_WIDTH + 80, 12, `📥 0 / ${inboxLimit}`, {
       ...boldStyle, fontSize: '13px'
     }).setDepth(16);
 
@@ -78,7 +79,7 @@ export class HUD extends Phaser.Events.EventEmitter {
     this.setInbox([], inboxLimit);
 
     // Wave indicator (Top-Center)
-    this.waveText = scene.add.text(GAME_WIDTH / 2, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
+    this.waveText = scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
       .setOrigin(0.5)
       .setDepth(16);
 
@@ -139,16 +140,17 @@ export class HUD extends Phaser.Events.EventEmitter {
     const slotSize = 60;
     const gap = 8;
     // Left edge layout
-    const x = 12 + slotSize / 2;
+    const x = TOOLBAR_WIDTH / 2;
     const startY = 140 + slotSize / 2;
 
-    const totalHeight = items.length * slotSize + (items.length - 1) * gap;
-
     const dockBg = scene.add.graphics();
-    dockBg.fillStyle(0x1e2a3a, 0.9);
-    dockBg.fillRoundedRect(x - slotSize / 2 - 8, startY - slotSize / 2 - 8, slotSize + 16, totalHeight + 16, 12);
-    dockBg.lineStyle(2, 0x3498db, 0.6);
-    dockBg.strokeRoundedRect(x - slotSize / 2 - 8, startY - slotSize / 2 - 8, slotSize + 16, totalHeight + 16, 12);
+    dockBg.fillStyle(0x1e2a3a, 1);
+    dockBg.fillRect(0, 0, TOOLBAR_WIDTH, GAME_HEIGHT);
+    dockBg.lineStyle(2, 0x3498db, 0.8);
+    dockBg.beginPath();
+    dockBg.moveTo(TOOLBAR_WIDTH, 0);
+    dockBg.lineTo(TOOLBAR_WIDTH, GAME_HEIGHT);
+    dockBg.strokePath();
     dockBg.setDepth(15);
 
     // Toolbar info text (placed near the bottom of the screen)
@@ -225,19 +227,19 @@ export class HUD extends Phaser.Events.EventEmitter {
     this.inboxCountText.setText(`📥 ${tasks.length}/${limit}`);
     
     this.inboxQueueGraphics.clear();
-    const startX = 82;
-    const startY = 36;
+    const baseX = TOOLBAR_WIDTH + 140;
+    const baseY = 36;
     const spacing = 12;
     
     for (let i = 0; i < limit; i++) {
       const task = tasks[i];
-      const cx = startX + i * spacing;
+      const cx = baseX + i * spacing;
       if (task) {
         this.inboxQueueGraphics.fillStyle(task.urgent ? 0xe74c3c : 0xf1c40f, 1);
-        this.inboxQueueGraphics.fillCircle(cx, startY, 4);
+        this.inboxQueueGraphics.fillCircle(cx, baseY, 4);
       } else {
         this.inboxQueueGraphics.lineStyle(2, 0x7f8c8d, 0.6);
-        this.inboxQueueGraphics.strokeCircle(cx, startY, 3.5);
+        this.inboxQueueGraphics.strokeCircle(cx, baseY, 3.5);
       }
     }
 

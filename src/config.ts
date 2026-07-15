@@ -12,7 +12,8 @@ export const OFFICE_Y_TOP    = 200;
 export const OFFICE_Y_BOTTOM = 780;
 
 /** Target – Petya's desk position (bottom of the office) */
-export const DESK_X = 240;
+export const TOOLBAR_WIDTH = 84;
+export const DESK_X = 282; // 84 + (480-84)/2
 export const DESK_Y = 700;
 
 /** Projectile speed px/s */
@@ -235,8 +236,8 @@ export interface DoorDef {
 }
 
 export const SPAWN_DOORS: DoorDef[] = [
-  { x: 60,  y: 165, label: 'HR' },
-  { x: 180, y: 165, label: 'Finance' },
-  { x: 300, y: 165, label: 'PM' },
-  { x: 420, y: 165, label: 'Legal' },
+  { x: 140, y: 165, label: 'HR' },
+  { x: 230, y: 165, label: 'Finance' },
+  { x: 320, y: 165, label: 'PM' },
+  { x: 410, y: 165, label: 'Legal' },
 ];
