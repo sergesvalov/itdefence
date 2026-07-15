@@ -1,12 +1,10 @@
 import Phaser from 'phaser';
-import {
-  TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS,
-  FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS,
-  GAME_WIDTH, GAME_HEIGHT, ULTIMATE_COOLDOWN_MS, SHIELD_COOLDOWN_MS,
-  TOOLBAR_WIDTH,
-  type TowerVariantStats, type FurnitureTypeStats 
-} from '../config';
+import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 import type { Task } from '../systems/Inbox';
+import type { TowerVariantStats, FurnitureTypeStats } from '../config';
+import { TopBar } from './TopBar';
+import { Toolbar } from './Toolbar';
+import { GameOverOverlay } from './GameOverOverlay';
 
 interface AbilityButton {
   container: Phaser.GameObjects.Container;
@@ -14,29 +12,13 @@ interface AbilityButton {
   ring: Phaser.GameObjects.Graphics;
 }
 
-interface ToolbarSlot {
-  container: Phaser.GameObjects.Container;
-  bg: Phaser.GameObjects.Graphics;
-  updateState: (selected: boolean, disabled: boolean) => void;
-}
-
-/**
- * HUD — the top-left stats panel, the two ability buttons (ultimate +
- * shield), left vertical toolbar dock for selecting towers, and BSOD Game Over overlay.
- */
 export class HUD extends Phaser.Events.EventEmitter {
   private scene: Phaser.Scene;
-  private moneyText: Phaser.GameObjects.Text;
-  private inboxCountText: Phaser.GameObjects.Text;
-  private inboxQueueGraphics: Phaser.GameObjects.Graphics;
-  private waveText: Phaser.GameObjects.Text;
   
-  // Toolbar state
-  private toolbarSlots: ToolbarSlot[] = [];
-  private toolbarInfoText!: Phaser.GameObjects.Text;
-  private toolbarInfoBg!: Phaser.GameObjects.Graphics;
+  private topBar: TopBar;
+  private toolbar: Toolbar;
+  private gameOverOverlay: GameOverOverlay;
 
-  private gameOverOverlay: Phaser.GameObjects.Container;
   private ultimateButton: AbilityButton;
   private shieldButton: AbilityButton;
   private startWaveButton: Phaser.GameObjects.Container;
@@ -45,47 +27,13 @@ export class HUD extends Phaser.Events.EventEmitter {
   constructor(scene: Phaser.Scene, startingMoney: number, inboxLimit: number) {
     super();
     this.scene = scene;
-    const pad = 12;
+
+    this.topBar = new TopBar(scene, startingMoney, inboxLimit);
+    this.toolbar = new Toolbar(scene, this);
+    this.gameOverOverlay = new GameOverOverlay(scene, this);
 
     const fontStyle = 'Inter, system-ui, sans-serif';
-    const textStyle = { fontFamily: fontStyle, fontSize: '16px', color: '#ecf0f1' };
-    const boldStyle = { ...textStyle, fontStyle: 'bold' };
 
-    // ── Corporate Dashboard (Top Bar) ───────────────────────
-    const hudBg = scene.add.graphics();
-    hudBg.fillStyle(0x1e2a3a, 0.9);
-    hudBg.fillRect(TOOLBAR_WIDTH, 0, GAME_WIDTH - TOOLBAR_WIDTH, 56);
-    hudBg.lineStyle(2, 0x3498db, 0.6);
-    hudBg.beginPath();
-    hudBg.moveTo(TOOLBAR_WIDTH, 56);
-    hudBg.lineTo(GAME_WIDTH, 56);
-    hudBg.strokePath();
-    hudBg.setDepth(15);
-
-    // Money
-    this.moneyText = scene.add.text(TOOLBAR_WIDTH + 12, 10, `💰 0`, {
-      ...boldStyle, color: '#f1c40f', fontSize: '18px'
-    }).setDepth(16);
-    this.setMoney(startingMoney);
-
-    // Inbox counter
-    this.inboxCountText = scene.add.text(TOOLBAR_WIDTH + 80, 12, `📥 0 / ${inboxLimit}`, {
-      ...boldStyle, fontSize: '13px'
-    }).setDepth(16);
-
-    // Inbox queue (graphics)
-    this.inboxQueueGraphics = scene.add.graphics().setDepth(16);
-    // Draw initial empty circles
-    this.setInbox([], inboxLimit);
-
-    // Wave indicator (Top-Center)
-    this.waveText = scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
-      .setOrigin(0.5)
-      .setDepth(16);
-
-    // ── Left Vertical Toolbar (Dock) ───────────────────────────────────
-    this.buildToolbar();
-    
     // Hint text (at the very bottom)
     const hintBg = scene.add.graphics();
     hintBg.fillStyle(0x000000, 0.5);
@@ -123,190 +71,92 @@ export class HUD extends Phaser.Events.EventEmitter {
     });
     this.startWaveButton.setVisible(false);
     this.startWaveText.setVisible(false);
-
-    // ── Game Over overlay (BSOD style) ────────────────────────────────
-    this.gameOverOverlay = this.buildGameOverOverlay();
-    this.gameOverOverlay.setVisible(false);
-    this.gameOverOverlay.setDepth(50);
   }
 
-  private buildToolbar(): void {
-    const scene = this.scene;
-    const items = [
-      ...TOWER_VARIANT_KEYS.map(key => ({ ...TOWER_VARIANTS_DATA[key], type: 'tower' })),
-      ...FURNITURE_TYPE_KEYS.map(key => ({ ...FURNITURE_TYPES_DATA[key], type: 'furniture' }))
-    ];
-
-    const slotSize = 60;
-    const gap = 8;
-    // Left edge layout
-    const x = TOOLBAR_WIDTH / 2;
-    const startY = 140 + slotSize / 2;
-
-    const dockBg = scene.add.graphics();
-    dockBg.fillStyle(0x1e2a3a, 1);
-    dockBg.fillRect(0, 0, TOOLBAR_WIDTH, GAME_HEIGHT);
-    dockBg.lineStyle(2, 0x3498db, 0.8);
-    dockBg.beginPath();
-    dockBg.moveTo(TOOLBAR_WIDTH, 0);
-    dockBg.lineTo(TOOLBAR_WIDTH, GAME_HEIGHT);
-    dockBg.strokePath();
-    dockBg.setDepth(15);
-
-    // Toolbar info text (placed near the bottom of the screen)
-    const infoY = GAME_HEIGHT - 65;
-    this.toolbarInfoBg = scene.add.graphics().setDepth(15);
-    this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.95);
-    this.toolbarInfoBg.fillRoundedRect(GAME_WIDTH / 2 - 180, infoY - 14, 360, 28, 6);
-    this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.8);
-    this.toolbarInfoBg.strokeRoundedRect(GAME_WIDTH / 2 - 180, infoY - 14, 360, 28, 6);
-    this.toolbarInfoBg.setVisible(false);
-
-    this.toolbarInfoText = scene.add.text(GAME_WIDTH / 2, infoY, '', {
-      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px', color: '#3498db', fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(16);
-
-    items.forEach((item, index) => {
-      const cy = startY + index * (slotSize + gap);
-      
-      const bg = scene.add.graphics();
-      bg.fillStyle(0x2c3e50, 1);
-      bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-      
-      const icon = scene.add.text(0, -8, item.icon, { fontSize: '28px' }).setOrigin(0.5);
-      const priceText = item.type === 'tower' ? `💰${(item as any).cost}` : '🆓';
-      const price = scene.add.text(0, 16, priceText, { 
-        fontFamily: 'Inter, system-ui, sans-serif', fontSize: '12px', color: '#f1c40f', fontStyle: 'bold' 
-      }).setOrigin(0.5);
-
-      const container = scene.add.container(x, cy, [bg, icon, price])
-        .setDepth(16)
-        .setInteractive(new Phaser.Geom.Rectangle(-slotSize/2, -slotSize/2, slotSize, slotSize), Phaser.Geom.Rectangle.Contains)
-        .on('pointerdown', () => this.emit('select-index', index));
-
-      this.toolbarSlots.push({
-        container,
-        bg,
-        updateState: (selected: boolean, disabled: boolean) => {
-          bg.clear();
-          if (selected) {
-            bg.fillStyle(0x34495e, 1);
-            bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            bg.lineStyle(3, 0x3498db, 1);
-            bg.strokeRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            container.setScale(1.1);
-          } else {
-            bg.fillStyle(0x2c3e50, disabled ? 0.5 : 1);
-            bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            bg.lineStyle(2, 0x7f8c8d, 0.5);
-            bg.strokeRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            container.setScale(1.0);
-            container.setAlpha(disabled ? 0.5 : 1);
-          }
-        }
-      });
-    });
+  // ── Public API ────────────────────────────────────────────────────────
+  
+  public setMoney(amount: number): void {
+    this.topBar.setMoney(amount);
   }
 
-  setMoney(amount: number): void {
-    this.moneyText.setText(`💰 ${amount}`);
+  public pulseMoney(color: string): void {
+    this.topBar.pulseMoney(color);
   }
 
-  pulseMoney(color: string): void {
-    this.scene.tweens.add({
-      targets: this.moneyText,
-      scaleX: 1.3, scaleY: 1.3,
-      duration: 150,
-      yoyo: true,
-      onStart: () => this.moneyText.setColor(color),
-      onComplete: () => this.moneyText.setColor('#f1c40f'),
-    });
+  public setInbox(tasks: readonly Task[], limit: number): void {
+    this.topBar.setInbox(tasks);
   }
 
-  setInbox(tasks: readonly Task[], limit: number): void {
-    this.inboxCountText.setText(`📥 ${tasks.length}/${limit}`);
-    
-    this.inboxQueueGraphics.clear();
-    const baseX = TOOLBAR_WIDTH + 140;
-    const baseY = 36;
-    const spacing = 12;
-    
-    for (let i = 0; i < limit; i++) {
-      const task = tasks[i];
-      const cx = baseX + i * spacing;
-      if (task) {
-        this.inboxQueueGraphics.fillStyle(task.urgent ? 0xe74c3c : 0xf1c40f, 1);
-        this.inboxQueueGraphics.fillCircle(cx, baseY, 4);
-      } else {
-        this.inboxQueueGraphics.lineStyle(2, 0x7f8c8d, 0.6);
-        this.inboxQueueGraphics.strokeCircle(cx, baseY, 3.5);
-      }
-    }
-
-    this.scene.tweens.add({
-      targets: this.inboxCountText,
-      scaleX: 1.15, scaleY: 1.15,
-      duration: 120, yoyo: true,
-      onStart: () => this.inboxCountText.setColor('#e74c3c'),
-      onComplete: () => this.inboxCountText.setColor('#ecf0f1'),
-    });
+  public setWave(wave: number): void {
+    this.topBar.setWave(wave);
   }
 
-  setWave(wave: number): void {
-    this.waveText.setText(`Спринт ${wave}`);
-  }
-
-  showStartWaveButton(nextWave: number): void {
+  public showStartWaveButton(nextWave: number): void {
     this.startWaveText.setText(`Готовься!\nСпринт ${nextWave}`);
     this.startWaveButton.setVisible(true);
     this.startWaveText.setVisible(true);
   }
 
-  hideStartWaveButton(): void {
+  public hideStartWaveButton(): void {
     this.startWaveButton.setVisible(false);
     this.startWaveText.setVisible(false);
   }
 
-  setTowerSelect(index: number, stats: TowerVariantStats): void {
-    this.updateToolbarHighlight(index);
-    this.toolbarInfoBg.setVisible(true);
-    this.toolbarInfoText.setText(`${stats.icon} ${stats.label} — Урон: ${stats.damage || 0}, Дальность: ${stats.range || 0}`);
-  }
+  // ── Ultimate & Shield ───────────────────────────────────────────────
 
-  setFurnitureSelect(index: number, stats: FurnitureTypeStats, left: number): void {
-    this.updateToolbarHighlight(index, left <= 0);
-    this.toolbarInfoBg.setVisible(true);
-    this.toolbarInfoText.setText(`${stats.icon} ${stats.label} — На складе: ${left} / ${stats.maxCount}`);
-  }
-
-  private updateToolbarHighlight(selectedIndex: number, disabled = false): void {
-    this.toolbarSlots.forEach((slot, idx) => {
-      slot.updateState(idx === selectedIndex, idx === selectedIndex ? disabled : false);
-    });
-  }
-
-  showGameOver(earnedMeta: number = 0): void {
-    this.gameOverOverlay.setVisible(true);
-    if ((this as any).earnedMetaText) {
-      (this as any).earnedMetaText.setText(`Получено премии: ${earnedMeta} 💰`);
-    }
-  }
-
-  setUltimateCharge(fraction: number): void {
+  public setUltimateCharge(fraction: number): void {
     this.redrawChargeRing(this.ultimateButton.ring, fraction, 0xe74c3c);
   }
 
-  setUltimateReady(ready: boolean): void {
+  public setUltimateReady(ready: boolean): void {
     this.setButtonReady(this.ultimateButton, ready, 0xe74c3c, 0xff7675);
   }
 
-  setShieldCharge(fraction: number): void {
+  public setShieldCharge(fraction: number): void {
     this.redrawChargeRing(this.shieldButton.ring, fraction, 0x3498db);
   }
 
-  setShieldReady(ready: boolean): void {
+  public setShieldReady(ready: boolean): void {
     this.setButtonReady(this.shieldButton, ready, 0x3498db, 0x74b9ff);
   }
+
+  // ── Toolbar ─────────────────────────────────────────────────────────
+
+  public updateSlot(index: number, selected: boolean, disabled: boolean): void {
+    this.toolbar.updateSlot(index, selected, disabled);
+  }
+
+  public setTowerSelect(index: number, stats: TowerVariantStats): void {
+    // Toolbar handles info bg and text
+    this.toolbar.setTowerSelect(index, stats);
+    // Also we need to highlight the slot in toolbar
+    // Let's implement updateToolbarHighlight in toolbar
+    for (let i = 0; i < 9; i++) {
+      this.toolbar.updateSlot(i, i === index, false);
+    }
+  }
+
+  public setFurnitureSelect(index: number, stats: FurnitureTypeStats, left: number): void {
+    this.toolbar.setFurnitureSelect(index, stats, left);
+    for (let i = 0; i < 9; i++) {
+      this.toolbar.updateSlot(i, i === index, left <= 0);
+    }
+  }
+
+  public hideSelect(): void {
+    this.toolbar.hideSelect();
+    for (let i = 0; i < 9; i++) {
+      this.toolbar.updateSlot(i, false, false);
+    }
+  }
+
+  // ── Game Over ───────────────────────────────────────────────────────
+
+  public showGameOver(earnedMetaCurrency: number = 0): void {
+    this.gameOverOverlay.show(earnedMetaCurrency);
+  }
+
+  // ── Private Helpers ───────────────────────────────────────────────────
 
   private buildAbilityButton(x: number, y: number, icon: string, buttonLabel: string, tapEvent: string): AbilityButton {
     const scene = this.scene;
@@ -349,44 +199,11 @@ export class HUD extends Phaser.Events.EventEmitter {
     this.scene.tweens.killTweensOf(button.container);
     if (ready) {
       this.scene.tweens.add({
-        targets: button.container,
-        scaleX: 1.15, scaleY: 1.15,
-        duration: 500, yoyo: true, repeat: -1, ease: 'Sine.InOut',
+        targets: button.container, scaleX: 1.15, scaleY: 1.15,
+        duration: 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
       });
     } else {
       button.container.setScale(1);
     }
-  }
-
-  private buildGameOverOverlay(): Phaser.GameObjects.Container {
-    const scene = this.scene;
-    const overlay = scene.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2);
-    const fontStyle = 'Inter, system-ui, sans-serif';
-
-    const veil = scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0984e3, 0.95);
-
-    const text = this.scene.add.text(0, -60, ':(', {
-      fontFamily: fontStyle, fontSize: '80px', color: '#ffffff', fontStyle: 'bold'
-    }).setOrigin(0.5);
-    
-    const subText = this.scene.add.text(0, 20, 'ERR_BURNOUT:\nСотрудник перестал отвечать.', {
-      fontFamily: fontStyle, fontSize: '20px', color: '#ffffff', align: 'center', wordWrap: { width: 340 },
-    }).setOrigin(0.5);
-
-    const hint = scene.add.text(0, 140, 'Тапните, чтобы вернуться в меню', {
-      fontFamily: fontStyle, fontSize: '14px', color: '#ffffff'
-    }).setOrigin(0.5).setAlpha(0.7);
-
-    const earnedText = this.scene.add.text(0, 80, '', {
-      fontFamily: fontStyle, fontSize: '24px', color: '#f1c40f', fontStyle: 'bold'
-    }).setOrigin(0.5);
-    (this as any).earnedMetaText = earnedText;
-
-    scene.tweens.add({ targets: hint, alpha: 1, duration: 800, yoyo: true, repeat: -1 });
-
-    overlay.add([veil, text, subText, hint, earnedText]);
-    veil.setInteractive().on('pointerdown', () => this.emit('restart-tap'));
-
-    return overlay;
   }
 }
