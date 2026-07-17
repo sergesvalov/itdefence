@@ -4,13 +4,12 @@ import { Furniture } from '../entities/Furniture';
 import {
   TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS, type TowerVariant,
   FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, type FurnitureType,
-  OFFICE_Y_TOP, OFFICE_Y_BOTTOM, GAME_WIDTH, DESK_X, DESK_Y, SPAWN_DOORS, TOOLBAR_WIDTH,
 } from '../config';
-import { Pathfinder } from './Pathfinder';
 import type { Economy } from './Economy';
 import type { HUD } from '../ui/HUD';
-import { showFloatingText } from '../ui/FloatingText';
 import type { TowerManager } from './TowerManager';
+import { isInOffice, isPlacementValid } from './PlacementValidator';
+import { Builder } from './Builder';
 
 const KEYBOARD_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
 
@@ -29,13 +28,16 @@ export class TowerPlacer {
 
   public carrying: Furniture | ToolTower | null = null;
   private carryOrigin = { x: 0, y: 0 };
+  private builder: Builder;
 
   constructor(
     private scene: Phaser.Scene,
-    private economy: Economy,
+    economy: Economy,
     private hud: HUD,
     private manager: TowerManager
   ) {
+    this.builder = new Builder(scene, economy, manager, () => this.getWave());
+
     this.buildItems = [
       ...TOWER_VARIANT_KEYS.map((variant): BuildItem => ({ kind: 'tower', variant })),
       ...FURNITURE_TYPE_KEYS.map((type): BuildItem => ({ kind: 'furniture', type })),
@@ -61,6 +63,14 @@ export class TowerPlacer {
     return Math.round(val / 80) * 80;
   }
 
+  public isInOffice(x: number, y: number): boolean {
+    return isInOffice(x, y);
+  }
+
+  public isPlacementValid(x: number, y: number, radius: number): boolean {
+    return isPlacementValid(x, y, radius, this.manager, this.carrying);
+  }
+
   private setupInput(): void {
     this.scene.input.on('pointermove', (ptr: Phaser.Input.Pointer) => {
       const sx = this.snap(ptr.x);
@@ -70,7 +80,7 @@ export class TowerPlacer {
         this.carrying.setPosition(sx, sy);
         return;
       }
-      const inOffice = this.isInOffice(sx, sy);
+      const inOffice = isInOffice(sx, sy);
       this.placementPreview.setPosition(sx, sy);
       this.placementPreview.setVisible(inOffice);
     });
@@ -95,7 +105,7 @@ export class TowerPlacer {
         if (clickedTower.variant === 'partner' && this.isPaused()) {
           this.pickUpTower(clickedTower);
         } else {
-          this.tryUpgrade(clickedTower);
+          this.builder.tryUpgrade(clickedTower);
         }
         return;
       }
@@ -110,18 +120,20 @@ export class TowerPlacer {
 
       const sx = this.snap(ptr.x);
       const sy = this.snap(ptr.y);
-      if (!this.isInOffice(sx, sy)) return;
+      if (!isInOffice(sx, sy)) return;
 
       const item = this.currentItem;
       if (item.kind === 'tower') {
         const stats = TOWER_VARIANTS_DATA[item.variant];
         const radius = stats.radius || TOWER_SIZE;
-        if (!this.isPlacementValid(sx, sy, radius)) return;
-        this.tryPlaceTower(sx, sy, item.variant);
+        if (!isPlacementValid(sx, sy, radius, this.manager, this.carrying)) return;
+        this.builder.tryPlaceTower(sx, sy, item.variant);
       } else {
         const stats = FURNITURE_TYPES_DATA[item.type];
-        if (!this.isPlacementValid(sx, sy, stats.radius)) return;
-        this.tryPlaceFurniture(sx, sy, item.type);
+        if (!isPlacementValid(sx, sy, stats.radius, this.manager, this.carrying)) return;
+        if (this.builder.tryPlaceFurniture(sx, sy, item.type)) {
+          this.refreshHudSelection();
+        }
       }
     });
 
@@ -170,99 +182,6 @@ export class TowerPlacer {
     }
   }
 
-  public isInOffice(x: number, y: number): boolean {
-    const margin = 24;
-    return (
-      y > OFFICE_Y_TOP + margin &&
-      y < OFFICE_Y_BOTTOM - margin &&
-      x > TOOLBAR_WIDTH + margin &&
-      x < GAME_WIDTH - margin &&
-      Phaser.Math.Distance.Between(x, y, DESK_X, DESK_Y) > 84
-    );
-  }
-
-  public isPlacementValid(x: number, y: number, ownRadius: number): boolean {
-    for (const t of this.manager.towers) {
-      if (t === this.carrying) continue;
-      const tRadius = TOWER_VARIANTS_DATA[t.variant].radius || TOWER_SIZE;
-      if (Phaser.Math.Distance.Between(t.x, t.y, x, y) < tRadius + ownRadius + 6) return false;
-    }
-    for (const f of this.manager.furniture) {
-      if (f === this.carrying) continue;
-      if (Phaser.Math.Distance.Between(f.x, f.y, x, y) < f.radius + ownRadius + 6) return false;
-    }
-
-    // Ensure path to desk is not completely blocked
-    const tempFurniture = { x, y, radius: ownRadius };
-    const furnitureArr = this.manager.furniture.filter(f => f !== this.carrying);
-    const pathfinder = new Pathfinder(furnitureArr, tempFurniture);
-    
-    for (const door of SPAWN_DOORS) {
-      if (!pathfinder.findPath(door.x, door.y, DESK_X, DESK_Y)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  private getPartnerLimit(): number {
-    const w = this.getWave();
-    if (w > 6) return 2;
-    if (w > 3) return 1;
-    return 0;
-  }
-
-  private tryPlaceTower(x: number, y: number, variant: TowerVariant): void {
-    if (variant === 'partner') {
-      const count = this.manager.towers.filter(t => t.variant === 'partner').length;
-      if (count >= this.getPartnerLimit()) {
-        showFloatingText(this.scene, x, y, 'Лимит напарников', '#a29bfe');
-        return;
-      }
-    }
-
-    const cost = TOWER_VARIANTS_DATA[variant].cost;
-
-    if (!this.economy.canAfford(cost)) {
-      showFloatingText(this.scene, x, y, 'Недостаточно 💰', '#ff6b6b');
-      return;
-    }
-    this.economy.spend(cost);
-
-    const tower = new ToolTower(this.scene, x, y, variant);
-    this.manager.addTower(tower);
-
-    showFloatingText(this.scene, x, y, `-${cost} 💰`, '#ff7675');
-    this.scene.cameras.main.shake(80, 0.003);
-  }
-
-  private tryUpgrade(tower: ToolTower): void {
-    if (!tower.canUpgrade()) {
-      showFloatingText(this.scene, tower.x, tower.y, 'Макс. уровень', '#a29bfe');
-      return;
-    }
-    const cost = tower.getUpgradeCost();
-    if (!this.economy.canAfford(cost)) {
-      showFloatingText(this.scene, tower.x, tower.y, 'Недостаточно 💰', '#ff6b6b');
-      return;
-    }
-    this.economy.spend(cost);
-    tower.upgrade();
-    showFloatingText(this.scene, tower.x, tower.y, `Ур. ${tower.level}!`, '#55efc4');
-  }
-
-  private tryPlaceFurniture(x: number, y: number, type: FurnitureType): void {
-    const stats = FURNITURE_TYPES_DATA[type];
-    if (this.manager.countFurniture(type) >= stats.maxCount) {
-      showFloatingText(this.scene, x, y, 'Нет в наличии', '#a29bfe');
-      return;
-    }
-    const piece = new Furniture(this.scene, x, y, type);
-    this.manager.addFurniture(piece);
-    this.refreshHudSelection();
-  }
-
   private pickUp(piece: Furniture): void {
     this.carrying = piece;
     this.carryOrigin = { x: piece.x, y: piece.y };
@@ -279,7 +198,7 @@ export class TowerPlacer {
     const piece = this.carrying!;
     const radius = piece instanceof Furniture ? piece.radius : (TOWER_VARIANTS_DATA[piece.variant].radius || TOWER_SIZE);
     
-    if (this.isInOffice(x, y) && this.isPlacementValid(x, y, radius)) {
+    if (isInOffice(x, y) && isPlacementValid(x, y, radius, this.manager, this.carrying)) {
       piece.setPosition(x, y);
     } else {
       piece.setPosition(this.carryOrigin.x, this.carryOrigin.y);
