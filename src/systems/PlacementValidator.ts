@@ -25,7 +25,8 @@ export function isPlacementValid(
   y: number,
   ownRadius: number,
   manager: TowerManager,
-  carrying: Furniture | ToolTower | null
+  carrying: Furniture | ToolTower | null,
+  isTower: boolean = false
 ): boolean {
   for (const t of manager.towers) {
     if (t === carrying) continue;
@@ -37,14 +38,17 @@ export function isPlacementValid(
     if (Phaser.Math.Distance.Between(f.x, f.y, x, y) < f.radius + ownRadius + 6) return false;
   }
 
-  // Ensure path to desk is not completely blocked
-  const tempFurniture = { x, y, radius: ownRadius };
-  const furnitureArr = manager.furniture.filter(f => f !== carrying);
-  const pathfinder = new Pathfinder(furnitureArr, tempFurniture);
-  
-  for (const door of SPAWN_DOORS) {
-    if (!pathfinder.findPath(door.x, door.y, DESK_X, DESK_Y)) {
-      return false;
+  // Towers don't block pathfinding, only furniture does!
+  if (!isTower) {
+    // Ensure path to desk is not completely blocked
+    const tempFurniture = { x, y, radius: ownRadius };
+    const furnitureArr = manager.furniture.filter(f => f !== carrying);
+    const pathfinder = new Pathfinder(furnitureArr, tempFurniture);
+    
+    for (const door of SPAWN_DOORS) {
+      if (!pathfinder.findPath(door.x, door.y, DESK_X, DESK_Y)) {
+        return false;
+      }
     }
   }
 

@@ -120,17 +120,29 @@ export class TowerPlacer {
 
       const sx = this.snap(ptr.x);
       const sy = this.snap(ptr.y);
-      if (!isInOffice(sx, sy)) return;
+      if (!isInOffice(sx, sy)) {
+        // Only show text if they clicked somewhat in the game area, not if they clicked the left menu
+        if (ptr.x > 84) {
+          import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, ptr.x, ptr.y, 'Вне зоны офиса', '#ff6b6b'));
+        }
+        return;
+      }
 
       const item = this.currentItem;
       if (item.kind === 'tower') {
         const stats = TOWER_VARIANTS_DATA[item.variant];
         const radius = stats.radius || TOWER_SIZE;
-        if (!isPlacementValid(sx, sy, radius, this.manager, this.carrying)) return;
+        if (!isPlacementValid(sx, sy, radius, this.manager, this.carrying, true)) {
+          import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, sx, sy, 'Нельзя строить здесь', '#ff6b6b'));
+          return;
+        }
         this.builder.tryPlaceTower(sx, sy, item.variant);
       } else {
         const stats = FURNITURE_TYPES_DATA[item.type];
-        if (!isPlacementValid(sx, sy, stats.radius, this.manager, this.carrying)) return;
+        if (!isPlacementValid(sx, sy, stats.radius, this.manager, this.carrying, false)) {
+          import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, sx, sy, 'Нельзя строить здесь', '#ff6b6b'));
+          return;
+        }
         if (this.builder.tryPlaceFurniture(sx, sy, item.type)) {
           this.refreshHudSelection();
         }
@@ -196,12 +208,14 @@ export class TowerPlacer {
 
   private tryDrop(x: number, y: number): void {
     const piece = this.carrying!;
-    const radius = piece instanceof Furniture ? piece.radius : (TOWER_VARIANTS_DATA[piece.variant].radius || TOWER_SIZE);
+    const isTower = piece instanceof ToolTower;
+    const radius = piece instanceof Furniture ? piece.radius : (TOWER_VARIANTS_DATA[(piece as ToolTower).variant].radius || TOWER_SIZE);
     
-    if (isInOffice(x, y) && isPlacementValid(x, y, radius, this.manager, this.carrying)) {
+    if (isInOffice(x, y) && isPlacementValid(x, y, radius, this.manager, this.carrying, isTower)) {
       piece.setPosition(x, y);
     } else {
       piece.setPosition(this.carryOrigin.x, this.carryOrigin.y);
+      import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, x, y, 'Нельзя разместить здесь', '#ff6b6b'));
     }
     
     if (piece instanceof Furniture) piece.setPicked(false);
