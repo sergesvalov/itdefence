@@ -86,9 +86,14 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
       fontSize: '12px',
       color: '#ffffff',
       fontStyle: 'bold',
-      backgroundColor: '#000000',
-      padding: { x: 4, y: 2 }
     }).setOrigin(0.5, 0.5);
+    
+    const labelBg = scene.add.graphics();
+    labelBg.fillStyle(0x1a2430, 0.85);
+    labelBg.lineStyle(1, 0x3498db, 0.5);
+    labelBg.fillRoundedRect(door.x - text.width / 2 - 8, door.y - 35 - text.height / 2 - 4, text.width + 16, text.height + 8, 4);
+    labelBg.strokeRoundedRect(door.x - text.width / 2 - 8, door.y - 35 - text.height / 2 - 4, text.width + 16, text.height + 8, 4);
+    text.setDepth(1); // Ensure text is above background
   }
 
   // ── "PETYA'S OFFICE" label near the top of the room ─────────────────
@@ -97,9 +102,14 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
     fontSize: '14px',
     color: '#ffffff',
     fontStyle: 'bold',
-    backgroundColor: '#000000',
-    padding: { x: 8, y: 4 }
   }).setOrigin(0.5, 0);
+  
+  const officeBg = scene.add.graphics();
+  officeBg.fillStyle(0x1a2430, 0.85);
+  officeBg.lineStyle(1, 0x3498db, 0.5);
+  officeBg.fillRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 12, OFFICE_Y_TOP + 8, officeText.width + 24, officeText.height + 8, 6);
+  officeBg.strokeRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 12, OFFICE_Y_TOP + 8, officeText.width + 24, officeText.height + 8, 6);
+  officeText.setDepth(1);
 
   // Desk zone warning glow (towers can't be placed too close, always drawn)
   gfx.lineStyle(1, 0xe74c3c, 0.4);

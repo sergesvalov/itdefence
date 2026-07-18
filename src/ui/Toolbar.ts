@@ -40,13 +40,16 @@ export class Toolbar {
     const infoY = GAME_HEIGHT - 65;
     this.toolbarInfoBg = scene.add.graphics().setDepth(10000);
     this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.95);
-    const bgWidth = 460;
-    const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
-    this.toolbarInfoBg.fillRoundedRect(centerX - bgWidth / 2, infoY - 18, bgWidth, 36, 8);
+    
+    // Position it correctly to the right of the toolbar
+    const bgWidth = GAME_WIDTH - TOOLBAR_WIDTH - 24;
+    const bgX = TOOLBAR_WIDTH + 12;
+    this.toolbarInfoBg.fillRoundedRect(bgX, infoY - 18, bgWidth, 36, 8);
     this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.8);
-    this.toolbarInfoBg.strokeRoundedRect(centerX - bgWidth / 2, infoY - 18, bgWidth, 36, 8);
+    this.toolbarInfoBg.strokeRoundedRect(bgX, infoY - 18, bgWidth, 36, 8);
     this.toolbarInfoBg.setVisible(false);
 
+    const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
     this.toolbarInfoText = scene.add.text(centerX, infoY, '', {
       fontFamily: 'Inter, system-ui, sans-serif', fontSize: '15px', color: '#3498db', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(10001);
