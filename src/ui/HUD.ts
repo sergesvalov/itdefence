@@ -36,14 +36,14 @@ export class HUD extends Phaser.Events.EventEmitter {
 
     // Hint text (at the very bottom)
     const hintBg = scene.add.graphics();
-    hintBg.fillStyle(0x000000, 0.5);
-    hintBg.fillRect(0, GAME_HEIGHT - 28, GAME_WIDTH, 28);
+    hintBg.fillStyle(0x000000, 0.7);
+    hintBg.fillRect(0, GAME_HEIGHT - 32, GAME_WIDTH, 32);
     hintBg.setDepth(10000);
     
-    scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, GAME_HEIGHT - 14, 'Тап: кабинет — строить, предмет — апгрейд/переместить', {
+    scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, GAME_HEIGHT - 16, 'Тап: кабинет — строить, предмет — апгрейд/переместить', {
       fontFamily: fontStyle,
-      fontSize: '14px',
-      color: '#bdc3c7',
+      fontSize: '15px',
+      color: '#ffffff',
     }).setOrigin(0.5).setDepth(10001);
 
     // ── Ability buttons — top-right corner ──────────────────────────────
@@ -60,8 +60,8 @@ export class HUD extends Phaser.Events.EventEmitter {
       .setDepth(10001)
       .setInteractive(new Phaser.Geom.Circle(0, 0, 36), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit('start-wave-tap'));
-    this.startWaveText = scene.add.text(swX, swY + 42, '', {
-      fontFamily: fontStyle, fontSize: '14px', color: '#2ecc71', fontStyle: 'bold', align: 'center',
+    this.startWaveText = scene.add.text(swX, swY + 46, '', {
+      fontFamily: fontStyle, fontSize: '15px', color: '#ffffff', fontStyle: 'bold', align: 'center', stroke: '#000000', strokeThickness: 4
     }).setOrigin(0.5).setDepth(10001);
     scene.tweens.add({
       targets: this.startWaveButton,

@@ -23,19 +23,19 @@ export class TopBar {
     hudBg.strokePath();
     hudBg.setDepth(10000);
 
-    this.moneyText = scene.add.text(TOOLBAR_WIDTH + 12, 10, `💰 0`, {
-      ...boldStyle, color: '#f1c40f', fontSize: '18px'
-    }).setDepth(10001);
+    this.moneyText = scene.add.text(TOOLBAR_WIDTH + 24, 28, `💰 0`, {
+      ...boldStyle, color: '#f1c40f', fontSize: '20px'
+    }).setOrigin(0, 0.5).setDepth(10001);
     this.setMoney(startingMoney);
 
     const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
-    this.waveText = scene.add.text(centerX, 28, '', { ...boldStyle, fontSize: '18px', color: '#3498db' })
-      .setOrigin(0.5)
+    this.waveText = scene.add.text(centerX, 28, '', { ...boldStyle, fontSize: '20px', color: '#3498db' })
+      .setOrigin(0.5, 0.5)
       .setDepth(10001);
 
-    this.inboxCountText = scene.add.text(GAME_WIDTH - 150, 10, `📥 0 / ${inboxLimit}`, {
-      ...boldStyle, fontSize: '13px'
-    }).setDepth(10001);
+    this.inboxCountText = scene.add.text(GAME_WIDTH - 150, 18, `📥 0 / ${inboxLimit}`, {
+      ...boldStyle, fontSize: '14px'
+    }).setOrigin(0, 0.5).setDepth(10001);
 
     this.inboxQueueGraphics = scene.add.graphics().setDepth(10001);
   }
@@ -61,7 +61,7 @@ export class TopBar {
     
     this.inboxQueueGraphics.clear();
     const baseX = GAME_WIDTH - 150;
-    const baseY = 36;
+    const baseY = 38;
     const spacing = 12;
     
     for (let i = 0; i < limit; i++) {

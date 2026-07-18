@@ -81,23 +81,25 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
       gfx.fillCircle(door.x + 16, door.y, 5);
     }
     // Label
-    const text = scene.add.text(door.x, door.y + 20, door.label, {
-      fontFamily: 'Courier, monospace',
-      fontSize: '11px',
-      color: '#FFFFFF',
+    const text = scene.add.text(door.x, door.y - 35, door.label, {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '12px',
+      color: '#ffffff',
       fontStyle: 'bold',
-    }).setOrigin(0.5, 0);
-    text.setShadow(1, 1, '#000000', 2, false, true);
+      backgroundColor: '#000000',
+      padding: { x: 4, y: 2 }
+    }).setOrigin(0.5, 0.5);
   }
 
   // ── "PETYA'S OFFICE" label near the top of the room ─────────────────
-  const officeText = scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 8, "PETYA'S OFFICE", {
-    fontFamily: 'Courier, monospace',
-    fontSize: '12px',
-    color: '#93C5FD',
+  const officeText = scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 12, "PETYA'S OFFICE", {
+    fontFamily: 'Inter, system-ui, sans-serif',
+    fontSize: '14px',
+    color: '#ffffff',
     fontStyle: 'bold',
+    backgroundColor: '#000000',
+    padding: { x: 8, y: 4 }
   }).setOrigin(0.5, 0);
-  officeText.setShadow(1, 1, '#000000', 2, false, true);
 
   // Desk zone warning glow (towers can't be placed too close, always drawn)
   gfx.lineStyle(1, 0xe74c3c, 0.4);
@@ -123,7 +125,7 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
 
   // Petya label
   const petyaText = scene.add.text(DESK_X, DESK_Y + 30, '🧑‍💻 Petya', {
-    fontFamily: 'Courier, monospace',
+    fontFamily: 'Inter, system-ui, sans-serif',
     fontSize: '14px',
     color: '#FBBF24',
     fontStyle: 'bold',
