@@ -36,7 +36,7 @@ export const PROJECTILE_SPEED = 280;
  * front of the queue every INBOX_RESOLVE_INTERVAL_MS.
  */
 export const INBOX_LIMIT = 10;
-export const INBOX_RESOLVE_INTERVAL_MS = 2000;
+export const INBOX_RESOLVE_INTERVAL_MS = 4000;
 
 /** Chance a spawning coworker carries a red/urgent task, which jumps the
  *  Inbox queue (to the front) instead of joining the back on arrival. */
@@ -185,7 +185,7 @@ export const SHIELD_DOT_INTERVAL_MS = 800;
 
 // ── Coworker Variants (Enemies) ────────────────────────────────────────────────────────
 
-export type CoworkerVariant = 'normal' | 'fast' | 'tank' | 'swarm' | 'boss';
+export type CoworkerVariant = 'normal' | 'fast' | 'tank' | 'swarm' | 'boss' | 'remote';
 
 export interface CoworkerStats {
   hpMult: number;
@@ -202,6 +202,7 @@ export const COWORKER_VARIANTS: Record<CoworkerVariant, CoworkerStats> = {
   tank:   { hpMult: 3, speedMult: 0.65, scale: 1.15, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер' },
   swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.8, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер' },
   boss:   { hpMult: 15, speedMult: 0.35, scale: 1.6, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик' },
+  remote: { hpMult: 0.8, speedMult: 1.2, scale: 0.95, tint: 0x8e44ad, emoji: '💻', name: 'Удаленщик' },
 };
 
 // ─── Map textures ───────────────────────────────────────────────────────

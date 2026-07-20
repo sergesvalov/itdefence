@@ -47,6 +47,7 @@ export class WaveManager {
     const pf = new Pathfinder(furniture);
     for (const cw of this.enemies) {
       if (cw.isDead || cw.hasReachedDesk) continue;
+      if (cw.variant === 'remote') continue; // remote ignores furniture
       const path = pf.findPath(cw.x, cw.y, DESK_X, DESK_Y);
       if (path) {
         cw.setWaypoints(path);
@@ -54,7 +55,14 @@ export class WaveManager {
     }
   }
 
-  private buildPath(startX: number, startY: number): Waypoint[] {
+  private buildPath(startX: number, startY: number, variant: CoworkerVariant): Waypoint[] {
+    if (variant === 'remote') {
+      return [
+        { x: startX, y: startY },
+        { x: DESK_X, y: DESK_Y },
+      ];
+    }
+    
     const pf = new Pathfinder(this.getFurniture());
     return pf.findPath(startX, startY, DESK_X, DESK_Y) || [
       { x: startX, y: startY },
@@ -128,12 +136,13 @@ export class WaveManager {
       variant = 'boss';
     } else {
       const roll = Math.random();
-      if (this.wave >= 4 && roll < 0.15) variant = 'tank';
-      else if (this.wave >= 3 && roll < 0.35) variant = 'fast';
-      else if (this.wave >= 2 && roll < 0.5) variant = 'swarm';
+      if (this.wave >= 6 && roll < 0.2) variant = 'remote';
+      else if (this.wave >= 4 && roll < 0.3) variant = 'tank';
+      else if (this.wave >= 3 && roll < 0.5) variant = 'fast';
+      else if (this.wave >= 2 && roll < 0.65) variant = 'swarm';
     }
 
-    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y), urgent, variant);
+    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant);
     this.enemies.push(cw);
     this.spawnedThisWave++;
 

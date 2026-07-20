@@ -24,14 +24,30 @@ export class ProjectileBehavior implements ITowerBehavior {
   }
 
   private findTarget(enemies: Coworker[]): Coworker | null {
-    let closest: Coworker | null = null;
-    let minDist = this.tower.range;
+    let bestTarget: Coworker | null = null;
+    let bestValue = -Infinity;
+
     for (const e of enemies) {
       if (e.isDead || e.hasReachedDesk) continue;
+      
       const d = Phaser.Math.Distance.Between(this.tower.x, this.tower.y, e.x, e.y);
-      if (d < minDist) { minDist = d; closest = e; }
+      if (d > this.tower.range) continue;
+
+      let value = 0;
+      if (this.tower.priority === 'closest') {
+        value = -d; // smaller distance = higher value
+      } else if (this.tower.priority === 'strongest') {
+        value = e.hp; // higher hp = higher value
+      } else if (this.tower.priority === 'first') {
+        value = e.y; // further down the screen (larger y) = closer to desk = higher value
+      }
+
+      if (value > bestValue) {
+        bestValue = value;
+        bestTarget = e;
+      }
     }
-    return closest;
+    return bestTarget;
   }
 
   private aimAt(target: Coworker): void {
@@ -100,6 +116,7 @@ export class ProjectileBehavior implements ITowerBehavior {
 
     const destroyProj = () => {
       scene.events.off('update', update);
+      if (trail) trail.stop();
       scene.tweens.add({
         targets: proj,
         alpha: 0,
@@ -109,6 +126,21 @@ export class ProjectileBehavior implements ITowerBehavior {
         onComplete: () => proj.destroy(),
       });
     };
+
+    let trail: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+    if (special !== 'aoe' && this.tower.variant !== 'docs') {
+      trail = scene.add.particles(0, 0, 'sprite-tower-cooler', { // Use a basic texture, it will be tinted. Wait, Phaser 3.60+ allows textureless particles with just a shape or a 1x1 white pixel, but we can just use a graphics generated texture or fallback.
+        color: [0xfdcb6e, 0xe17055],
+        colorEase: 'quad.out',
+        lifespan: 150,
+        scale: { start: 0.3, end: 0 },
+        blendMode: 'ADD',
+        follow: proj
+      }).setDepth(15);
+      
+      // Since 'sprite-tower-cooler' is large, we can just use it very small as a particle.
+      // Alternatively, we could create a 1x1 white texture, but we'll stick to a loaded asset for safety.
+    }
 
     scene.events.on('update', update);
   }

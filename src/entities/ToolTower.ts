@@ -27,6 +27,7 @@ export class ToolTower extends Phaser.GameObjects.Container {
   public range: number;
   public damage: number;
   public fireRate: number;
+  public priority: 'first' | 'closest' | 'strongest';
 
   private readonly baseCost: number;
   private readonly baseRange: number;
@@ -55,6 +56,11 @@ export class ToolTower extends Phaser.GameObjects.Container {
     this.fireRate = this.baseFireRate;
 
     this.view = new TowerView(scene, this, variant, this.range, TOWER_MAX_LEVEL);
+    
+    // Setup Priority
+    if (variant === 'docs') this.priority = 'strongest';
+    else if (variant === 'coffee') this.priority = 'first';
+    else this.priority = 'closest';
     
     // Strategy assignment based on special capability
     if (this.special === 'partner') {

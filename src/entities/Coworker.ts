@@ -263,15 +263,17 @@ export class Coworker extends Phaser.GameObjects.Container {
       ny = this.y + (dy / dist) * effectiveSpeed * dt;
     }
 
-    for (const f of furniture) {
-      const fd = Phaser.Math.Distance.Between(nx, ny, f.x, f.y);
-      const minDist = RADIUS + f.radius;
-      if (fd >= minDist) continue;
+    if (this.variant !== 'remote') {
+      for (const f of furniture) {
+        const fd = Phaser.Math.Distance.Between(nx, ny, f.x, f.y);
+        const minDist = RADIUS + f.radius;
+        if (fd >= minDist) continue;
 
-      const onCooldown = this.sitCooldownFurniture === f && this.scene.time.now < this.sitCooldownUntil;
-      if (f.type === 'sofa' && !onCooldown) {
-        this.sitDown(f);
-        return;
+        const onCooldown = this.sitCooldownFurniture === f && this.scene.time.now < this.sitCooldownUntil;
+        if (f.type === 'sofa' && !onCooldown) {
+          this.sitDown(f);
+          return;
+        }
       }
     }
 
