@@ -113,6 +113,23 @@ export class CoworkerView {
   }
 
   public playDeathAnimation(onComplete: () => void): void {
+    // Paper burst particles
+    for (let i = 0; i < 10; i++) {
+      const p = this.scene.add.rectangle(this.container.x, this.container.y, 6, 8, 0xffffff).setDepth(20);
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 30 + Math.random() * 40;
+      this.scene.tweens.add({
+        targets: p,
+        x: this.container.x + Math.cos(angle) * dist,
+        y: this.container.y + Math.sin(angle) * dist,
+        rotation: Math.random() * 4 - 2,
+        alpha: 0,
+        duration: 300 + Math.random() * 200,
+        ease: 'Cubic.Out',
+        onComplete: () => p.destroy()
+      });
+    }
+
     this.scene.tweens.add({
       targets: this.container,
       alpha: 0,

@@ -8,6 +8,7 @@ import {
 import type { Economy } from './Economy';
 import type { HUD } from '../ui/HUD';
 import type { TowerManager } from './TowerManager';
+import { SoundFX } from './SoundFX';
 import { isInOffice, isPlacementValid } from './PlacementValidator';
 import { Builder } from './Builder';
 import { EventBus } from '../events/EventBus';
@@ -160,10 +161,12 @@ export class TowerPlacer {
   }
 
   cycleSelection(): void {
+    SoundFX.playClick();
     this.selectIndex((this.selectedIndex + 1) % this.buildItems.length);
   }
 
   selectIndex(index: number): void {
+    SoundFX.playClick();
     this.selectedIndex = index;
     this.refreshHudSelection();
     this.updatePreviewStyle();
@@ -214,6 +217,7 @@ export class TowerPlacer {
     
     if (isInOffice(x, y) && isPlacementValid(x, y, radius, this.manager, this.carrying, isTower)) {
       piece.setPosition(x, y);
+      SoundFX.playBuild();
       if (!isTower) EventBus.emit('furniture_moved');
     } else {
       piece.setPosition(this.carryOrigin.x, this.carryOrigin.y);

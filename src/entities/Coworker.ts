@@ -4,6 +4,7 @@ import type { Furniture } from './Furniture';
 import type { ToolTower } from './ToolTower';
 import { CoworkerView, RADIUS } from './CoworkerView';
 import { showFloatingText } from '../ui/FloatingText';
+import { SoundFX } from '../systems/SoundFX';
 
 export interface Waypoint {
   x: number;
@@ -85,6 +86,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hp -= amount;
     this.view.redrawHpBar(this.hp, this.maxHp);
     this.view.triggerHitFlash();
+    SoundFX.playHit();
     showFloatingText(this.scene, this.x, this.y, `-${amount}`, '#e74c3c');
     if (this.hp <= 0) this.kill();
   }

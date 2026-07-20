@@ -9,6 +9,7 @@ import { WaveManager } from '../systems/WaveManager';
 import { Ultimate } from '../systems/Ultimate';
 import { Shield } from '../systems/Shield';
 import { TutorialManager } from '../systems/TutorialManager';
+import { SoundFX } from '../systems/SoundFX';
 import { Inbox } from '../systems/Inbox';
 import { EventBus, GameEvents } from '../events/EventBus';
 import { MetaProgression } from '../systems/MetaProgression';
@@ -46,6 +47,7 @@ export class MainScene extends Phaser.Scene {
 
   create(): void {
     this.isGameOver = false;
+    SoundFX.init();
     
     MetaProgression.load();
     const meta = MetaProgression.get();

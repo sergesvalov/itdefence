@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { ITowerBehavior } from './ITowerBehavior';
 import type { ToolTower } from '../ToolTower';
 import type { Coworker } from '../Coworker';
+import { SoundFX } from '../../systems/SoundFX';
 import { PROJECTILE_SPEED, SLOW_MULTIPLIER, SLOW_DURATION_MS, STUN_DURATION_MS, AOE_SPLASH_RADIUS } from '../../config';
 
 export class ProjectileBehavior implements ITowerBehavior {
@@ -55,6 +56,8 @@ export class ProjectileBehavior implements ITowerBehavior {
     if (this.tower.variant === 'docs') {
       scene.cameras.main.shake(150, 0.008);
     }
+    
+    SoundFX.playShoot();
     
     const proj = this.createProjectileVisual();
 

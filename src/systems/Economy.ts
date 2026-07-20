@@ -1,4 +1,5 @@
 import type { HUD } from '../ui/HUD';
+import { SoundFX } from './SoundFX';
 
 /** Petya's money: spend it on towers/upgrades, earn it once per cleared wave. */
 export class Economy {
@@ -24,6 +25,7 @@ export class Economy {
 
   earn(amount: number): void {
     this.money += amount;
+    SoundFX.playCoin();
     this.hud.setMoney(this.money);
     this.hud.pulseMoney('#2ecc71');
   }
