@@ -8,6 +8,7 @@ export class TutorialManager {
   private currentStep = 0;
   private arrowTween: Phaser.Tweens.Tween | null = null;
   private hintText!: Phaser.GameObjects.Text;
+  private textBg!: Phaser.GameObjects.Rectangle;
   private arrow!: Phaser.GameObjects.Text;
 
   constructor(private scene: Phaser.Scene) {
@@ -20,15 +21,17 @@ export class TutorialManager {
     const bg = scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.3).setOrigin(0);
     this.overlay.add(bg);
 
+    // Text background banner for better contrast
+    this.textBg = scene.add.rectangle(GAME_WIDTH / 2 + 42, GAME_HEIGHT / 2 - 50, GAME_WIDTH - 84, 130, 0x000000, 0.75).setOrigin(0.5);
+    this.overlay.add(this.textBg);
+
     this.hintText = scene.add.text(GAME_WIDTH / 2 + 42, GAME_HEIGHT / 2 - 50, '', {
       fontFamily: 'Inter, system-ui, sans-serif',
       fontSize: '22px',
-      color: '#ffeaa7',
+      color: '#ffffff',
       fontStyle: 'bold',
-      stroke: '#000',
-      strokeThickness: 5,
       align: 'center',
-      wordWrap: { width: 300 },
+      wordWrap: { width: 320 },
       padding: { x: 15, y: 15 },
       lineSpacing: 10
     }).setOrigin(0.5);
@@ -48,11 +51,12 @@ export class TutorialManager {
     });
   }
 
-  private animateArrow(x: number, y: number, offsetY: number) {
+  private animateArrow(x: number, y: number, offsetX: number, offsetY: number) {
     this.arrow.setPosition(x, y);
     if (this.arrowTween) this.arrowTween.stop();
     this.arrowTween = this.scene.tweens.add({
       targets: this.arrow,
+      x: x + offsetX,
       y: y + offsetY,
       duration: 500,
       yoyo: true,
@@ -64,7 +68,10 @@ export class TutorialManager {
   private showStep1() {
     this.currentStep = 1;
     this.hintText.setText('Перетяни любой шкаф, чтобы освободить место для защиты!');
-    this.animateArrow(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50, 20);
+    this.hintText.setPosition(GAME_WIDTH / 2 + 42, GAME_HEIGHT / 2 - 50);
+    this.textBg.setPosition(GAME_WIDTH / 2 + 42, GAME_HEIGHT / 2 - 50);
+    this.arrow.setRotation(0);
+    this.animateArrow(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50, 0, 20);
   }
 
   private onFurnitureMoved() {
@@ -79,20 +86,14 @@ export class TutorialManager {
     (this.overlay.list[0] as Phaser.GameObjects.Rectangle).setFillStyle(0x000000, 0);
     
     this.hintText.setText('Отлично!\nТеперь выбери башню слева и поставь её на карту!');
-    this.hintText.setPosition(GAME_WIDTH / 2 + 42, GAME_HEIGHT - 150);
+    // Move text up to avoid overlapping the desk
+    this.hintText.setPosition(GAME_WIDTH / 2 + 42, 180);
+    this.textBg.setPosition(GAME_WIDTH / 2 + 42, 180);
     
-    // Point to the toolbar (left side)
-    this.arrow.setRotation(-Math.PI / 2); // point left
-    this.animateArrow(100, 170, 0);
-    if (this.arrowTween) this.arrowTween.stop();
-    this.arrowTween = this.scene.tweens.add({
-      targets: this.arrow,
-      x: 80,
-      duration: 500,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.InOut'
-    });
+    // Point to the toolbar (left side). +90 degrees rotates 👇 to 👈
+    this.arrow.setRotation(Math.PI / 2); 
+    // Start slightly right of the first slot (which is around x=42, y=85) and point left
+    this.animateArrow(110, 85, -20, 0); 
   }
 
   private onTowerBuilt() {
