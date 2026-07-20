@@ -4,6 +4,7 @@ import {
   TOWER_VARIANTS_DATA, TOWER_VARIANT_KEYS,
   FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS
 } from '../config';
+import { IconRenderer } from '../rendering/IconRenderer';
 
 export interface ToolbarSlot {
   container: Phaser.GameObjects.Container;
@@ -61,7 +62,9 @@ export class Toolbar {
       bg.fillStyle(0x2c3e50, 1);
       bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
       
-      const icon = scene.add.text(0, -8, item.icon, { fontSize: '28px' }).setOrigin(0.5);
+      const variantOrType = item.type === 'tower' ? (item as any).variant : (item as any).type;
+      const icon = IconRenderer.drawIcon(scene, 0, -8, item.type as 'tower' | 'furniture', variantOrType, 20);
+      
       const priceText = item.type === 'tower' ? `${(item as any).cost} 💰` : 'FREE';
       const priceColor = item.type === 'tower' ? '#f1c40f' : '#2ecc71';
       const price = scene.add.text(0, 18, priceText, { 

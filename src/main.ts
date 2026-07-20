@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import { MainScene } from './scenes/MainScene';
 import { UpgradeScene } from './scenes/UpgradeScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
-import { GAME_WIDTH, GAME_HEIGHT } from './config';
+import { GAME_WIDTH, GAME_HEIGHT, initLayout } from './config';
+
+initLayout();
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -15,9 +17,6 @@ const config: Phaser.Types.Core.GameConfig = {
     antialias: true,
     pixelArt: false,
   },
-  // Portrait canvas at a fixed logical size — scale it to fit whatever
-  // viewport the phone/browser actually gives us, keeping the aspect ratio
-  // and centering it, instead of rendering at a fixed pixel size.
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

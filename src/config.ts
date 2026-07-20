@@ -3,18 +3,28 @@
 // and walk straight down through Petya's office to the desk at the bottom.
 
 export const GAME_WIDTH  = 480;
-export const GAME_HEIGHT = 800;
+export let GAME_HEIGHT = 800;
 
 /** Top of Petya's office — enemies+towers live in [OFFICE_Y_TOP, OFFICE_Y_BOTTOM].
  *  This band is 600px tall = 3/4 of GAME_HEIGHT; the remaining top quarter is
  *  the reception strip where the spawn doors are. */
 export const OFFICE_Y_TOP    = 200;
-export const OFFICE_Y_BOTTOM = 780;
+export let OFFICE_Y_BOTTOM = 780;
 
 /** Target – Petya's desk position (bottom of the office) */
 export const TOOLBAR_WIDTH = 84;
 export const DESK_X = 282; // 84 + (480-84)/2
-export const DESK_Y = 700;
+export let DESK_Y = 700;
+
+export function initLayout() {
+  const aspect = window.innerHeight / window.innerWidth;
+  // Cap the aspect ratio between 1.5 and 2.5 (phones)
+  const clampedAspect = Math.max(1.5, Math.min(2.5, aspect));
+  GAME_HEIGHT = Math.floor(GAME_WIDTH * clampedAspect);
+  
+  OFFICE_Y_BOTTOM = GAME_HEIGHT - 20;
+  DESK_Y = GAME_HEIGHT - 100;
+}
 
 /** Projectile speed px/s */
 export const PROJECTILE_SPEED = 280;
