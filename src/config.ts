@@ -236,5 +236,5 @@ export interface DoorDef {
 }
 
 export const SPAWN_DOORS: DoorDef[] = [
-  { x: 282, y: 165, label: 'Reception' },
+  { x: 282, y: 165.5, label: 'Reception' },
 ];
