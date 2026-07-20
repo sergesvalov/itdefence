@@ -30,7 +30,7 @@ export class Toolbar {
     const dockBg = scene.add.graphics();
     dockBg.fillStyle(0x1a2430, 1);
     dockBg.fillRect(0, 0, TOOLBAR_WIDTH, GAME_HEIGHT);
-    dockBg.lineStyle(2, 0x3498db, 0.8);
+    dockBg.lineStyle(2, 0x4a7a9b, 0.5);
     dockBg.beginPath();
     dockBg.moveTo(TOOLBAR_WIDTH, 0);
     dockBg.lineTo(TOOLBAR_WIDTH, GAME_HEIGHT);
@@ -45,13 +45,13 @@ export class Toolbar {
     const bgWidth = GAME_WIDTH - TOOLBAR_WIDTH - 24;
     const bgX = TOOLBAR_WIDTH + 12;
     this.toolbarInfoBg.fillRoundedRect(bgX, infoY - 18, bgWidth, 36, 8);
-    this.toolbarInfoBg.lineStyle(2, 0x3498db, 0.8);
+    this.toolbarInfoBg.lineStyle(2, 0x4a7a9b, 0.6);
     this.toolbarInfoBg.strokeRoundedRect(bgX, infoY - 18, bgWidth, 36, 8);
     this.toolbarInfoBg.setVisible(false);
 
     const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
     this.toolbarInfoText = scene.add.text(centerX, infoY, '', {
-      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '15px', color: '#3498db', fontStyle: 'bold'
+      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '15px', color: '#7ab8d4', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(10001);
 
     items.forEach((item, index) => {
@@ -79,9 +79,9 @@ export class Toolbar {
         updateState: (selected: boolean, disabled: boolean) => {
           bg.clear();
           if (selected) {
-            bg.fillStyle(0x34495e, 1);
+            bg.fillStyle(0x2a3a4a, 1);
             bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
-            bg.lineStyle(3, 0x3498db, 1);
+            bg.lineStyle(3, 0xfbbf24, 0.9);
             bg.strokeRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
             container.setScale(1.1);
           } else {

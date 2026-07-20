@@ -39,7 +39,7 @@ export class UpgradeScene extends Phaser.Scene {
 
     // Back Button
     const playBtn = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT - 100);
-    const playBg = this.add.rectangle(0, 0, 200, 60, 0x3498db).setInteractive({ useHandCursor: true });
+    const playBg = this.add.rectangle(0, 0, 200, 60, 0x4a7a9b).setInteractive({ useHandCursor: true });
     const playText = this.add.text(0, 0, 'НАЗАД В МЕНЮ', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '20px',
@@ -70,7 +70,7 @@ export class UpgradeScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const btn = this.add.container(GAME_WIDTH / 2, y + 70);
-    const bg = this.add.rectangle(0, 0, 140, 40, data[key] < 5 ? 0x9b59b6 : 0x7f8c8d).setInteractive({ useHandCursor: data[key] < 5 });
+    const bg = this.add.rectangle(0, 0, 140, 40, data[key] < 5 ? 0x4a7a9b : 0x7f8c8d).setInteractive({ useHandCursor: data[key] < 5 });
     const txt = this.add.text(0, 0, data[key] < 5 ? `Купить (${price} 💰)` : 'MAX', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '14px',

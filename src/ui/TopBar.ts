@@ -14,9 +14,9 @@ export class TopBar {
     const boldStyle = { ...textStyle, fontStyle: 'bold' };
 
     const hudBg = scene.add.graphics();
-    hudBg.fillStyle(0x1e2a3a, 0.9);
+    hudBg.fillStyle(0x1e2a3a, 0.95);
     hudBg.fillRect(TOOLBAR_WIDTH, 0, GAME_WIDTH - TOOLBAR_WIDTH, 56);
-    hudBg.lineStyle(2, 0x3498db, 0.6);
+    hudBg.lineStyle(2, 0x4a7a9b, 0.4);
     hudBg.beginPath();
     hudBg.moveTo(TOOLBAR_WIDTH, 56);
     hudBg.lineTo(GAME_WIDTH, 56);
@@ -29,7 +29,7 @@ export class TopBar {
     this.setMoney(startingMoney);
 
     const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
-    this.waveText = scene.add.text(centerX, 28, '', { ...boldStyle, fontSize: '20px', color: '#3498db' })
+    this.waveText = scene.add.text(centerX, 28, '', { ...boldStyle, fontSize: '20px', color: '#fbbf24' })
       .setOrigin(0.5, 0.5)
       .setDepth(10001);
 

@@ -113,11 +113,11 @@ export class HUD extends Phaser.Events.EventEmitter {
   }
 
   public setShieldCharge(fraction: number): void {
-    this.redrawChargeRing(this.shieldButton.ring, fraction, 0x3498db);
+    this.redrawChargeRing(this.shieldButton.ring, fraction, 0x4a7a9b);
   }
 
   public setShieldReady(ready: boolean): void {
-    this.setButtonReady(this.shieldButton, ready, 0x3498db, 0x74b9ff);
+    this.setButtonReady(this.shieldButton, ready, 0x4a7a9b, 0x7ab8d4);
   }
 
   // ── Toolbar ─────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ export class HUD extends Phaser.Events.EventEmitter {
 
     const radius = 20;
     const bg = scene.add.circle(0, 0, radius, 0x1e2a3a, 0.9);
-    bg.setStrokeStyle(2, 0x3498db, 0.8);
+    bg.setStrokeStyle(2, 0x4a7a9b, 0.6);
 
     const ring = scene.add.graphics();
     const t = scene.add.text(0, 0, icon, { fontSize: '18px' }).setOrigin(0.5);
@@ -195,7 +195,7 @@ export class HUD extends Phaser.Events.EventEmitter {
 
   private setButtonReady(button: AbilityButton, ready: boolean, readyFill: number, readyStroke: number): void {
     button.bg.setFillStyle(ready ? readyFill : 0x1e2a3a, 0.9);
-    button.bg.setStrokeStyle(3, ready ? readyStroke : 0x3498db, 1);
+    button.bg.setStrokeStyle(3, ready ? readyStroke : 0x4a7a9b, 1);
     this.scene.tweens.killTweensOf(button.container);
     if (ready) {
       this.scene.tweens.add({

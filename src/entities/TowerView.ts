@@ -22,8 +22,8 @@ export class TowerView {
     const radius = stats.radius || TOWER_SIZE;
 
     // ── Range indicator (initially hidden) ───────────────────────────────
-    this.rangeCircle = scene.add.arc(0, 0, initialRange, 0, 360, false, color, 0.07);
-    this.rangeCircle.setStrokeStyle(1, color, 0.35);
+    this.rangeCircle = scene.add.arc(0, 0, initialRange, 0, 360, false, color, 0.03);
+    this.rangeCircle.setStrokeStyle(1, color, 0.15);
     this.rangeCircle.setVisible(false);
 
     // ── Barrel graphic ───────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export class TowerView {
 
   public aimAt(angle: number): void {
     this.barrelLine.clear();
-    this.barrelLine.lineStyle(3, 0xffffff, 0.5);
+    this.barrelLine.lineStyle(2, 0xd4c5a9, 0.4);
     const barrelLen = TOWER_SIZE + 6;
     this.barrelLine.lineBetween(0, 0, Math.cos(angle) * barrelLen, Math.sin(angle) * barrelLen);
   }

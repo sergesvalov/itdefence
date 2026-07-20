@@ -14,18 +14,18 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 4, 'IT DEFENCE', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '48px',
-      color: '#3498db',
+      color: '#fbbf24',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
     const startY = GAME_HEIGHT / 2;
     const spacing = 80;
 
-    this.createButton(GAME_WIDTH / 2, startY, 'СТАРТ', 0x2ecc71, () => {
+    this.createButton(GAME_WIDTH / 2, startY, 'СТАРТ', 0x27ae60, () => {
       this.scene.start('MainScene');
     });
 
-    this.createButton(GAME_WIDTH / 2, startY + spacing, 'МАГАЗИН', 0x9b59b6, () => {
+    this.createButton(GAME_WIDTH / 2, startY + spacing, 'МАГАЗИН', 0x4a7a9b, () => {
       this.scene.start('UpgradeScene');
     });
 
