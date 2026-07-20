@@ -21,13 +21,16 @@ export class TutorialManager {
     this.overlay.add(bg);
 
     this.hintText = scene.add.text(GAME_WIDTH / 2 + 42, GAME_HEIGHT / 2 - 50, '', {
+      fontFamily: 'Inter, system-ui, sans-serif',
       fontSize: '22px',
       color: '#ffeaa7',
       fontStyle: 'bold',
       stroke: '#000',
       strokeThickness: 5,
       align: 'center',
-      wordWrap: { width: 300 }
+      wordWrap: { width: 300 },
+      padding: { x: 15, y: 15 },
+      lineSpacing: 10
     }).setOrigin(0.5);
 
     this.arrow = scene.add.text(0, 0, '👇', { fontSize: '48px' }).setOrigin(0.5);

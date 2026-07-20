@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
+import { MetaProgression } from '../systems/MetaProgression';
+
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
     super('MainMenuScene');
@@ -11,25 +13,32 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1e2a3a).setOrigin(0);
 
     // Title
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 4, 'IT DEFENCE', {
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 4 - 20, 'IT DEFENCE', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '48px',
       color: '#fbbf24',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    const startY = GAME_HEIGHT / 2;
-    const spacing = 80;
+    const startY = GAME_HEIGHT / 2 - 20;
+    const spacing = 75;
 
     this.createButton(GAME_WIDTH / 2, startY, 'СТАРТ', 0x27ae60, () => {
       this.scene.start('MainScene');
     });
 
-    this.createButton(GAME_WIDTH / 2, startY + spacing, 'МАГАЗИН', 0x4a7a9b, () => {
+    this.createButton(GAME_WIDTH / 2, startY + spacing, 'ОБУЧЕНИЕ', 0xf39c12, () => {
+      const meta = MetaProgression.get();
+      meta.tutorialCompleted = false;
+      MetaProgression.save();
+      this.scene.start('MainScene');
+    });
+
+    this.createButton(GAME_WIDTH / 2, startY + spacing * 2, 'МАГАЗИН', 0x4a7a9b, () => {
       this.scene.start('UpgradeScene');
     });
 
-    this.createButton(GAME_WIDTH / 2, startY + spacing * 2, 'ВЫХОД', 0xe74c3c, () => {
+    this.createButton(GAME_WIDTH / 2, startY + spacing * 3, 'ВЫХОД', 0xe74c3c, () => {
       // In a browser, window.close() might not work if it wasn't opened by a script.
       // We'll just show an alert or attempt to close.
       if (window.confirm("Вы точно хотите выйти?")) {
