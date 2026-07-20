@@ -80,7 +80,7 @@ export class TutorialManager {
     
     // Point to the toolbar (left side)
     this.arrow.setRotation(-Math.PI / 2); // point left
-    this.animateArrow(100, 300, 0);
+    this.animateArrow(100, 170, 0);
     if (this.arrowTween) this.arrowTween.stop();
     this.arrowTween = this.scene.tweens.add({
       targets: this.arrow,
