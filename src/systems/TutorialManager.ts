@@ -15,7 +15,7 @@ export class TutorialManager {
     const meta = MetaProgression.get();
     if (meta.tutorialCompleted) return;
 
-    this.overlay = scene.add.container(0, 0).setDepth(100);
+    this.overlay = scene.add.container(0, 0).setDepth(10000);
     
     // Dim background slightly for focus
     const bg = scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.3).setOrigin(0);
