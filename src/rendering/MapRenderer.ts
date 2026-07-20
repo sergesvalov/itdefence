@@ -8,8 +8,25 @@ import {
 
 import type { DoorDef } from '../config';
 
+// ─── Color Palette ──────────────────────────────────────────────────────
+// Warm office palette derived from the desk/character art style:
+//   Wall:    warm cream/beige tones
+//   Floor:   dark blue-navy carpet
+//   Accents: walnut brown, soft gold, muted teal
+const PAL = {
+  floorBase:     0x1a2a3a,   // dark navy — fallback floor fill
+  floorGrid:     0x243648,   // subtle grid lines on floor
+  wallFill:      0xd4c5a9,   // warm cream (wall fallback)
+  wallBaseboard: 0x5a3f2b,   // dark walnut baseboard
+  borderShadow:  0x0e1a26,   // very dark navy for shadow line at wall-floor junction
+  labelBg:       0x1a2430,   // dark chip behind text labels
+  labelStroke:   0x4a7a9b,   // muted teal for label borders
+  deskGlow:      0xc0392b,   // warm red danger glow around desk
+  petyaGold:     0xfbbf24,   // gold for Petya's name
+};
+
 /**
- * Draws the static map once per game: reception strip (doors) on top,
+ * Draws the static map once per game: wall strip (doors) on top,
  * Petya's office (the battlefield) below, desk at the bottom. Uses a
  * texture for any slot whose asset was loaded (see TEXTURE_ASSETS in
  * config.ts), otherwise falls back to programmatic Graphics.
@@ -20,35 +37,38 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   const gfx = scene.add.graphics();
 
   // ── Floor background (base layer, always drawn) ─────────────────────
-  gfx.fillStyle(0x1e2a3a);
+  gfx.fillStyle(PAL.floorBase);
   gfx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-  // ── Reception strip (top 1/4) — the corridor the doors open onto ────
+  // ── Wall strip (top 200px) — the wall the doors are embedded in ─────
   if (scene.textures.exists('tile-corridor-floor')) {
     scene.add.tileSprite(0, 0, GAME_WIDTH, OFFICE_Y_TOP, 'tile-corridor-floor').setOrigin(0, 0);
   } else {
-    gfx.fillStyle(0x2d3e50);
+    // Programmatic wall fallback
+    gfx.fillStyle(PAL.wallFill);
     gfx.fillRect(0, 0, GAME_WIDTH, OFFICE_Y_TOP);
+    // Baseboard strip at the bottom of the wall
+    gfx.fillStyle(PAL.wallBaseboard);
+    gfx.fillRect(0, OFFICE_Y_TOP - 6, GAME_WIDTH, 6);
   }
 
   // ── Bottom wall strip ────────────────────────────────────────────────
   if (scene.textures.exists('tile-wall')) {
     scene.add.tileSprite(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM, 'tile-wall').setOrigin(0, 0);
   } else {
-    gfx.fillStyle(0x2d3e50);
+    gfx.fillStyle(PAL.wallFill);
     gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM);
   }
 
-  // ── Petya's office (bottom 3/4) — the battlefield ───────────────────
+  // ── Petya's office (the battlefield) ────────────────────────────────
   if (scene.textures.exists('tile-office-floor')) {
     scene.add.tileSprite(0, OFFICE_Y_TOP, GAME_WIDTH, OFFICE_Y_BOTTOM - OFFICE_Y_TOP, 'tile-office-floor').setOrigin(0, 0);
   } else {
-    gfx.fillStyle(0x1a5276, 0.55);
+    gfx.fillStyle(PAL.floorBase, 0.95);
     gfx.fillRect(0, OFFICE_Y_TOP, GAME_WIDTH, OFFICE_Y_BOTTOM - OFFICE_Y_TOP);
 
-    // Placeholder floor tile grid — a real floor texture already has its
-    // own pattern, so only draw this when there isn't one.
-    gfx.lineStyle(1, 0x4a6b8a, 0.25);
+    // Placeholder floor tile grid
+    gfx.lineStyle(1, PAL.floorGrid, 0.3);
     const tileSize = 48;
     for (let x = 0; x < GAME_WIDTH; x += tileSize) {
       gfx.lineBetween(x, OFFICE_Y_TOP, x, OFFICE_Y_BOTTOM);
@@ -58,12 +78,23 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
     }
   }
 
-  // ── Office border lines (gameplay boundary, always drawn) ───────────
-  gfx.lineStyle(3, 0x3498db, 0.8);
-  gfx.lineBetween(0, OFFICE_Y_TOP,    GAME_WIDTH, OFFICE_Y_TOP);
+  // ── Wall-floor junction shadow (soft transition, not a harsh line) ──
+  // Drop-shadow below the wall to give depth
+  const shadowGfx = scene.add.graphics();
+  shadowGfx.fillStyle(PAL.borderShadow, 0.5);
+  shadowGfx.fillRect(0, OFFICE_Y_TOP, GAME_WIDTH, 4);
+  shadowGfx.fillStyle(PAL.borderShadow, 0.25);
+  shadowGfx.fillRect(0, OFFICE_Y_TOP + 4, GAME_WIDTH, 4);
+  shadowGfx.fillStyle(PAL.borderShadow, 0.1);
+  shadowGfx.fillRect(0, OFFICE_Y_TOP + 8, GAME_WIDTH, 4);
+
+  // Bottom boundary — subtle line only
+  gfx.lineStyle(2, PAL.borderShadow, 0.4);
   gfx.lineBetween(0, OFFICE_Y_BOTTOM, GAME_WIDTH, OFFICE_Y_BOTTOM);
 
   // ── Spawn doors ───────────────────────────────────────────────────
+  // Doors are positioned so their bottom edge sits exactly at the
+  // wall-floor junction (OFFICE_Y_TOP = 200).
   const hasDoorSprite = scene.textures.exists('sprite-door');
   for (const door of SPAWN_DOORS) {
     if (hasDoorSprite) {
@@ -71,57 +102,58 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
       doorSprites.set(door, img);
     } else {
       doorSprites.set(door, null);
-      // Door frame
-      gfx.fillStyle(0xe74c3c, 0.9);
+      // Door frame — warm brown, matching palette
+      gfx.fillStyle(PAL.wallBaseboard, 0.9);
       gfx.fillRect(door.x - 26, door.y - 21, 52, 42);
-      gfx.lineStyle(2, 0xff6b6b);
+      gfx.lineStyle(2, 0x8b6b4a);
       gfx.strokeRect(door.x - 26, door.y - 21, 52, 42);
-      // Door knob
-      gfx.fillStyle(0xf1c40f);
-      gfx.fillCircle(door.x + 16, door.y, 5);
+      // Door knob — soft gold
+      gfx.fillStyle(PAL.petyaGold);
+      gfx.fillCircle(door.x + 16, door.y, 4);
     }
-    // Label
-    const text = scene.add.text(door.x, door.y - 35, door.label, {
+    // Label above door
+    const text = scene.add.text(door.x, door.y - 42, door.label, {
       fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5, 0.5);
     
     const labelBg = scene.add.graphics();
-    labelBg.fillStyle(0x1a2430, 0.85);
-    labelBg.lineStyle(1, 0x3498db, 0.5);
-    labelBg.fillRoundedRect(door.x - text.width / 2 - 8, door.y - 35 - text.height / 2 - 4, text.width + 16, text.height + 8, 4);
-    labelBg.strokeRoundedRect(door.x - text.width / 2 - 8, door.y - 35 - text.height / 2 - 4, text.width + 16, text.height + 8, 4);
-    text.setDepth(1); // Ensure text is above background
+    labelBg.fillStyle(PAL.labelBg, 0.85);
+    labelBg.lineStyle(1, PAL.labelStroke, 0.4);
+    labelBg.fillRoundedRect(door.x - text.width / 2 - 8, door.y - 42 - text.height / 2 - 4, text.width + 16, text.height + 8, 4);
+    labelBg.strokeRoundedRect(door.x - text.width / 2 - 8, door.y - 42 - text.height / 2 - 4, text.width + 16, text.height + 8, 4);
+    text.setDepth(1);
   }
 
   // ── "PETYA'S OFFICE" label near the top of the room ─────────────────
-  const officeText = scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 12, "PETYA'S OFFICE", {
+  const officeText = scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 14, "PETYA'S OFFICE", {
     fontFamily: 'Inter, system-ui, sans-serif',
-    fontSize: '14px',
-    color: '#ffffff',
+    fontSize: '13px',
+    color: '#c8d6e5',
     fontStyle: 'bold',
+    letterSpacing: 2,
   }).setOrigin(0.5, 0);
   
   const officeBg = scene.add.graphics();
-  officeBg.fillStyle(0x1a2430, 0.85);
-  officeBg.lineStyle(1, 0x3498db, 0.5);
-  officeBg.fillRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 12, OFFICE_Y_TOP + 8, officeText.width + 24, officeText.height + 8, 6);
-  officeBg.strokeRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 12, OFFICE_Y_TOP + 8, officeText.width + 24, officeText.height + 8, 6);
+  officeBg.fillStyle(PAL.labelBg, 0.75);
+  officeBg.lineStyle(1, PAL.labelStroke, 0.3);
+  officeBg.fillRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 14, OFFICE_Y_TOP + 10, officeText.width + 28, officeText.height + 8, 6);
+  officeBg.strokeRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 14, OFFICE_Y_TOP + 10, officeText.width + 28, officeText.height + 8, 6);
   officeText.setDepth(1);
 
-  // Desk zone warning glow (towers can't be placed too close, always drawn)
-  gfx.lineStyle(1, 0xe74c3c, 0.4);
+  // Desk zone warning glow — muted red, not screaming
+  gfx.lineStyle(1, PAL.deskGlow, 0.25);
   gfx.strokeCircle(DESK_X, DESK_Y, 72);
 
   // Desk (+ monitor + Petya himself, all baked into the sprite if one is supplied)
   if (scene.textures.exists('sprite-desk')) {
     scene.add.image(DESK_X, DESK_Y - 13, 'sprite-desk').setDisplaySize(156, 140);
   } else {
-    gfx.fillStyle(0x8b4513);
+    gfx.fillStyle(0x8b6b4a);
     gfx.fillRect(DESK_X - 58, DESK_Y - 32, 117, 65);
-    gfx.lineStyle(2, 0xa0522d);
+    gfx.lineStyle(2, 0xa0825d);
     gfx.strokeRect(DESK_X - 58, DESK_Y - 32, 117, 65);
 
     // Computer monitor on desk
