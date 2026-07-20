@@ -58,28 +58,22 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   } else {
     gfx.fillStyle(PAL.wallFill);
     gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM);
+    // Baseboard at top of bottom wall
+    gfx.fillStyle(PAL.wallBaseboard);
+    gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, 5);
   }
 
   // ── Petya's office (the battlefield) ────────────────────────────────
   if (scene.textures.exists('tile-office-floor')) {
     scene.add.tileSprite(0, OFFICE_Y_TOP, GAME_WIDTH, OFFICE_Y_BOTTOM - OFFICE_Y_TOP, 'tile-office-floor').setOrigin(0, 0);
   } else {
-    gfx.fillStyle(PAL.floorBase, 0.95);
+    // Plain dark floor — no grid lines (they looked like Excel)
+    gfx.fillStyle(PAL.floorBase);
     gfx.fillRect(0, OFFICE_Y_TOP, GAME_WIDTH, OFFICE_Y_BOTTOM - OFFICE_Y_TOP);
-
-    // Placeholder floor tile grid
-    gfx.lineStyle(1, PAL.floorGrid, 0.3);
-    const tileSize = 48;
-    for (let x = 0; x < GAME_WIDTH; x += tileSize) {
-      gfx.lineBetween(x, OFFICE_Y_TOP, x, OFFICE_Y_BOTTOM);
-    }
-    for (let y = OFFICE_Y_TOP; y <= OFFICE_Y_BOTTOM; y += tileSize) {
-      gfx.lineBetween(0, y, GAME_WIDTH, y);
-    }
   }
 
-  // ── Wall-floor junction shadow (soft transition, not a harsh line) ──
-  // Drop-shadow below the wall to give depth
+  // ── Wall-floor junction shadows (soft transitions for depth) ────────
+  // Top wall → floor shadow
   const shadowGfx = scene.add.graphics();
   shadowGfx.fillStyle(PAL.borderShadow, 0.5);
   shadowGfx.fillRect(0, OFFICE_Y_TOP, GAME_WIDTH, 4);
@@ -88,9 +82,11 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   shadowGfx.fillStyle(PAL.borderShadow, 0.1);
   shadowGfx.fillRect(0, OFFICE_Y_TOP + 8, GAME_WIDTH, 4);
 
-  // Bottom boundary — subtle line only
-  gfx.lineStyle(2, PAL.borderShadow, 0.4);
-  gfx.lineBetween(0, OFFICE_Y_BOTTOM, GAME_WIDTH, OFFICE_Y_BOTTOM);
+  // Floor → bottom wall shadow
+  shadowGfx.fillStyle(PAL.borderShadow, 0.3);
+  shadowGfx.fillRect(0, OFFICE_Y_BOTTOM - 4, GAME_WIDTH, 4);
+  shadowGfx.fillStyle(PAL.borderShadow, 0.15);
+  shadowGfx.fillRect(0, OFFICE_Y_BOTTOM - 8, GAME_WIDTH, 4);
 
   // ── Spawn doors ───────────────────────────────────────────────────
   // Doors are positioned so their bottom edge sits exactly at the

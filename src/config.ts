@@ -150,9 +150,9 @@ export interface FurnitureTypeStats {
 export const FURNITURE_TYPE_KEYS: readonly FurnitureType[] = ['cabinet', 'drawer', 'sofa'];
 
 export const FURNITURE_TYPES_DATA: Record<FurnitureType, FurnitureTypeStats> = {
-  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x795548, radius: 34, maxCount: 5 },
-  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0xa1887f, radius: 25, maxCount: 6 },
-  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x8e44ad, radius: 38, maxCount: 3 },
+  cabinet: { label: 'Шкаф',     icon: '🗄️', color: 0x5a3f2b, radius: 34, maxCount: 5 },
+  drawer:  { label: 'Тумбочка', icon: '🗃️', color: 0x8b6b4a, radius: 25, maxCount: 6 },
+  sofa:    { label: 'Диван',    icon: '🛋️', color: 0x4a7a9b, radius: 38, maxCount: 3 },
 };
 
 /** How long a coworker sits on a sofa before standing back up and continuing */
