@@ -10,6 +10,7 @@ import type { HUD } from '../ui/HUD';
 import type { TowerManager } from './TowerManager';
 import { isInOffice, isPlacementValid } from './PlacementValidator';
 import { Builder } from './Builder';
+import { EventBus } from '../events/EventBus';
 
 const KEYBOARD_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
 
@@ -213,6 +214,7 @@ export class TowerPlacer {
     
     if (isInOffice(x, y) && isPlacementValid(x, y, radius, this.manager, this.carrying, isTower)) {
       piece.setPosition(x, y);
+      if (!isTower) EventBus.emit('furniture_moved');
     } else {
       piece.setPosition(this.carryOrigin.x, this.carryOrigin.y);
       import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, x, y, 'Нельзя разместить здесь', '#ff6b6b'));

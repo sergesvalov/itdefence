@@ -50,6 +50,12 @@ export class ProjectileBehavior implements ITowerBehavior {
 
   private fireAt(target: Coworker, enemies: Coworker[]): void {
     const scene = this.tower.scene;
+    
+    // Docs screen shake
+    if (this.tower.variant === 'docs') {
+      scene.cameras.main.shake(150, 0.008);
+    }
+    
     const proj = this.createProjectileVisual();
 
     const angle = Phaser.Math.Angle.Between(this.tower.x, this.tower.y, target.x, target.y);

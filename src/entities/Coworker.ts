@@ -3,6 +3,7 @@ import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS, type C
 import type { Furniture } from './Furniture';
 import type { ToolTower } from './ToolTower';
 import { CoworkerView, RADIUS } from './CoworkerView';
+import { showFloatingText } from '../ui/FloatingText';
 
 export interface Waypoint {
   x: number;
@@ -84,6 +85,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hp -= amount;
     this.view.redrawHpBar(this.hp, this.maxHp);
     this.view.triggerHitFlash();
+    showFloatingText(this.scene, this.x, this.y, `-${amount}`, '#e74c3c');
     if (this.hp <= 0) this.kill();
   }
 

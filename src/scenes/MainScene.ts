@@ -8,6 +8,7 @@ import { TowerManager } from '../systems/TowerManager';
 import { WaveManager } from '../systems/WaveManager';
 import { Ultimate } from '../systems/Ultimate';
 import { Shield } from '../systems/Shield';
+import { TutorialManager } from '../systems/TutorialManager';
 import { Inbox } from '../systems/Inbox';
 import { EventBus, GameEvents } from '../events/EventBus';
 import { MetaProgression } from '../systems/MetaProgression';
@@ -83,6 +84,8 @@ export class MainScene extends Phaser.Scene {
     this.towerPlacer.isPaused = () => this.waveManager.getIsPaused();
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
+    
+    new TutorialManager(this);
 
     this.hud.on('restart-tap', () => { 
       if (this.isGameOver) {

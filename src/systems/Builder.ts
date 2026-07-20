@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { ToolTower } from '../entities/ToolTower';
 import { Furniture } from '../entities/Furniture';
+import { EventBus } from '../events/EventBus';
 import { TOWER_VARIANTS_DATA, FURNITURE_TYPES_DATA, type TowerVariant, type FurnitureType } from '../config';
 import type { Economy } from './Economy';
 import type { TowerManager } from './TowerManager';
@@ -43,6 +44,7 @@ export class Builder {
 
     showFloatingText(this.scene, x, y, `-${cost} 💰`, '#ff7675');
     this.scene.cameras.main.shake(80, 0.003);
+    EventBus.emit('tower_built');
     return true;
   }
 
