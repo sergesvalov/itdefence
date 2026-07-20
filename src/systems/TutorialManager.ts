@@ -92,8 +92,8 @@ export class TutorialManager {
     
     // Point to the toolbar (left side). +90 degrees rotates 👇 to 👈
     this.arrow.setRotation(Math.PI / 2); 
-    // Start slightly right of the first slot (which is around x=42, y=85) and point left
-    this.animateArrow(110, 85, -20, 0); 
+    // Point to the first toolbar slot (which is around x=36, y=170) and point left
+    this.animateArrow(110, 170, -20, 0); 
   }
 
   private onTowerBuilt() {
