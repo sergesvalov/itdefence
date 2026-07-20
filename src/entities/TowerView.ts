@@ -126,8 +126,7 @@ export class TowerView {
         gfx.strokeRoundedRect(-radius, -radius, radius * 2, radius * 2, 4);
       }
 
-      this.icon = scene.add.text(0, 0, stats.icon, { fontSize: '22px' }).setOrigin(0.5, 0.5);
-      bodyParts.push(gfx, this.icon);
+      bodyParts.push(gfx);
     }
 
     // ── Level indicator ──────────────────────────────────────────────────

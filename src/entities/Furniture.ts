@@ -115,8 +115,7 @@ export class Furniture extends Phaser.GameObjects.Container {
         gfx.strokeRoundedRect(-w / 2, -h / 2, w, h, 6);
       }
 
-      this.icon = scene.add.text(0, 0, stats.icon, { fontSize: `${Math.round(stats.radius * 0.7)}px` }).setOrigin(0.5);
-      parts = [gfx, this.icon];
+      parts = [gfx];
     }
 
     this.add(parts);
