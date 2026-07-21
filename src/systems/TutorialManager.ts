@@ -173,8 +173,10 @@ export class TutorialManager {
     const centerX = GAME_WIDTH / 2 + 42;
     const centerY = GAME_HEIGHT / 2 - 50;
     
-    this.updateText('Смотри, идут задачи!\nПеретяни любой шкаф, чтобы заставить их идти в обход!', centerX, centerY, false);
-    this.animateArrow(centerX, centerY + 100, 0, 0, 25);
+    this.updateText('Смотри, идут задачи!\nВыбери шкаф слева и кликни на поле,\nчтобы преградить им путь!', centerX, centerY, false);
+    
+    // Cabinet is index 6 in the toolbar. y = 170 + 6 * 68 = 578
+    this.animateArrow(130, 578, Math.PI / 2, -25, 0);
   }
 
   private onFurnitureMoved(): void {
