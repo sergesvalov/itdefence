@@ -94,6 +94,28 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                script {
+                    echo "🧪 Запуск Unit-тестов (Vitest)..."
+                    withNodeBuilder {
+                        sh 'npm run test'
+                    }
+
+                    echo "🎭 Запуск E2E-тестов (Playwright)..."
+                    // Используем официальный образ Playwright для запуска E2E тестов в Docker.
+                    // Монтируем директорию и используем IPC/Net host, если нужно для локального dev-сервера.
+                    docker.image('mcr.microsoft.com/playwright:v1.49.1-jammy').inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm --ipc=host") {
+                        // Playwright требует установки системных зависимостей браузеров (даже в своем образе иногда).
+                        // Но в mcr.microsoft.com/playwright они уже есть.
+                        sh 'npm ci --ignore-scripts' // На всякий случай убедимся, что пакеты стоят
+                        sh 'npx playwright install chromium'
+                        sh 'npm run test:e2e'
+                    }
+                }
+            }
+        }
+
         // ═════════════════════════════════════════════════════════════════
         // ПОСЛЕДОВАТЕЛЬНЫЕ СБОРКИ (без parallel — ARM-хост не тянет
         // одновременные тяжёлые контейнеры vite+gradle без деградации)

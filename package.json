@@ -14,7 +14,9 @@
     "electron:dev": "npm run build:electron && electron .",
     "dist:win": "npm run build:electron && electron-builder --win --x64",
     "cap:sync": "npm run build:cap && npx cap sync android",
-    "cap:open": "npx cap open android"
+    "cap:open": "npx cap open android",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@capacitor/core": "^7.4.0",
@@ -23,10 +25,12 @@
   "devDependencies": {
     "@capacitor/android": "^7.4.0",
     "@capacitor/cli": "^7.4.0",
+    "@playwright/test": "^1.49.1",
     "electron": "^43.1.0",
     "electron-builder": "^26.0.12",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^2.1.8"
   },
   "build": {
     "appId": "com.sergesvalov.itdefence",
