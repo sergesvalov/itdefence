@@ -2,6 +2,10 @@
 
 pipeline {
     agent { label 'built-in' }
+    
+    options {
+        skipDefaultCheckout()
+    }
 
     parameters {
         booleanParam(name: 'SKIP_TYPECHECK',       defaultValue: false, description: 'Пропустить TypeScript-проверку')
@@ -39,8 +43,14 @@ pipeline {
 
         stage('Source Checkout') {
             steps {
+                // Manually clean up root files that might have been left by previous Playwright runs
+                sh 'docker run --rm -v $(pwd):/workspace alpine chown -R $(id -u):$(id -g) /workspace || true'
+                
                 checkout scm
-                echo "▶ Коммит: ${env.GIT_COMMIT} | Ветка: ${env.GIT_BRANCH}"
+                
+                script {
+                    echo "▶ Коммит: ${env.GIT_COMMIT} | Ветка: ${env.GIT_BRANCH}"
+                }
 
                 // Предыдущие сборки могли оставить в workspace dist/,
                 // release/ и android/ (cap add android — это полноценный
@@ -48,12 +58,11 @@ pipeline {
                 // каждого `docker build`; теперь на всякий случай чистим и
                 // тут, чтобы workspace не пух от сборки к сборке.
                 //
-                // Эти файлы создавались контейнерами с -u root (см.
-                // withNodeBuilder/withAndroidBuilder), поэтому на хосте они
+                // Эти файлы создавались контейнерами с -u root, поэтому на хосте они
                 // root-owned — обычный `rm -rf` от jenkins-пользователя не
                 // может их удалить (Permission denied). Чистим тоже от root,
                 // через одноразовый контейнер на том же bind-mount workspace.
-                sh 'docker run --rm -u root -v "$WORKSPACE:$WORKSPACE" -w "$WORKSPACE" node:22-bookworm-slim rm -rf dist release android'
+                sh 'docker run --rm -u root -v "$WORKSPACE:$WORKSPACE" -w "$WORKSPACE" node:22-bookworm-slim rm -rf dist release android playwright-report test-results'
             }
         }
 
