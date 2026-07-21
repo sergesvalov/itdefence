@@ -231,7 +231,7 @@ Test                  (Unit-тесты Vitest + E2E Playwright внутри Dock
     ↓
 Archive (dist/**, **/*.apk)
     ↓
-Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 192.168.10.222:7979
+Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 192.168.0.222:7979
 ```
 
 > **Windows .exe не собирается в этом пайплайне.** `electron-builder --win` создаёт

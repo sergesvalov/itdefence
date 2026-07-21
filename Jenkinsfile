@@ -17,13 +17,13 @@ pipeline {
 
     environment {
         // ── Конфигурация локального реестра ──────────────────────────────
-        REGISTRY_IP    = '192.168.10.222'
+        REGISTRY_IP    = '192.168.0.222'
         REGISTRY_PORT  = '5050'
         NODE_IMAGE     = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-builder"
         ANDROID_IMAGE  = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-android"
 
         // ── Целевой сервер (Docker-деплой) ──────────────────────────────
-        DEPLOY_HOST    = '192.168.10.222'
+        DEPLOY_HOST    = '192.168.0.222'
         DEPLOY_USER    = 'serge'
         DEPLOY_CREDS   = 'serge'
         DEPLOY_DIR     = '/opt/itdefence'
