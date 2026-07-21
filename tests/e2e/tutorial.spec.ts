@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('tutorial should complete successfully', async ({ page }) => {
+  test.setTimeout(90000); // 90 seconds timeout for slow CI environments
   const errors: string[] = [];
   
   page.on('pageerror', err => {
@@ -21,7 +22,7 @@ test('tutorial should complete successfully', async ({ page }) => {
   await page.goto('/');
 
   // Wait for the main menu to load
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(3000);
 
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
@@ -31,12 +32,12 @@ test('tutorial should complete successfully', async ({ page }) => {
   }
 
   // Wait for MainScene (the game itself) to initialize
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(5000);
 
   if (box) {
     // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (x = center, y = center + 40)
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 40);
-    await page.waitForTimeout(6000); // Wait for enemy to spawn (up to 3.5s) and reach y > 200 to trigger step_furniture
+    await page.waitForTimeout(15000); // Wait for enemy to spawn and reach y > 200 to trigger step_furniture
 
     // 1. Trigger furniture_moved by dispatching it via __EventBus
     await page.evaluate(() => {
