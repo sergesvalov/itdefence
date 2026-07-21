@@ -63,7 +63,7 @@ export class MainScene extends Phaser.Scene {
     this.towerPlacer = new TowerPlacer(this, this.economy, this.hud, this.towerManager);
     
     // Spawn initial barricade furniture
-    this.towerManager.autoSpawnFurniture(10, 
+    this.towerManager.autoSpawnFurniture(3, 
       (x, y, radius) => this.towerPlacer.isPlacementValid(x, y, radius) && this.towerPlacer.isInOffice(x, y),
       (val) => this.towerPlacer.snap(val)
     );
