@@ -197,12 +197,12 @@ export interface CoworkerStats {
 }
 
 export const COWORKER_VARIANTS: Record<CoworkerVariant, CoworkerStats> = {
-  normal: { hpMult: 1, speedMult: 1, scale: 1, tint: 0xffffff, emoji: '', name: 'Коллега' },
-  fast:   { hpMult: 0.7, speedMult: 1.5, scale: 0.9, tint: 0xf39c12, emoji: '⚡', name: 'Agile Коуч' },
-  tank:   { hpMult: 3, speedMult: 0.65, scale: 1.15, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер' },
-  swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.8, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер' },
-  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.6, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик' },
-  remote: { hpMult: 0.8, speedMult: 1.2, scale: 0.95, tint: 0x8e44ad, emoji: '💻', name: 'Удаленщик' },
+  normal: { hpMult: 1, speedMult: 1, scale: 1.2, tint: 0xffffff, emoji: '', name: 'Коллега' },
+  fast:   { hpMult: 0.7, speedMult: 1.5, scale: 1.08, tint: 0xf39c12, emoji: '⚡', name: 'Agile Коуч' },
+  tank:   { hpMult: 3, speedMult: 0.65, scale: 1.38, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер' },
+  swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.96, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер' },
+  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.92, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик' },
+  remote: { hpMult: 0.8, speedMult: 1.2, scale: 1.14, tint: 0x8e44ad, emoji: '💻', name: 'Удаленщик' },
 };
 
 // ─── Map textures ───────────────────────────────────────────────────────
