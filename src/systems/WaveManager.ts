@@ -48,7 +48,7 @@ export class WaveManager {
     for (const cw of this.enemies) {
       if (cw.isDead || cw.hasReachedDesk) continue;
       if (cw.variant === 'remote') continue; // remote ignores furniture
-      const path = pf.findPath(cw.x, cw.y, DESK_X, DESK_Y);
+      const path = pf.findPath(cw.x, cw.y, DESK_X, DESK_Y - 70);
       if (path) {
         cw.setWaypoints(path);
       }
@@ -59,16 +59,16 @@ export class WaveManager {
     if (variant === 'remote') {
       return [
         { x: startX, y: startY },
-        { x: DESK_X, y: DESK_Y },
+        { x: DESK_X, y: DESK_Y - 70 },
       ];
     }
     
     const pf = new Pathfinder(this.getFurniture());
-    return pf.findPath(startX, startY, DESK_X, DESK_Y) || [
+    return pf.findPath(startX, startY, DESK_X, DESK_Y - 70) || [
       { x: startX, y: startY },
       { x: startX, y: OFFICE_Y_TOP },
       { x: DESK_X, y: OFFICE_Y_TOP },
-      { x: DESK_X, y: DESK_Y },
+      { x: DESK_X, y: DESK_Y - 70 },
     ];
   }
 
