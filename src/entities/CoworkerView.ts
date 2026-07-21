@@ -17,11 +17,13 @@ export class CoworkerView {
     private variant: CoworkerVariant,
     private stats: CoworkerStats
   ) {
-    this.useSprite = scene.textures.exists('sprite-coworker');
+    const specificKey = `sprite-coworker-${variant}`;
+    const keyToUse = scene.textures.exists(specificKey) ? specificKey : 'sprite-coworker';
+    this.useSprite = scene.textures.exists(keyToUse);
     const bodyParts: Phaser.GameObjects.GameObject[] = [];
 
     if (this.useSprite) {
-      this.coBody = scene.add.image(0, 0, 'sprite-coworker').setDisplaySize(RADIUS * 2 * stats.scale, RADIUS * 2.4 * stats.scale);
+      this.coBody = scene.add.image(0, 0, keyToUse).setDisplaySize(RADIUS * 2 * stats.scale, RADIUS * 2.4 * stats.scale);
       bodyParts.push(this.coBody);
     } else {
       this.coBody = scene.add.arc(0, 0, RADIUS * stats.scale, 0, 360, false, stats.tint);

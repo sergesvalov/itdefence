@@ -223,6 +223,11 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   { key: 'sprite-desk-partner', path: 'assets/sprites/desk-partner.png', kind: 'sprite' },
   { key: 'sprite-tower-partner',  path: 'assets/sprites/desk-partner.png', kind: 'sprite' },
   { key: 'sprite-coworker',       path: 'assets/sprites/coworker.png',     kind: 'sprite' },
+  { key: 'sprite-coworker-fast',  path: 'assets/sprites/coworker-fast.png', kind: 'sprite' },
+  { key: 'sprite-coworker-tank',  path: 'assets/sprites/coworker-tank.png', kind: 'sprite' },
+  { key: 'sprite-coworker-swarm', path: 'assets/sprites/coworker-swarm.png', kind: 'sprite' },
+  { key: 'sprite-coworker-boss',  path: 'assets/sprites/coworker-boss.png', kind: 'sprite' },
+  { key: 'sprite-coworker-remote',path: 'assets/sprites/coworker-remote.png', kind: 'sprite' },
   // One sprite slot per tower variant — sprite-tower-script, sprite-tower-router, ...
   ...TOWER_VARIANT_KEYS.map((variant): TextureAsset => ({
     key: `sprite-tower-${variant}`,
