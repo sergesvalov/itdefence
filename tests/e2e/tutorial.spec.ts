@@ -47,7 +47,7 @@ test('tutorial should complete successfully', async ({ page }) => {
 
   // Verify that meta.tutorialCompleted was set to true
   const meta = await page.evaluate(() => {
-    return JSON.parse(window.localStorage.getItem('itdefence-meta') || '{}');
+    return JSON.parse(window.localStorage.getItem('itdefence_meta') || '{}');
   });
 
   expect(meta.tutorialCompleted).toBe(true);
