@@ -154,37 +154,13 @@ pipeline {
             steps {
                 script {
                     echo "🤖 Capacitor → Gradle → Android APK..."
-                    withAndroidBuilder {
-                        // 1. Vite-билд для мобилки
-                        sh 'VITE_MODE=capacitor npm run build:cap'
-
-                        // 2. Инициализация платформы
-                        sh "npx cap add android || npx cap sync android"
-
-                        // AGP тянет свой aapt2 с Maven (только x86_64) независимо
-                        // от SDK build-tools — на arm64 падает с "Syntax error:
-                        // '(' unexpected" (shell пытается исполнить x86_64 ELF).
-                        // Официального arm64-билда от Google нет, поэтому
-                        // подсовываем проверенный по чек-сумме arm64 aapt2 из
-                        // Dockerfile.android (Commit451/android-arm-build-tools).
-                        sh 'echo "android.aapt2FromMavenOverride=/usr/local/bin/aapt2" >> android/gradle.properties'
-
-                        // 3. Компиляция через Gradle (с постоянным кэшем — см. GRADLE_CACHE_VOLUME)
-                        sh '''
-                            cd android
-                            chmod +x gradlew
-                            ./gradlew assembleRelease --no-daemon --stacktrace --build-cache -Pandroid.useAndroidX=true
-                        '''
-
-                        signAndroidApk(
-                            unsignedApk: 'android/app/build/outputs/apk/release/app-release-unsigned.apk',
-                            signedApk:   'android/app/build/outputs/apk/release/app-release.apk',
-                            keystore:    'keystore/release.keystore',
-                            storepass:   'password',
-                            keyalias:    'release',
-                            keypass:     'password'
-                        )
-                    }
+                    buildCapacitorAndroid(
+                        buildScript: 'VITE_MODE=capacitor npm run build:cap',
+                        keystore: 'keystore/release.keystore',
+                        storepass: 'password',
+                        keyalias: 'release',
+                        keypass: 'password'
+                    )
                     sh 'find android/app/build/outputs/apk -name "*.apk" | head -5'
                     archiveArtifacts artifacts: 'android/app/build/outputs/apk/**/*.apk', fingerprint: true
                 }
