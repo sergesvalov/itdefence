@@ -30,8 +30,6 @@ pipeline {
         WEB_IMAGE      = "${REGISTRY_IP}:${REGISTRY_PORT}/itdefence-web"
         WEB_PORT       = '7979'
 
-        BUILD_TAG      = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'local'}"
-
         // Именованные Docker-тома с npm/gradle кэшем — переживают между
         // сборками (в отличие от слоёв образа) и сильно ускоряют повторные
         // npm ci / gradle assembleRelease на медленном ARM-хосте
@@ -49,6 +47,7 @@ pipeline {
                 checkout scm
                 
                 script {
+                    env.BUILD_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'local'}"
                     echo "▶ Коммит: ${env.GIT_COMMIT} | Ветка: ${env.GIT_BRANCH}"
                 }
 
