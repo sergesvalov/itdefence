@@ -26,6 +26,15 @@ npm run build:electron # Electron-версия → dist/ (base='./')
 npm run build:cap      # Capacitor-версия → dist/ (base='./')
 ```
 
+## 🧪 Тестирование
+
+```bash
+npm run test           # Запуск Unit-тестов (Vitest)
+npm run test:e2e       # Запуск E2E-тестов (Playwright)
+```
+
+В проекте настроено сквозное (E2E) тестирование критических путей (например, прохождение туториала) с помощью Playwright, а также юнит-тестирование с помощью Vitest. Эти тесты интегрированы в Jenkins-пайплайн и выполняются перед сборкой.
+
 ## 📦 Платформенные пакеты
 
 ```bash
@@ -210,6 +219,8 @@ Build Android Image   (аналогично — только при измене
 Install Dependencies  (npm ci, с постоянным кэшем — том itdefence-npm-cache)
     ↓
 TypeScript Check      (tsc --noEmit)
+    ↓
+Test                  (Unit-тесты Vitest + E2E Playwright внутри Docker)
     ↓
 ┌───────────────────────────────────────┐  ← последовательно (ARM-хост не тянет parallel)
 │ Build: Web           │ Build: Android          │
