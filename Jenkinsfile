@@ -105,7 +105,7 @@ pipeline {
                     echo "🎭 Запуск E2E-тестов (Playwright)..."
                     // Используем официальный образ Playwright для запуска E2E тестов в Docker.
                     // Монтируем директорию и используем IPC/Net host, если нужно для локального dev-сервера.
-                    docker.image('mcr.microsoft.com/playwright:v1.49.1-jammy').inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm --ipc=host") {
+                    docker.image('mcr.microsoft.com/playwright:v1.49.1-jammy').inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm --shm-size=1gb") {
                         // Playwright требует установки системных зависимостей браузеров (даже в своем образе иногда).
                         // Но в mcr.microsoft.com/playwright они уже есть.
                         sh 'npm install --ignore-scripts' // На всякий случай убедимся, что пакеты стоят
