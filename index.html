@@ -29,15 +29,23 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 100vh;
+        height: 100dvh;
+        width: 100vw;
         font-family: 'Segoe UI', system-ui, sans-serif;
         overflow: hidden;
       }
       #game-container {
         position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       canvas {
         display: block;
+        max-width: 100%;
+        max-height: 100%;
         border-radius: 8px;
         box-shadow: 0 0 60px rgba(100,200,255,0.15), 0 0 20px rgba(0,0,0,0.8);
       }
