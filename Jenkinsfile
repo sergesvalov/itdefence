@@ -146,30 +146,14 @@ pipeline {
                             ./gradlew assembleRelease --no-daemon --stacktrace --build-cache -Pandroid.useAndroidX=true
                         '''
 
-                        // 4. Выравнивание и подпись APK
-                        sh '''
-                            APK_DIR="android/app/build/outputs/apk/release"
-                            UNSIGNED_APK="$APK_DIR/app-release-unsigned.apk"
-                            ALIGNED_APK="$APK_DIR/app-release-aligned.apk"
-                            SIGNED_APK="$APK_DIR/app-release.apk"
-                            BUILD_TOOLS="/opt/android-sdk/build-tools/35.0.0"
-
-                            if [ -f "$UNSIGNED_APK" ]; then
-                                echo "Выравнивание APK (zipalign)..."
-                                # SDK build-tools zipalign is x86_64-only ("Exec format
-                                # error" on this arm64 host) — use the arm64 build from
-                                # Dockerfile.android instead (same source as aapt2 override).
-                                /usr/local/bin/zipalign -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
-                                
-                                echo "Подписание APK (apksigner)..."
-                                $BUILD_TOOLS/apksigner sign --ks keystore/release.keystore --ks-pass pass:password --ks-key-alias release --key-pass pass:password --out "$SIGNED_APK" "$ALIGNED_APK"
-                                
-                                echo "Удаление временных файлов..."
-                                rm "$UNSIGNED_APK" "$ALIGNED_APK"
-                            else
-                                echo "Собранный unsigned APK не найден по пути $UNSIGNED_APK"
-                            fi
-                        '''
+                        signAndroidApk(
+                            unsignedApk: 'android/app/build/outputs/apk/release/app-release-unsigned.apk',
+                            signedApk:   'android/app/build/outputs/apk/release/app-release.apk',
+                            keystore:    'keystore/release.keystore',
+                            storepass:   'password',
+                            keyalias:    'release',
+                            keypass:     'password'
+                        )
                     }
                     sh 'find android/app/build/outputs/apk -name "*.apk" | head -5'
                     archiveArtifacts artifacts: 'android/app/build/outputs/apk/**/*.apk', fingerprint: true
