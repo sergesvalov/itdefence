@@ -15,7 +15,7 @@ const DEFAULT_SAVE: MetaSaveData = {
   moneyLevel: 0,
   damageLevel: 0,
   shieldDurationLevel: 0,
-  tutorialCompleted: false,
+  tutorialCompleted: true,
 };
 
 export class MetaProgression {
