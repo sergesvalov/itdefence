@@ -202,12 +202,14 @@ pipeline {
                 script {
                     echo "🚀 Docker-деплой на ${DEPLOY_HOST}:${WEB_PORT} ..."
                     unstash 'compose'
-                    sshagent(credentials: [DEPLOY_CREDS]) {
-                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'mkdir -p ${DEPLOY_DIR}'"
-                        sh "scp -o StrictHostKeyChecking=no compose.yml ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/compose.yml"
-                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} 'cd ${DEPLOY_DIR} && docker compose pull && docker compose up -d --remove-orphans'"
-                        echo "✅ Игра доступна: http://${DEPLOY_HOST}:${WEB_PORT}"
-                    }
+                    deployDockerCompose(
+                        credentialsId: DEPLOY_CREDS,
+                        user: DEPLOY_USER,
+                        host: DEPLOY_HOST,
+                        dir: DEPLOY_DIR,
+                        composeFile: 'compose.yml'
+                    )
+                    echo "✅ Игра доступна: http://${DEPLOY_HOST}:${WEB_PORT}"
                 }
             }
         }

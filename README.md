@@ -284,3 +284,4 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 - `withNodeBuilder`: Обертка для запуска команд сборки в изолированном Docker-контейнере с Node.js, с пробросом кэша npm (`NPM_CACHE_VOLUME`) и правами root.
 - `withAndroidBuilder`: Обертка для запуска сборки Android-проекта (Capacitor/Gradle) в изолированном контейнере, с пробросом кэша npm (`NPM_CACHE_VOLUME`), кэша Gradle (`GRADLE_CACHE_VOLUME`) и правами root.
 - `signAndroidApk`: Выравнивает (zipalign) и подписывает (apksigner) собранный APK-файл с использованием параметров-ключей. Удобно переиспользуется для других Android-сборок.
+- `deployDockerCompose`: Деплоит приложение через Docker Compose на удаленный сервер по SSH, создавая нужные директории и копируя конфигурацию.
