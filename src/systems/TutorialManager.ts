@@ -5,12 +5,14 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
 export class TutorialManager {
   private overlay!: Phaser.GameObjects.Container;
-  private currentStep: 'init' | 'step_furniture' | 'step_tower' | 'completed' = 'init';
+  private currentStep: 'init' | 'step_intro' | 'step_furniture' | 'step_tower' | 'completed' = 'init';
   private arrowTween: Phaser.Tweens.Tween | null = null;
   private hintText!: Phaser.GameObjects.Text;
   private textBg!: Phaser.GameObjects.Graphics;
   private arrow!: Phaser.GameObjects.Graphics;
   private dimBg!: Phaser.GameObjects.Rectangle;
+  private avatar!: Phaser.GameObjects.Image;
+  private okBtn!: Phaser.GameObjects.Container;
 
   constructor(private scene: Phaser.Scene) {
     const meta = MetaProgression.get();
@@ -28,22 +30,40 @@ export class TutorialManager {
 
     this.hintText = scene.add.text(0, 0, '', {
       fontFamily: 'Inter, system-ui, sans-serif',
-      fontSize: '22px',
+      fontSize: '20px',
       color: '#ffffff',
       fontStyle: 'bold',
-      align: 'center',
-      wordWrap: { width: 340 },
+      align: 'left',
+      wordWrap: { width: 280 },
       padding: { x: 20, y: 20 },
       lineSpacing: 8
-    }).setOrigin(0.5);
+    }).setOrigin(0, 0.5);
+
+    // Avatar
+    this.avatar = scene.add.image(0, 0, 'sprite-avatar-petya').setScale(1.2).setOrigin(0, 0.5);
+    this.overlay.add(this.avatar);
 
     // Custom drawn arrow (chevron)
     this.arrow = scene.add.graphics();
     this.drawArrow();
+    this.arrow.setVisible(false);
 
-    this.overlay.add([this.hintText, this.arrow]);
+    // OK Button
+    const okBg = scene.add.rectangle(0, 0, 140, 40, 0x27ae60).setInteractive({ useHandCursor: true });
+    okBg.setStrokeStyle(2, 0xffffff);
+    const okTxt = scene.add.text(0, 0, 'ПОНЯТНО', { fontFamily: 'Inter, sans-serif', fontSize: '18px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.okBtn = scene.add.container(0, 0, [okBg, okTxt]);
+    this.okBtn.setVisible(false);
+    
+    okBg.on('pointerdown', () => {
+      if (this.currentStep === 'step_intro') {
+        this.showStep1();
+      }
+    });
 
-    this.showStep1();
+    this.overlay.add([this.hintText, this.arrow, this.okBtn]);
+
+    this.showIntro();
 
     EventBus.on('furniture_moved', this.onFurnitureMoved, this);
     EventBus.on('tower_built', this.onTowerBuilt, this);
@@ -65,20 +85,40 @@ export class TutorialManager {
     this.arrow.strokePath();
   }
 
-  private updateText(text: string, x: number, y: number): void {
+  private updateText(text: string, x: number, y: number, showAvatar = false): void {
     this.hintText.setText(text);
-    this.hintText.setPosition(x, y);
+
+    if (showAvatar) {
+      this.avatar.setVisible(true);
+      this.avatar.setPosition(x, y);
+      this.hintText.setPosition(x + 80, y);
+    } else {
+      this.avatar.setVisible(false);
+      this.hintText.setPosition(x, y);
+    }
 
     // Update dynamic background
     const bounds = this.hintText.getBounds();
     this.textBg.clear();
     this.textBg.fillStyle(0x000000, 0.85);
     this.textBg.lineStyle(2, 0x3498db, 1);
-    this.textBg.fillRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
-    this.textBg.strokeRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
+    
+    if (showAvatar) {
+      const avBounds = this.avatar.getBounds();
+      const bgX = avBounds.x - 10;
+      const bgY = Math.min(avBounds.y, bounds.y) - 10;
+      const bgW = avBounds.width + bounds.width + 30;
+      const bgH = Math.max(avBounds.height, bounds.height) + 20;
+      this.textBg.fillRoundedRect(bgX, bgY, bgW, bgH, 12);
+      this.textBg.strokeRoundedRect(bgX, bgY, bgW, bgH, 12);
+    } else {
+      this.textBg.fillRoundedRect(bounds.x - 10, bounds.y - 10, bounds.width + 20, bounds.height + 20, 12);
+      this.textBg.strokeRoundedRect(bounds.x - 10, bounds.y - 10, bounds.width + 20, bounds.height + 20, 12);
+    }
   }
 
   private animateArrow(x: number, y: number, angle: number, offsetX: number, offsetY: number): void {
+    this.arrow.setVisible(true);
     this.arrow.setPosition(x, y);
     this.arrow.setRotation(angle);
     if (this.arrowTween) this.arrowTween.stop();
@@ -93,12 +133,27 @@ export class TutorialManager {
     });
   }
 
+  private showIntro(): void {
+    this.currentStep = 'step_intro';
+    const centerX = 50;
+    const centerY = GAME_HEIGHT / 2 - 80;
+    
+    this.updateText('Я — Петя, сисадмин.\nКонец спринта, и коллеги несут горящие таски!\nЕсли они дойдут до моего стола — я сгорю на работе.\nНужно срочно строить защиту!', centerX, centerY, true);
+    
+    this.okBtn.setVisible(true);
+    this.okBtn.setPosition(GAME_WIDTH / 2, centerY + 120);
+  }
+
   private showStep1(): void {
     this.currentStep = 'step_furniture';
+    this.okBtn.setVisible(false);
+    this.hintText.setAlign('center'); // switch to center alignment for the rest
+    this.hintText.setOrigin(0.5);
+
     const centerX = GAME_WIDTH / 2 + 42;
     const centerY = GAME_HEIGHT / 2 - 50;
     
-    this.updateText('Смотри, идут задачи!\nПеретяни любой шкаф, чтобы освободить место для защиты!', centerX, centerY);
+    this.updateText('Смотри, идут задачи!\nПеретяни любой шкаф, чтобы заставить их идти в обход!', centerX, centerY, false);
     this.animateArrow(centerX, centerY + 100, 0, 0, 25);
   }
 

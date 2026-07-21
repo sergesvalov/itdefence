@@ -34,6 +34,10 @@ test('tutorial should complete successfully', async ({ page }) => {
   await page.waitForTimeout(2000);
 
   if (box) {
+    // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (x = center, y = center + 40)
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 40);
+    await page.waitForTimeout(1000);
+
     // 1. Trigger furniture_moved by dispatching it via __EventBus
     await page.evaluate(() => {
       if ((window as any).__EventBus) {
