@@ -40,7 +40,7 @@ export class TutorialManager {
     }).setOrigin(0, 0.5);
 
     // Avatar
-    this.avatar = scene.add.image(0, 0, 'sprite-avatar-petya').setScale(1.2).setOrigin(0, 0.5);
+    this.avatar = scene.add.image(0, 0, 'sprite-avatar-petya').setDisplaySize(80, 80).setOrigin(0, 0.5);
     this.overlay.add(this.avatar);
 
     // Custom drawn arrow (chevron)
@@ -96,7 +96,7 @@ export class TutorialManager {
     if (showAvatar) {
       this.avatar.setVisible(true);
       this.avatar.setPosition(x, y);
-      this.hintText.setPosition(x + 80, y);
+      this.hintText.setPosition(x + 100, y);
     } else {
       this.avatar.setVisible(false);
       this.hintText.setPosition(x, y);

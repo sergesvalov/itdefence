@@ -82,6 +82,7 @@ export class Builder {
     }
     const piece = new Furniture(this.scene, x, y, type);
     this.manager.addFurniture(piece);
+    EventBus.emit('furniture_moved');
     return true;
   }
 }
