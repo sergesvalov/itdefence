@@ -76,7 +76,7 @@ pipeline {
                 script {
                     echo "📦 npm ci в workspace..."
                     withNodeBuilder {
-                        sh 'npm ci --ignore-scripts'
+                        sh 'npm install --ignore-scripts'
                     }
                 }
             }
@@ -108,7 +108,7 @@ pipeline {
                     docker.image('mcr.microsoft.com/playwright:v1.49.1-jammy').inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm --ipc=host") {
                         // Playwright требует установки системных зависимостей браузеров (даже в своем образе иногда).
                         // Но в mcr.microsoft.com/playwright они уже есть.
-                        sh 'npm ci --ignore-scripts' // На всякий случай убедимся, что пакеты стоят
+                        sh 'npm install --ignore-scripts' // На всякий случай убедимся, что пакеты стоят
                         sh 'npx playwright install chromium'
                         sh 'npm run test:e2e'
                     }
