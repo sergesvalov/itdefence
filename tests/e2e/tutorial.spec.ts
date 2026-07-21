@@ -38,8 +38,13 @@ test('tutorial should complete successfully', async ({ page }) => {
     // 2. Simulate tower build (clicking left toolbar, then clicking map)
     await page.mouse.click(box.x + 36, box.y + 170); // select first tower from toolbar
     await page.waitForTimeout(500);
-    // Click on a valid empty spot in the map (e.g. near the center but avoiding center if there's furniture, just use a clear spot)
-    await page.mouse.click(box.x + box.width / 2, box.y + 100); 
+    // Click on a valid empty spot in the map inside the office (y > 224). 
+    // Try multiple spots in case one is occupied by random furniture.
+    await page.mouse.click(box.x + 200, box.y + 300);
+    await page.waitForTimeout(200);
+    await page.mouse.click(box.x + 200, box.y + 400);
+    await page.waitForTimeout(200);
+    await page.mouse.click(box.x + 300, box.y + 300);
     await page.waitForTimeout(1000); // Wait for tower to be placed and tutorial to complete
   }
 
