@@ -80,11 +80,43 @@ export class TowerPlacer {
 
       if (this.carrying) {
         this.carrying.setPosition(sx, sy);
-        return;
       }
+      
       const inOffice = isInOffice(sx, sy);
       this.placementPreview.setPosition(sx, sy);
       this.placementPreview.setVisible(inOffice);
+      
+      if (inOffice) {
+        let radius = TOWER_SIZE;
+        let isTower = false;
+        
+        if (this.carrying) {
+          radius = (this.carrying as any).radius || TOWER_SIZE; // Furniture has .radius, Tower might not explicitly expose it here but we can approximate or just use TOWER_SIZE
+          // wait, actually we can just use `this.carrying instanceof ToolTower`
+          isTower = (this.carrying as any).variant !== undefined;
+          if (isTower) {
+            radius = TOWER_VARIANTS_DATA[(this.carrying as ToolTower).variant].radius || TOWER_SIZE;
+          }
+        } else {
+          const item = this.currentItem;
+          if (item.kind === 'tower') {
+            isTower = true;
+            radius = TOWER_VARIANTS_DATA[item.variant].radius || TOWER_SIZE;
+          } else {
+            isTower = false;
+            radius = FURNITURE_TYPES_DATA[item.type].radius;
+          }
+        }
+        
+        const valid = isPlacementValid(sx, sy, radius, this.manager, this.carrying, isTower);
+        if (valid) {
+          this.placementPreview.setFillStyle(0x0984e3, 0.45);
+          this.placementPreview.setStrokeStyle(2, 0x74b9ff, 0.8);
+        } else {
+          this.placementPreview.setFillStyle(0xd63031, 0.45);
+          this.placementPreview.setStrokeStyle(2, 0xff7675, 0.8);
+        }
+      }
     });
 
     this.scene.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {

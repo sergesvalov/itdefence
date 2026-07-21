@@ -3,6 +3,7 @@ import type { Coworker } from '../entities/Coworker';
 import type { HUD } from '../ui/HUD';
 import { DESK_X, DESK_Y, SHIELD_COOLDOWN_MS, SHIELD_DURATION_MS } from '../config';
 import { showFloatingText } from '../ui/FloatingText';
+import { MetaProgression } from './MetaProgression';
 
 /**
  * Shield — "Я на митинге": temporary invulnerability for Petya's office
@@ -59,7 +60,10 @@ export class Shield {
 
     this.active = true;
     this.ready = false;
-    this.activeMs = SHIELD_DURATION_MS;
+    
+    const meta = MetaProgression.get();
+    this.activeMs = SHIELD_DURATION_MS + (meta.shieldDurationLevel * 2000); // +2s per level
+    
     this.chargeMs = 0;
     this.hud.setShieldReady(false);
     this.hud.setShieldCharge(0);

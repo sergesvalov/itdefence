@@ -40,6 +40,16 @@ export class Builder {
     this.economy.spend(cost);
 
     const tower = new ToolTower(this.scene, x, y, variant);
+    
+    // Tower build animation
+    tower.setScale(0);
+    this.scene.tweens.add({
+      targets: tower,
+      scale: 1,
+      duration: 350,
+      ease: 'Back.out',
+    });
+
     this.manager.addTower(tower);
 
     showFloatingText(this.scene, x, y, `-${cost} 💰`, '#ff7675');

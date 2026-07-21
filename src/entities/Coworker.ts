@@ -253,7 +253,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     const dy   = targetY - this.y;
     const dist = Math.hypot(dx, dy);
     const dt   = delta / 1000;
-    const effectiveSpeed = this.speed * this.slowMultiplier;
+    const effectiveSpeed = this.speed * this.slowMultiplier * (this.urgent ? 1.4 : 1);
 
     let nx = this.x;
     let ny = this.y;

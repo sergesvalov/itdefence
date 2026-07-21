@@ -129,6 +129,18 @@ export class MainScene extends Phaser.Scene {
     console.log('Game Over – the Inbox overflowed!');
     this.hud.showGameOver(earnedMeta);
     this.cameras.main.shake(600, 0.012);
+    
+    // Fade to black behind HUD
+    const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000)
+      .setOrigin(0)
+      .setDepth(9000)
+      .setAlpha(0);
+    this.tweens.add({
+      targets: bg,
+      alpha: 0.8,
+      duration: 1500,
+      ease: 'Quad.Out'
+    });
   }
 
   private restartGame(): void {

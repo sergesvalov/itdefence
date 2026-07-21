@@ -30,12 +30,13 @@ export class UpgradeScene extends Phaser.Scene {
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    const startY = 220;
-    const spacing = 120;
+    const startY = 200;
+    const spacing = 110;
 
     this.createUpgradeRow('inboxLevel', 'Расширение Инбокса (+2 таски)', 150, startY);
     this.createUpgradeRow('moneyLevel', 'Финансовая Подушка (+50$ старт)', 150, startY + spacing);
     this.createUpgradeRow('damageLevel', 'Крепкие Нервы (+10% урон)', 150, startY + spacing * 2);
+    this.createUpgradeRow('shieldDurationLevel', 'Долгий Митинг (+2с щит)', 150, startY + spacing * 3);
 
     // Back Button
     const playBtn = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT - 100);
@@ -54,7 +55,7 @@ export class UpgradeScene extends Phaser.Scene {
     });
   }
 
-  private createUpgradeRow(key: 'inboxLevel' | 'moneyLevel' | 'damageLevel', label: string, price: number, y: number) {
+  private createUpgradeRow(key: 'inboxLevel' | 'moneyLevel' | 'damageLevel' | 'shieldDurationLevel', label: string, price: number, y: number) {
     const data = MetaProgression.get();
     
     this.add.text(GAME_WIDTH / 2, y, label, {
@@ -63,7 +64,11 @@ export class UpgradeScene extends Phaser.Scene {
       color: '#ecf0f1'
     }).setOrigin(0.5);
 
-    const levelText = this.add.text(GAME_WIDTH / 2, y + 30, `Уровень: ${data[key]} / 5`, {
+    const getSquares = (lvl: number) => {
+      return '■'.repeat(lvl) + '□'.repeat(5 - lvl);
+    };
+
+    const levelText = this.add.text(GAME_WIDTH / 2, y + 30, `Уровень: [${getSquares(data[key])}]`, {
       fontFamily: 'Inter, sans-serif',
       fontSize: '16px',
       color: '#bdc3c7'
@@ -85,11 +90,12 @@ export class UpgradeScene extends Phaser.Scene {
       if (MetaProgression.spendMoney(price)) {
         data[key]++;
         MetaProgression.save();
-        levelText.setText(`Уровень: ${data[key]} / 5`);
+        levelText.setText(`Уровень: [${getSquares(data[key])}]`);
         this.moneyText.setText(`Премия: ${MetaProgression.get().money} 💰`);
         if (data[key] >= 5) {
           bg.setFillStyle(0x7f8c8d);
           txt.setText('MAX');
+          bg.disableInteractive();
         }
       } else {
         // Flash red

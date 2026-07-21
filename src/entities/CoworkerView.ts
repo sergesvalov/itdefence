@@ -8,6 +8,7 @@ export class CoworkerView {
   private hpBar: Phaser.GameObjects.Graphics;
   private ticket: Phaser.GameObjects.Graphics;
   private sitIcon: Phaser.GameObjects.Text;
+  private statusText: Phaser.GameObjects.Text;
   public hitFlash = 0;
 
   constructor(
@@ -46,8 +47,11 @@ export class CoworkerView {
 
     // ── Sofa sit indicator (hidden unless sitting) ─────────────────────────
     this.sitIcon = scene.add.text(0, -32, '🛋️', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
+    
+    // ── Status Text (Zzz, Slow, etc) ─────────────────────────────────────
+    this.statusText = scene.add.text(0, -RADIUS * stats.scale - 20, '', { fontSize: '14px' }).setOrigin(0.5);
 
-    this.container.add([...bodyParts, this.ticket, this.hpBar, this.sitIcon]);
+    this.container.add([...bodyParts, this.ticket, this.hpBar, this.sitIcon, this.statusText]);
   }
 
   private drawTicket(): void {
@@ -99,10 +103,13 @@ export class CoworkerView {
       this.tintBody(0xffeaa7);
     } else if (slowMultiplier === 0) {
       this.tintBody(0xa29bfe);
+      this.statusText.setText('Zzz');
     } else if (slowMultiplier < 1) {
       this.tintBody(0x74b9ff);
+      this.statusText.setText('🥶');
     } else {
       this.tintBody(this.useSprite ? 0xffffff : this.stats.tint);
+      this.statusText.setText('');
     }
   }
 
@@ -144,6 +151,24 @@ export class CoworkerView {
   }
 
   public playHelpdeskAnimation(onComplete: () => void): void {
+    // Red ticket burst particles
+    for (let i = 0; i < 8; i++) {
+      const p = this.scene.add.rectangle(this.container.x, this.container.y, 10, 14, 0xff7675).setDepth(20);
+      p.setStrokeStyle(1, 0xd63031);
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 40 + Math.random() * 50;
+      this.scene.tweens.add({
+        targets: p,
+        x: this.container.x + Math.cos(angle) * dist,
+        y: this.container.y - 20 + Math.sin(angle) * dist,
+        rotation: Math.random() * 8 - 4,
+        alpha: 0,
+        duration: 400 + Math.random() * 200,
+        ease: 'Cubic.Out',
+        onComplete: () => p.destroy()
+      });
+    }
+
     this.scene.tweens.add({
       targets: this.container,
       alpha: 0,

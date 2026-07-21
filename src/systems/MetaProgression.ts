@@ -5,6 +5,7 @@ export interface MetaSaveData {
   inboxLevel: number; // 0 to 5
   moneyLevel: number; // 0 to 5
   damageLevel: number; // 0 to 5
+  shieldDurationLevel: number; // 0 to 5
   tutorialCompleted: boolean;
 }
 
@@ -13,6 +14,7 @@ const DEFAULT_SAVE: MetaSaveData = {
   inboxLevel: 0,
   moneyLevel: 0,
   damageLevel: 0,
+  shieldDurationLevel: 0,
   tutorialCompleted: false,
 };
 
