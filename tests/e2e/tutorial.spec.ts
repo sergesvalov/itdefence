@@ -36,7 +36,7 @@ test('tutorial should complete successfully', async ({ page }) => {
   if (box) {
     // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (x = center, y = center + 40)
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 40);
-    await page.waitForTimeout(4000); // Wait for enemy to spawn and reach y > 200 to trigger step_furniture
+    await page.waitForTimeout(6000); // Wait for enemy to spawn (up to 3.5s) and reach y > 200 to trigger step_furniture
 
     // 1. Trigger furniture_moved by dispatching it via __EventBus
     await page.evaluate(() => {
