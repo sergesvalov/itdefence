@@ -20,11 +20,19 @@ test('tutorial should complete successfully', async ({ page }) => {
 
   await page.goto('/');
 
-  // Wait for game to initialize
-  await page.waitForTimeout(3000);
+  // Wait for the main menu to load
+  await page.waitForTimeout(1500);
 
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
+  if (box) {
+    // Click "СТАРТ" button in the main menu (centered, y = height/2 - 20)
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 - 20);
+  }
+
+  // Wait for MainScene (the game itself) to initialize
+  await page.waitForTimeout(2000);
+
   if (box) {
     // 1. Trigger furniture_moved by dispatching it via __EventBus
     await page.evaluate(() => {
