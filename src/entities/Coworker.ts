@@ -26,6 +26,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   /** Red/urgent task — jumps the Inbox queue on arrival (see Inbox.enqueue()). */
   public readonly urgent: boolean;
   public readonly variant: CoworkerVariant;
+  
+  public static partnerCounter = 0;
 
   private waypoints: Waypoint[];
   private waypointIndex = 0;
@@ -187,9 +189,10 @@ export class Coworker extends Phaser.GameObjects.Container {
 
     if (!this.hasRolledForPartner) {
       this.hasRolledForPartner = true;
-      if (Math.random() < 0.5) {
-        const activePartners = towers.filter(t => t.variant === 'partner' && t.tasksSolved < 10);
-        if (activePartners.length > 0) {
+      const activePartners = towers.filter(t => t.variant === 'partner' && t.tasksSolved < 10);
+      if (activePartners.length > 0) {
+        Coworker.partnerCounter++;
+        if (Coworker.partnerCounter % 2 === 0) {
           this.partnerTarget = Phaser.Utils.Array.GetRandom(activePartners);
         }
       }
