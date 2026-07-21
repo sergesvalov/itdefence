@@ -33,7 +33,7 @@ export class CoworkerView {
       bodyParts.push(scene.add.text(0, -2, '😤', { fontSize: '13px' }).setOrigin(0.5, 0.5));
     }
     
-    if (stats.emoji) {
+    if (stats.emoji && !this.useSprite) {
       bodyParts.push(scene.add.text(0, -RADIUS * stats.scale - 12, stats.emoji, { fontSize: '16px' }).setOrigin(0.5));
     }
 
@@ -45,7 +45,7 @@ export class CoworkerView {
     this.hpBar = scene.add.graphics();
 
     // ── Sofa sit indicator (hidden unless sitting) ─────────────────────────
-    this.sitIcon = scene.add.text(0, -32, '💺', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
+    this.sitIcon = scene.add.text(0, -32, '🛋️', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
 
     this.container.add([...bodyParts, this.ticket, this.hpBar, this.sitIcon]);
   }
@@ -102,7 +102,7 @@ export class CoworkerView {
     } else if (slowMultiplier < 1) {
       this.tintBody(0x74b9ff);
     } else {
-      this.tintBody(this.stats.tint);
+      this.tintBody(this.useSprite ? 0xffffff : this.stats.tint);
     }
   }
 
