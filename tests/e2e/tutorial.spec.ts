@@ -26,8 +26,8 @@ test('tutorial should complete successfully', async ({ page }) => {
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
   if (box) {
-    // Click "СТАРТ" button in the main menu (centered, y = height/2 - 20)
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 - 20);
+    // Click "СТАРТ" button in the main menu (centered, y = height/2 + 30)
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 30);
   }
 
   // Wait for MainScene (the game itself) to initialize
