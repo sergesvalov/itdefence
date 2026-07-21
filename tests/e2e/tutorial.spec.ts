@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('tutorial should complete without console errors', async ({ page }) => {
+test('tutorial should complete successfully', async ({ page }) => {
   const errors: string[] = [];
   
   page.on('pageerror', err => {
@@ -26,20 +26,29 @@ test('tutorial should complete without console errors', async ({ page }) => {
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
   if (box) {
-    // Attempt to interact with the game (click around the center to potentially move furniture or trigger tutorial step)
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await page.waitForTimeout(500);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + 50, box.y + box.height / 2 + 50);
-    await page.mouse.up();
-    await page.waitForTimeout(1000);
+    // 1. Trigger furniture_moved by dispatching it via __EventBus
+    await page.evaluate(() => {
+      if ((window as any).__EventBus) {
+        (window as any).__EventBus.emit('furniture_moved');
+      }
+    });
+
+    await page.waitForTimeout(1000); // Wait for step 2 animation to settle
     
-    // Simulate tower build (clicking left toolbar, then clicking map)
-    await page.mouse.click(box.x + 36, box.y + 170); // left toolbar slot
+    // 2. Simulate tower build (clicking left toolbar, then clicking map)
+    await page.mouse.click(box.x + 36, box.y + 170); // select first tower from toolbar
     await page.waitForTimeout(500);
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await page.waitForTimeout(1000);
+    // Click on a valid empty spot in the map (e.g. near the center but avoiding center if there's furniture, just use a clear spot)
+    await page.mouse.click(box.x + box.width / 2, box.y + 100); 
+    await page.waitForTimeout(1000); // Wait for tower to be placed and tutorial to complete
   }
 
   expect(errors).toEqual([]);
+
+  // Verify that meta.tutorialCompleted was set to true
+  const meta = await page.evaluate(() => {
+    return JSON.parse(window.localStorage.getItem('itdefence-meta') || '{}');
+  });
+
+  expect(meta.tutorialCompleted).toBe(true);
 });
