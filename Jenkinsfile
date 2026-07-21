@@ -1,4 +1,4 @@
-@Library('mylib') _
+@Library('mylib@main') _
 
 pipeline {
     agent { label 'built-in' }
