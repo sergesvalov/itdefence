@@ -40,19 +40,19 @@ export class HUD extends Phaser.Events.EventEmitter {
     hintBg.fillRect(0, GAME_HEIGHT - 32, GAME_WIDTH, 32);
     hintBg.setDepth(10000);
     
-    scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, GAME_HEIGHT - 16, 'Тап: кабинет — строить, предмет — апгрейд/переместить', {
+    scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, GAME_HEIGHT - 16, 'Тап: кабинет - строить, предмет - апгрейд/перенос', {
       fontFamily: fontStyle,
-      fontSize: '15px',
+      fontSize: '14px',
       color: '#ffffff',
     }).setOrigin(0.5).setDepth(10001);
 
-    // ── Ability buttons — top-right corner ──────────────────────────────
-    this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 80, 28, '🎫', '', 'ultimate-tap');
-    this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 30, 28, '🛡️', '', 'shield-tap');
+    // ── Ability buttons — right edge, below top bar ─────────────────────────
+    this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 40, 96, '🎫', '', 'ultimate-tap');
+    this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 40, 160, '🛡️', '', 'shield-tap');
 
     // ── "Start Wave" button ───────────────────────────────────────────
-    const swX = GAME_WIDTH - 76;
-    const swY = 136;
+    const swX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2; // center of play area
+    const swY = 120;
     const swBg = scene.add.circle(0, 0, 32, 0x27ae60, 0.95);
     swBg.setStrokeStyle(3, 0xffffff, 0.9);
     const swIcon = scene.add.text(0, 0, '▶️', { fontSize: '24px' }).setOrigin(0.5);
