@@ -34,17 +34,7 @@ export class HUD extends Phaser.Events.EventEmitter {
 
     const fontStyle = 'Inter, system-ui, sans-serif';
 
-    // Hint text (at the very bottom)
-    const hintBg = scene.add.graphics();
-    hintBg.fillStyle(0x000000, 0.7);
-    hintBg.fillRect(0, GAME_HEIGHT - 32, GAME_WIDTH, 32);
-    hintBg.setDepth(10000);
-    
-    scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, GAME_HEIGHT - 16, 'Тап: кабинет - строить, предмет - апгрейд/перенос', {
-      fontFamily: fontStyle,
-      fontSize: '14px',
-      color: '#ffffff',
-    }).setOrigin(0.5).setDepth(10001);
+
 
     // ── Ability buttons — right edge, below top bar ─────────────────────────
     this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 40, 96, '🎫', '', 'ultimate-tap');
