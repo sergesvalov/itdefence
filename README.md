@@ -260,3 +260,14 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 | `BUILD_ANDROID` | true | Собирать Android .apk |
 | `FORCE_DEPLOY` | false | Деплоить не из ветки main |
 | `FORCE_REBUILD_IMAGES` | false | Пересобрать Node/Android toolchain-образы, даже если их Dockerfile не менялся |
+
+### Jenkins Shared Library (`mylib`)
+
+Часть логики пайплайна вынесена в общую библиотеку (Shared Library), которая подключается в начале `Jenkinsfile`:
+```groovy
+@Library('mylib@main') _
+```
+
+**Используемые функции из библиотеки:**
+- `buildAndPushIfChanged`: Оптимизированная сборка Docker-образов. Собирает образ только если его ещё нет в реестре (проверка по хэшу `Dockerfile`), экономя время.
+- `withNodeBuilder`: Обертка для запуска команд сборки в изолированном Docker-контейнере с Node.js, с пробросом кэша npm (`NPM_CACHE_VOLUME`) и правами root.
