@@ -104,8 +104,11 @@ export class TutorialManager {
 
   private completeTutorial() {
     this.currentStep = 3;
+    if (this.arrowTween) {
+      this.arrowTween.stop();
+      this.arrowTween = null;
+    }
     this.overlay.destroy();
-    if (this.arrowTween) this.arrowTween.stop();
     
     const meta = MetaProgression.get();
     meta.tutorialCompleted = true;
