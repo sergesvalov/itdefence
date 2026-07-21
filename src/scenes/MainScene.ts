@@ -27,8 +27,8 @@ export class MainScene extends Phaser.Scene {
   private ultimate!: Ultimate;
   private shield!: Shield;
   private inbox!: Inbox;
-
-  private isGameOver = false;
+  private tutorialManager?: TutorialManager;
+  public isGameOver = false;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -87,7 +87,7 @@ export class MainScene extends Phaser.Scene {
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
     
-    new TutorialManager(this);
+    this.tutorialManager = new TutorialManager(this);
 
     this.hud.on('restart-tap', () => { 
       if (this.isGameOver) {
@@ -103,6 +103,11 @@ export class MainScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.isGameOver) return;
+    
+    if (this.tutorialManager) {
+      this.tutorialManager.update(this.waveManager.enemies);
+      if (this.tutorialManager.isPaused) return;
+    }
 
     this.shield.update(delta);
     this.waveManager.update(delta);

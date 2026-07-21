@@ -5,7 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
 export class TutorialManager {
   private overlay!: Phaser.GameObjects.Container;
-  private currentStep: 'init' | 'step_intro' | 'step_furniture' | 'step_tower' | 'completed' = 'init';
+  private currentStep: 'init' | 'step_intro' | 'wait_for_enemy' | 'step_furniture' | 'step_tower' | 'completed' = 'init';
   private arrowTween: Phaser.Tweens.Tween | null = null;
   private hintText!: Phaser.GameObjects.Text;
   private textBg!: Phaser.GameObjects.Graphics;
@@ -57,7 +57,12 @@ export class TutorialManager {
     
     okBg.on('pointerdown', () => {
       if (this.currentStep === 'step_intro') {
-        this.showStep1();
+        this.currentStep = 'wait_for_enemy';
+        this.okBtn.setVisible(false);
+        this.hintText.setVisible(false);
+        this.avatar.setVisible(false);
+        this.textBg.setVisible(false);
+        this.dimBg.setVisible(false);
       }
     });
 
@@ -144,8 +149,23 @@ export class TutorialManager {
     this.okBtn.setPosition(GAME_WIDTH / 2, centerY + 120);
   }
 
+  public get isPaused(): boolean {
+    return this.currentStep === 'step_intro' || this.currentStep === 'step_furniture' || this.currentStep === 'step_tower';
+  }
+
+  public update(enemies: import('../entities/Coworker').Coworker[]): void {
+    if (this.currentStep === 'wait_for_enemy') {
+      if (enemies.length > 0 && enemies[0].y > 200) {
+        this.showStep1();
+      }
+    }
+  }
+
   private showStep1(): void {
     this.currentStep = 'step_furniture';
+    this.dimBg.setVisible(true);
+    this.textBg.setVisible(true);
+    this.hintText.setVisible(true);
     this.okBtn.setVisible(false);
     this.hintText.setAlign('center'); // switch to center alignment for the rest
     this.hintText.setOrigin(0.5);
