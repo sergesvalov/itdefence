@@ -271,3 +271,4 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 **Используемые функции из библиотеки:**
 - `buildAndPushIfChanged`: Оптимизированная сборка Docker-образов. Собирает образ только если его ещё нет в реестре (проверка по хэшу `Dockerfile`), экономя время.
 - `withNodeBuilder`: Обертка для запуска команд сборки в изолированном Docker-контейнере с Node.js, с пробросом кэша npm (`NPM_CACHE_VOLUME`) и правами root.
+- `withAndroidBuilder`: Обертка для запуска сборки Android-проекта (Capacitor/Gradle) в изолированном контейнере, с пробросом кэша npm (`NPM_CACHE_VOLUME`), кэша Gradle (`GRADLE_CACHE_VOLUME`) и правами root.
