@@ -1,3 +1,5 @@
+@Library('mylib') _
+
 pipeline {
     agent { label 'built-in' }
 
@@ -212,23 +214,7 @@ pipeline {
 
 // ── Функции-обертки ──────────────────────────────────────────────────────
 
-// Собирает и пушит toolchain-образ только если его Dockerfile реально
-// изменился (тег = хэш содержимого файла). Раньше оба образа собирались и
-// пушились в реестр на КАЖДОЙ сборке — на Android-образе это лишние
-// gradle/SDK-скачивания, а Node-образ ещё и содержал бесполезный npm ci
-// (см. комментарии в Dockerfile.build/Dockerfile.android).
-def buildAndPushIfChanged(String image, String tag, String dockerfile, String label) {
-    def exists = !params.FORCE_REBUILD_IMAGES &&
-                 sh(script: "docker pull ${image}:${tag} > /dev/null 2>&1", returnStatus: true) == 0
-    if (exists) {
-        echo "✅ ${label}-образ ${tag} уже есть в реестре — пересборка не нужна"
-    } else {
-        echo "🐳 Сборка ${label}-образа (${tag})..."
-        sh "docker build -t ${image}:${tag} -t ${image}:latest -f ${dockerfile} ."
-        sh "docker push ${image}:${tag}"
-        sh "docker push ${image}:latest"
-    }
-}
+
 
 def withNodeBuilder(Closure body) {
     docker.image("${env.NODE_IMAGE}:${env.NODE_IMAGE_TAG}").inside("-u root -v ${env.NPM_CACHE_VOLUME}:/tmp/.npm") {
