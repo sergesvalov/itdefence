@@ -123,21 +123,7 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
     text.setDepth(1);
   }
 
-  // ── "PETYA'S OFFICE" label near the top of the room ─────────────────
-  const officeText = scene.add.text(GAME_WIDTH / 2, OFFICE_Y_TOP + 14, "PETYA'S OFFICE", {
-    fontFamily: 'Inter, system-ui, sans-serif',
-    fontSize: '13px',
-    color: '#c8d6e5',
-    fontStyle: 'bold',
-    letterSpacing: 2,
-  }).setOrigin(0.5, 0);
-  
-  const officeBg = scene.add.graphics();
-  officeBg.fillStyle(PAL.labelBg, 0.75);
-  officeBg.lineStyle(1, PAL.labelStroke, 0.3);
-  officeBg.fillRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 14, OFFICE_Y_TOP + 10, officeText.width + 28, officeText.height + 8, 6);
-  officeBg.strokeRoundedRect(GAME_WIDTH / 2 - officeText.width / 2 - 14, OFFICE_Y_TOP + 10, officeText.width + 28, officeText.height + 8, 6);
-  officeText.setDepth(1);
+
 
   // Desk zone warning glow — muted red, not screaming
   gfx.lineStyle(1, PAL.deskGlow, 0.25);
