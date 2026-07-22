@@ -109,11 +109,14 @@ export class TutorialManager {
     this.textBg.lineStyle(2, 0x3498db, 1);
     
     if (showAvatar) {
-      const avBounds = this.avatar.getBounds();
-      const bgX = avBounds.x - 10;
-      const bgY = Math.min(avBounds.y, bounds.y) - 10;
-      const bgW = avBounds.width + bounds.width + 30;
-      const bgH = Math.max(avBounds.height, bounds.height) + 20;
+      const bgX = x - 20;
+      const bgY = Math.min(y - 40, bounds.y) - 15;
+      const rightEdge = bounds.x + bounds.width;
+      const bottomEdge = Math.max(y + 40, bounds.y + bounds.height);
+      
+      const bgW = rightEdge - bgX + 20;
+      const bgH = bottomEdge - bgY + 15;
+      
       this.textBg.fillRoundedRect(bgX, bgY, bgW, bgH, 12);
       this.textBg.strokeRoundedRect(bgX, bgY, bgW, bgH, 12);
     } else {
