@@ -5,6 +5,7 @@ import type { TowerVariantStats, FurnitureTypeStats } from '../config';
 import { TopBar } from './TopBar';
 import { Toolbar } from './Toolbar';
 import { GameOverOverlay } from './GameOverOverlay';
+import { MetaProgression } from '../systems/MetaProgression';
 
 interface AbilityButton {
   container: Phaser.GameObjects.Container;
@@ -122,21 +123,24 @@ export class HUD extends Phaser.Events.EventEmitter {
     // Also we need to highlight the slot in toolbar
     // Let's implement updateToolbarHighlight in toolbar
     for (let i = 0; i < 9; i++) {
-      this.toolbar.updateSlot(i, i === index, false);
+      const isTutDisabled = (i > 0 && !MetaProgression.get().tutorialCompleted);
+      this.toolbar.updateSlot(i, i === index, isTutDisabled);
     }
   }
 
   public setFurnitureSelect(index: number, stats: FurnitureTypeStats, left: number): void {
     this.toolbar.setFurnitureSelect(index, stats, left);
     for (let i = 0; i < 9; i++) {
-      this.toolbar.updateSlot(i, i === index, left <= 0);
+      const isTutDisabled = (i > 0 && !MetaProgression.get().tutorialCompleted);
+      this.toolbar.updateSlot(i, i === index, (left <= 0) || isTutDisabled);
     }
   }
 
   public hideSelect(): void {
     this.toolbar.hideSelect();
     for (let i = 0; i < 9; i++) {
-      this.toolbar.updateSlot(i, false, false);
+      const isTutDisabled = (i > 0 && !MetaProgression.get().tutorialCompleted);
+      this.toolbar.updateSlot(i, false, isTutDisabled);
     }
   }
 

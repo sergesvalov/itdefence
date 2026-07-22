@@ -12,6 +12,7 @@ import { SoundFX } from './SoundFX';
 import { isInOffice, isPlacementValid } from './PlacementValidator';
 import { Builder } from './Builder';
 import { EventBus } from '../events/EventBus';
+import { MetaProgression } from './MetaProgression';
 
 const KEYBOARD_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
 
@@ -198,6 +199,10 @@ export class TowerPlacer {
   }
 
   selectIndex(index: number): void {
+    if (index > 0 && !MetaProgression.get().tutorialCompleted) {
+      import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, 80, 150, 'Заблокировано', '#f39c12'));
+      return;
+    }
     SoundFX.playClick();
     this.selectedIndex = index;
     this.refreshHudSelection();
