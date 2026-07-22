@@ -27,16 +27,24 @@ test('tutorial should complete successfully', async ({ page }) => {
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
   if (box) {
-    // Click "ОБУЧЕНИЕ" button in the main menu (centered, y = height/2 + 105)
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 105);
+    const scale = box.height / 800;
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    // Click "ОБУЧЕНИЕ" button in the main menu (centered, logical y = center + 105)
+    await page.mouse.click(cx, cy + 105 * scale);
   }
 
   // Wait for MainScene (the game itself) to initialize
   await page.waitForTimeout(5000);
 
   if (box) {
-    // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (x = center, y = center + 40)
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 40);
+    const scale = box.height / 800;
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (logical x = center, y = center + 40)
+    await page.mouse.click(cx, cy + 40 * scale);
     await page.waitForTimeout(15000); // Wait for enemy to spawn and reach y > 200 to trigger step_furniture
 
     // 1. Trigger furniture_moved by dispatching it via __EventBus
@@ -49,15 +57,14 @@ test('tutorial should complete successfully', async ({ page }) => {
     await page.waitForTimeout(1000); // Wait for step 2 animation to settle
     
     // 2. Simulate tower build (clicking left toolbar, then clicking map)
-    await page.mouse.click(box.x + 36, box.y + 170); // select first tower from toolbar
+    await page.mouse.click(box.x + 36 * scale, box.y + 170 * scale); // select first tower from toolbar
     await page.waitForTimeout(500);
     // Click on a valid empty spot in the map inside the office (y > 224). 
-    // Try multiple spots in case one is occupied by random furniture.
-    await page.mouse.click(box.x + 200, box.y + 300);
+    await page.mouse.click(box.x + 200 * scale, box.y + 300 * scale);
     await page.waitForTimeout(200);
-    await page.mouse.click(box.x + 200, box.y + 400);
+    await page.mouse.click(box.x + 200 * scale, box.y + 400 * scale);
     await page.waitForTimeout(200);
-    await page.mouse.click(box.x + 300, box.y + 300);
+    await page.mouse.click(box.x + 300 * scale, box.y + 300 * scale);
     await page.waitForTimeout(1000); // Wait for tower to be placed and tutorial to complete
   }
 
