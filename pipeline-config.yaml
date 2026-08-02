@@ -8,3 +8,12 @@ features:
   - typecheck
   - tests
   - e2e
+
+custom_stages:
+  - name: "Security Scan"
+    insert_before: "Test"
+    steps: |
+      script {
+          echo "Running custom security scan..."
+          // sh 'npm run scan'
+      }
