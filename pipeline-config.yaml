@@ -1,0 +1,10 @@
+service_name: "itdefence"
+stack_type: "capacitor"
+target_cluster: "prod"
+deploy:
+  dir: "/opt/itdefence"
+  web_port: 7979
+features:
+  - typecheck
+  - tests
+  - e2e

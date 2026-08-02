@@ -274,10 +274,11 @@ Deploy Web [только main] → docker compose (ssh) → /opt/itdefence на 
 
 ### Jenkins Shared Library (`mylib`)
 
-Часть логики пайплайна вынесена в общую библиотеку (Shared Library), которая подключается в начале `Jenkinsfile`:
+Часть логики пайплайна вынесена в общую библиотеку (Shared Library, исходный код: `git@github.com:sergesvalov/jenkins-shared-library.git`), которая подключается в начале `Jenkinsfile`:
 ```groovy
 @Library('mylib@main') _
 ```
+*(В настройках Jenkins эта библиотека должна быть добавлена под именем `mylib` с указанием данного репозитория).*
 
 **Используемые функции из библиотеки:**
 - `buildAndPushIfChanged`: Оптимизированная сборка Docker-образов. Собирает образ только если его ещё нет в реестре (проверка по хэшу `Dockerfile`), экономя время.
