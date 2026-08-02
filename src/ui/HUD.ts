@@ -123,7 +123,7 @@ export class HUD extends Phaser.Events.EventEmitter {
     // Also we need to highlight the slot in toolbar
     // Let's implement updateToolbarHighlight in toolbar
     for (let i = 0; i < 9; i++) {
-      const isTutDisabled = (i > 0 && !MetaProgression.get().tutorialCompleted);
+      const isTutDisabled = (i > 0 && i !== 6 && !MetaProgression.get().tutorialCompleted);
       this.toolbar.updateSlot(i, i === index, isTutDisabled);
     }
   }
@@ -131,7 +131,7 @@ export class HUD extends Phaser.Events.EventEmitter {
   public setFurnitureSelect(index: number, stats: FurnitureTypeStats, left: number): void {
     this.toolbar.setFurnitureSelect(index, stats, left);
     for (let i = 0; i < 9; i++) {
-      const isTutDisabled = (i > 0 && !MetaProgression.get().tutorialCompleted);
+      const isTutDisabled = (i > 0 && i !== 6 && !MetaProgression.get().tutorialCompleted);
       this.toolbar.updateSlot(i, i === index, (left <= 0) || isTutDisabled);
     }
   }
@@ -139,7 +139,7 @@ export class HUD extends Phaser.Events.EventEmitter {
   public hideSelect(): void {
     this.toolbar.hideSelect();
     for (let i = 0; i < 9; i++) {
-      const isTutDisabled = (i > 0 && !MetaProgression.get().tutorialCompleted);
+      const isTutDisabled = (i > 0 && i !== 6 && !MetaProgression.get().tutorialCompleted);
       this.toolbar.updateSlot(i, false, isTutDisabled);
     }
   }

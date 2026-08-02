@@ -199,7 +199,8 @@ export class TowerPlacer {
   }
 
   selectIndex(index: number): void {
-    if (index > 0 && !MetaProgression.get().tutorialCompleted) {
+    // Index 0 is tower (Cooler), index 6 is furniture (Cabinet). Allow both during tutorial.
+    if (index > 0 && index !== 6 && !MetaProgression.get().tutorialCompleted) {
       import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, 80, 150, 'Заблокировано', '#f39c12'));
       return;
     }

@@ -24,48 +24,49 @@ test('tutorial should complete successfully', async ({ page }) => {
   // Wait for the main menu to load
   await page.waitForTimeout(3000);
 
+  const { gameWidth, gameHeight } = await page.evaluate(() => {
+    const cvs = document.querySelector('canvas');
+    return { gameWidth: cvs?.width || 480, gameHeight: cvs?.height || 800 };
+  });
+
   const canvas = page.locator('canvas');
   const box = await canvas.boundingBox();
   if (box) {
-    const scale = box.height / 800;
+    const scaleX = box.width / gameWidth;
+    const scaleY = box.height / gameHeight;
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
 
-    // Click "ОБУЧЕНИЕ" button in the main menu (centered, logical y = center + 105)
-    await page.mouse.click(cx, cy + 105 * scale);
+    // Click "ОБУЧЕНИЕ" button in the main menu (logical y = center + 105)
+    await page.mouse.click(cx, cy + 105 * scaleY);
   }
 
   // Wait for MainScene (the game itself) to initialize
   await page.waitForTimeout(5000);
 
   if (box) {
-    const scale = box.height / 800;
+    const scaleX = box.width / gameWidth;
+    const scaleY = box.height / gameHeight;
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
 
-    // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (logical x = center, y = center + 40)
-    await page.mouse.click(cx, cy + 40 * scale);
-    await page.waitForTimeout(15000); // Wait for enemy to spawn and reach y > 200 to trigger step_furniture
+    // 0. Click "ПОНЯТНО" (OK) button to dismiss intro (logical y = center + 40)
+    await page.mouse.click(cx, cy + 40 * scaleY);
+    await page.waitForTimeout(8000); // Wait for enemy to spawn and reach y > 200 to trigger step_furniture
 
-    // 1. Trigger furniture_moved by dispatching it via __EventBus
-    await page.evaluate(() => {
-      if ((window as any).__EventBus) {
-        (window as any).__EventBus.emit('furniture_moved');
-      }
-    });
-
-    await page.waitForTimeout(1000); // Wait for step 2 animation to settle
-    
-    // 2. Simulate tower build (clicking left toolbar, then clicking map)
-    await page.mouse.click(box.x + 36 * scale, box.y + 170 * scale); // select first tower from toolbar
+    // 1. Actually do Step 1: select cabinet and place it
+    await page.mouse.click(box.x + 42 * scaleX, box.y + 578 * scaleY); // Select cabinet (index 6)
     await page.waitForTimeout(500);
-    // Click on a valid empty spot in the map inside the office (y > 224). 
-    await page.mouse.click(box.x + 200 * scale, box.y + 300 * scale);
-    await page.waitForTimeout(200);
-    await page.mouse.click(box.x + 200 * scale, box.y + 400 * scale);
-    await page.waitForTimeout(200);
-    await page.mouse.click(box.x + 300 * scale, box.y + 300 * scale);
-    await page.waitForTimeout(1000); // Wait for tower to be placed and tutorial to complete
+    // Click on a valid empty spot (e.g. x=240, y=560)
+    await page.mouse.click(box.x + 240 * scaleX, box.y + 560 * scaleY);
+    await page.waitForTimeout(1000); // Wait for animation and step 2 to trigger
+    
+    // 2. Do Step 2: select tower and place it
+    await page.mouse.click(box.x + 42 * scaleX, box.y + 170 * scaleY); // select first tower (Cooler)
+    await page.waitForTimeout(500);
+    // Click on a valid empty spot (x=240, y=320)
+    await page.mouse.click(box.x + 240 * scaleX, box.y + 320 * scaleY);
+    await page.waitForTimeout(1500); // Wait for tower to be placed and tutorial to complete
   }
 
   expect(errors).toEqual([]);
