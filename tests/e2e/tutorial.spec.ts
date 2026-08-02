@@ -57,8 +57,8 @@ test('tutorial should complete successfully', async ({ page }) => {
     // 1. Actually do Step 1: select cabinet and place it
     await page.mouse.click(box.x + 42 * scaleX, box.y + 578 * scaleY); // Select cabinet (index 6)
     await page.waitForTimeout(500);
-    // Click on a valid empty spot (e.g. x=240, y=560)
-    await page.mouse.click(box.x + 240 * scaleX, box.y + 560 * scaleY);
+    // Click on a valid empty spot (e.g. x=240, y=400)
+    await page.mouse.click(box.x + 240 * scaleX, box.y + 400 * scaleY);
     await page.waitForTimeout(1000); // Wait for animation and step 2 to trigger
     
     // 2. Do Step 2: select tower and place it
