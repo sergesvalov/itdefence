@@ -28,9 +28,9 @@ export class TopBar {
     }).setOrigin(0, 0.5).setDepth(10001);
     this.setMoney(startingMoney);
 
-    // Sits between the money (left) and the inbox counter (right)
-    this.waveText = scene.add.text(TOOLBAR_WIDTH + 162, 28, '', { ...boldStyle, fontSize: '18px', color: '#fbbf24' })
-      .setOrigin(0.5, 0.5)
+    // Right-aligned against the inbox counter, so a long money figure can't run into it
+    this.waveText = scene.add.text(GAME_WIDTH - 160, 28, '', { ...boldStyle, fontSize: '17px', color: '#fbbf24' })
+      .setOrigin(1, 0.5)
       .setDepth(10001);
 
     this.inboxCountText = scene.add.text(GAME_WIDTH - 150, 18, `📥 0 / ${inboxLimit}`, {
@@ -85,7 +85,7 @@ export class TopBar {
     });
   }
 
-  public setWave(wave: number): void {
-    this.waveText.setText(`Спринт ${wave}`);
+  public setWave(wave: number, total?: number): void {
+    this.waveText.setText(total ? `Спринт ${wave}/${total}` : `Спринт ${wave}`);
   }
 }

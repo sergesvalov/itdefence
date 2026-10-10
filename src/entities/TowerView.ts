@@ -7,6 +7,7 @@ export class TowerView {
   private rangeCircle: Phaser.GameObjects.Arc;
   private barrelLine: Phaser.GameObjects.Graphics;
   private levelText: Phaser.GameObjects.Text;
+  private sleepText?: Phaser.GameObjects.Text;
 
   constructor(
     private scene: Phaser.Scene,
@@ -143,6 +144,18 @@ export class TowerView {
     // Placement pop animation
     this.container.setScale(0.1);
     scene.tweens.add({ targets: this.container, scaleX: 1, scaleY: 1, duration: 180, ease: 'Back.Out' });
+  }
+
+  /** Dimmed with a "💤" above while the tower is dozing. */
+  public setAsleep(asleep: boolean): void {
+    if (asleep && !this.sleepText) {
+      this.sleepText = this.scene.add.text(TOWER_SIZE - 14, -TOWER_SIZE - 2, '💤', { fontSize: '18px' }).setOrigin(0.5);
+      this.container.add(this.sleepText);
+    }
+    this.sleepText?.setVisible(asleep);
+    if (asleep) this.sprite?.setTint(0x7f8c9b);
+    else this.sprite?.clearTint();
+    this.clearAim();
   }
 
   public setRangeVisible(visible: boolean): void {

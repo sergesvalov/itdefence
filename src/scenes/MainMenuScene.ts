@@ -47,27 +47,30 @@ export class MainMenuScene extends Phaser.Scene {
     const startY = GAME_HEIGHT / 2 + 30;
     const spacing = 75;
 
-    this.createButton(GAME_WIDTH / 2, startY, 'СТАРТ', 0x27ae60, () => {
-      this.scene.start('MainScene');
+    this.createButton(GAME_WIDTH / 2, startY, 'КАМПАНИЯ', 0x27ae60, () => {
+      this.scene.start('CampaignScene');
     });
 
     this.createButton(GAME_WIDTH / 2, startY + spacing, 'ОБУЧЕНИЕ', 0xf39c12, () => {
       const meta = MetaProgression.get();
       meta.tutorialCompleted = false;
       MetaProgression.save();
-      this.scene.start('MainScene');
+      this.scene.start('MainScene', { levelId: null });
     });
 
-    this.createButton(GAME_WIDTH / 2, startY + spacing * 2, 'МАГАЗИН', 0x4a7a9b, () => {
+    this.createButton(GAME_WIDTH / 2, startY + spacing * 2, 'СВОБОДНАЯ ИГРА', 0x8e6bbf, () => {
+      this.scene.start('MainScene', { levelId: null });
+    });
+
+    this.createButton(GAME_WIDTH / 2, startY + spacing * 3, 'МАГАЗИН', 0x4a7a9b, () => {
       this.scene.start('UpgradeScene');
     });
 
-    this.createButton(GAME_WIDTH / 2, startY + spacing * 3, 'ВЫХОД', 0xe74c3c, () => {
-      // In a browser, window.close() might not work if it wasn't opened by a script.
-      // We'll just show an alert or attempt to close.
-      if (window.confirm("Вы точно хотите выйти?")) {
-        window.close();
-      }
+    // In a browser window.close() only works for script-opened windows; it matters for the desktop build.
+    this.add.text(GAME_WIDTH - 20, 24, 'Выход', {
+      fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#95a5a6',
+    }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+      if (window.confirm('Вы точно хотите выйти?')) window.close();
     });
   }
 
@@ -84,7 +87,7 @@ export class MainMenuScene extends Phaser.Scene {
     bg.setStrokeStyle(3, 0xffffff, 0.25);
     const txt = this.add.text(0, 0, text, {
       fontFamily: 'Inter, sans-serif',
-      fontSize: '24px',
+      fontSize: '22px',
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5);

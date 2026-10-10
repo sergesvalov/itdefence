@@ -5,7 +5,7 @@ import type { TowerVariantStats, FurnitureTypeStats } from '../config';
 import { TopBar } from './TopBar';
 import { Toolbar } from './Toolbar';
 import { GameOverOverlay } from './GameOverOverlay';
-import { MetaProgression } from '../systems/MetaProgression';
+import { isBuildLocked } from '../systems/BuildLocks';
 
 interface AbilityButton {
   container: Phaser.GameObjects.Container;
@@ -91,8 +91,8 @@ export class HUD extends Phaser.Events.EventEmitter {
     this.topBar.setInbox(tasks);
   }
 
-  public setWave(wave: number): void {
-    this.topBar.setWave(wave);
+  public setWave(wave: number, total?: number): void {
+    this.topBar.setWave(wave, total);
   }
 
   public showStartWaveButton(nextWave: number): void {
@@ -141,24 +141,21 @@ export class HUD extends Phaser.Events.EventEmitter {
     // Also we need to highlight the slot in toolbar
     // Let's implement updateToolbarHighlight in toolbar
     for (let i = 0; i < 9; i++) {
-      const isTutDisabled = (i > 0 && i !== 6 && !MetaProgression.get().tutorialCompleted);
-      this.toolbar.updateSlot(i, i === index, isTutDisabled);
+      this.toolbar.updateSlot(i, i === index, isBuildLocked(i));
     }
   }
 
   public setFurnitureSelect(index: number, stats: FurnitureTypeStats, left: number): void {
     this.toolbar.setFurnitureSelect(index, stats, left);
     for (let i = 0; i < 9; i++) {
-      const isTutDisabled = (i > 0 && i !== 6 && !MetaProgression.get().tutorialCompleted);
-      this.toolbar.updateSlot(i, i === index, (left <= 0) || isTutDisabled);
+      this.toolbar.updateSlot(i, i === index, (left <= 0) || isBuildLocked(i));
     }
   }
 
   public hideSelect(): void {
     this.toolbar.hideSelect();
     for (let i = 0; i < 9; i++) {
-      const isTutDisabled = (i > 0 && i !== 6 && !MetaProgression.get().tutorialCompleted);
-      this.toolbar.updateSlot(i, false, isTutDisabled);
+      this.toolbar.updateSlot(i, false, isBuildLocked(i));
     }
   }
 

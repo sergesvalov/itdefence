@@ -57,7 +57,7 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   private view: CoworkerView;
 
-  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1) {
+  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1, problem?: string) {
     const start = waypoints[0];
     super(scene, start.x, start.y);
 
@@ -71,7 +71,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hp           = this.maxHp;
     this.urgent       = urgent;
 
-    this.view = new CoworkerView(scene, this, urgent, variant, stats);
+    this.view = new CoworkerView(scene, this, urgent, variant, stats, problem);
     this.view.redrawHpBar(this.hp, this.maxHp);
 
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);

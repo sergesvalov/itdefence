@@ -22,7 +22,9 @@ export class CoworkerView {
     private container: Phaser.GameObjects.Container,
     private urgent: boolean,
     variant: CoworkerVariant,
-    private stats: CoworkerStats
+    private stats: CoworkerStats,
+    /** The problem this coworker brings (campaign) — shown instead of the plain ticket */
+    private problem?: string
   ) {
     const specificKey = `sprite-coworker-${variant}`;
     const keyToUse = scene.textures.exists(specificKey) ? specificKey : 'sprite-coworker';
@@ -60,12 +62,21 @@ export class CoworkerView {
     this.hpBar = scene.add.graphics();
 
     // ── Sofa sit indicator (hidden unless sitting) ─────────────────────────
-    this.sitIcon = scene.add.text(0, -this.halfHeight - 26, '🛋️', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
+    this.sitIcon = scene.add.text(26, -this.halfHeight + 10, '🛋️', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
 
     // ── Status Text (Zzz, Slow, etc) ─────────────────────────────────────
-    this.statusText = scene.add.text(0, -this.halfHeight - 26, '', { fontSize: '14px' }).setOrigin(0.5);
+    this.statusText = scene.add.text(26, -this.halfHeight + 10, '', { fontSize: '14px' }).setOrigin(0.5);
 
     this.container.add([...bodyParts, this.ticket, this.hpBar, this.sitIcon, this.statusText]);
+
+    if (problem) {
+      this.container.add(scene.add.text(0, -this.halfHeight - 4, problem, {
+        fontFamily: 'Inter, system-ui, sans-serif', fontSize: '10px', fontStyle: 'bold',
+        color: urgent ? '#ffffff' : '#1a2330',
+        backgroundColor: urgent ? '#d63031' : '#ffeaa7',
+        padding: { x: 4, y: 2 },
+      }).setOrigin(0.5, 1));
+    }
 
     // ── Armor badge next to the HP bar ───────────────────────────────────
     if (stats.armor) {
@@ -75,6 +86,7 @@ export class CoworkerView {
 
   private drawTicket(): void {
     this.ticket.clear();
+    if (this.problem) return; // the problem label doubles as the ticket
     const fill = this.urgent ? 0xff7675 : 0xffeaa7;
     const stroke = this.urgent ? 0xd63031 : 0xd4ac0d;
     const top = -this.halfHeight - 13;

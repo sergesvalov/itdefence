@@ -73,6 +73,13 @@ export const TOWER_UPGRADE_FIRE_RATE_MULT = 0.85;
 /** Selling a tower returns this fraction of everything spent on it */
 export const TOWER_SELL_REFUND = 0.6;
 
+/** "Sleepy storage" levels: an idle tower dozes off after this long, and once
+ *  a coworker walks into range it needs the wake delay before it acts again
+ *  (shorter while a partner desk is around to "go wake the disks"). */
+export const TOWER_SLEEP_AFTER_MS = 5000;
+export const TOWER_WAKE_DELAY_MS = 2600;
+export const TOWER_WAKE_DELAY_WITH_PARTNER_MS = 1100;
+
 /** Partner desk: tasks it takes over per wave before burning out (rested by the next wave) */
 export const PARTNER_TASKS_PER_WAVE = 5;
 

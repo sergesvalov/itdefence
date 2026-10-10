@@ -12,10 +12,13 @@ export class Builder {
     private scene: Phaser.Scene,
     private economy: Economy,
     private manager: TowerManager,
-    private getWave: () => number
+    private getWave: () => number,
+    private getPartnerLimitOverride: () => number | null = () => null
   ) {}
 
   private getPartnerLimit(): number {
+    const override = this.getPartnerLimitOverride();
+    if (override !== null) return override;
     const w = this.getWave();
     if (w > 6) return 2;
     if (w > 3) return 1;

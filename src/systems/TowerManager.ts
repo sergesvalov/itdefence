@@ -2,18 +2,26 @@ import { ToolTower } from '../entities/ToolTower';
 import { Furniture } from '../entities/Furniture';
 import { EventBus } from '../events/EventBus';
 import type { Coworker } from '../entities/Coworker';
-import { FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, GAME_WIDTH, OFFICE_Y_BOTTOM, OFFICE_Y_TOP, type FurnitureType } from '../config';
+import { FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, GAME_WIDTH, OFFICE_Y_BOTTOM, OFFICE_Y_TOP, TOWER_WAKE_DELAY_MS, TOWER_WAKE_DELAY_WITH_PARTNER_MS, type FurnitureType } from '../config';
 
 export class TowerManager {
   public readonly towers: ToolTower[] = [];
   public readonly furniture: Furniture[] = [];
+  /** Campaign modifier: idle towers fall asleep (see ToolTower.tick) */
+  public sleepyTowers = false;
 
   constructor(private scene: Phaser.Scene) {}
 
   public tick(delta: number, enemies: Coworker[], carrying: Furniture | ToolTower | null): void {
+    // "Вася пошёл будить диски": with a partner desk around, towers wake faster
+    let wakeDelay: number | null = null;
+    if (this.sleepyTowers) {
+      wakeDelay = this.towers.some(t => t.variant === 'partner')
+        ? TOWER_WAKE_DELAY_WITH_PARTNER_MS : TOWER_WAKE_DELAY_MS;
+    }
     for (const tower of this.towers) {
       tower.setDepth(tower.y);
-      tower.tick(delta, enemies);
+      tower.tick(delta, enemies, wakeDelay);
     }
     for (const f of this.furniture) {
       f.setDepth(f.y);

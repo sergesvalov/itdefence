@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { MainScene } from './scenes/MainScene';
 import { UpgradeScene } from './scenes/UpgradeScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
+import { CampaignScene } from './scenes/CampaignScene';
+import { StoryScene } from './scenes/StoryScene';
 import { GAME_WIDTH, GAME_HEIGHT, initLayout } from './config';
 
 initLayout();
@@ -12,7 +14,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: GAME_HEIGHT,
   backgroundColor: '#1e2a3a',
   parent: 'game-container',
-  scene: [MainMenuScene, UpgradeScene, MainScene],
+  scene: [MainMenuScene, CampaignScene, StoryScene, UpgradeScene, MainScene],
   render: {
     antialias: true,
     pixelArt: false,

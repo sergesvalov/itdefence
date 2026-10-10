@@ -94,6 +94,7 @@ export class Toolbar {
             bg.lineStyle(3, 0xfbbf24, 0.9);
             bg.strokeRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
             container.setScale(1.1);
+            container.setAlpha(1);
           } else {
             bg.fillStyle(0x2c3e50, disabled ? 0.5 : 1);
             bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);

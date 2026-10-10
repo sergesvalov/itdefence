@@ -8,7 +8,8 @@ export class GameOverOverlay {
   constructor(scene: Phaser.Scene, events: Phaser.Events.EventEmitter) {
     this.overlay = scene.add.container(0, 0);
 
-    const veil = scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x0000aa).setAlpha(0.85);
+    // The container sits at the screen centre, so the veil is centred on its origin
+    const veil = scene.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0000aa).setAlpha(0.85);
 
     const fontStyle = 'Courier, monospace';
     const text = scene.add.text(0, -80, 'A fatal exception 0E has occurred at IT:DEFENCE.', {
@@ -19,7 +20,7 @@ export class GameOverOverlay {
       fontFamily: fontStyle, fontSize: '14px', color: '#ffffff', align: 'left',
     }).setOrigin(0.5);
 
-    const hint = scene.add.text(0, 140, 'Тапните, чтобы вернуться в меню', {
+    const hint = scene.add.text(0, 140, 'Тапните, чтобы продолжить', {
       fontFamily: fontStyle, fontSize: '14px', color: '#ffffff'
     }).setOrigin(0.5).setAlpha(0.7);
 

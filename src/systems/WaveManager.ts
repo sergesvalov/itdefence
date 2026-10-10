@@ -9,14 +9,15 @@ import {
   OFFICE_Y_TOP, DESK_X, DESK_Y,
   WAVE_MONEY_AMOUNT, ENEMIES_PER_WAVE_BASE, ENEMIES_PER_WAVE_GROWTH,
   URGENT_TASK_CHANCE, WAVE_HP_GROWTH, WAVE_HP_GROWTH_SQ, COWORKER_VARIANTS,
-  GAME_WIDTH, GAME_HEIGHT,
+
 } from '../config';
 import type { Economy } from './Economy';
 import type { HUD } from '../ui/HUD';
-import { showFloatingText } from '../ui/FloatingText';
+import { showFloatingText, showBanner } from '../ui/FloatingText';
 import { EventBus, GameEvents } from '../events/EventBus';
 
 import { Pathfinder } from './Pathfinder';
+import type { LevelDef } from '../campaign/act1';
 
 export class WaveManager {
   public readonly enemies: Coworker[] = [];
@@ -34,9 +35,11 @@ export class WaveManager {
     private isDoorShielded: () => boolean,
     private getFurniture: () => Furniture[],
     private getTowers: () => ToolTower[],
+    /** Campaign level being played, or null for the endless mode */
+    private level: LevelDef | null = null,
   ) {
     this.scheduleNextSpawn();
-    this.hud.setWave(this.wave);
+    this.hud.setWave(this.wave, this.level?.waves);
     this.hud.on('start-wave-tap', () => this.startNextWave());
     
     EventBus.on('furniture_changed', this.recalculatePaths, this);
@@ -120,14 +123,19 @@ export class WaveManager {
 
   // ── Spawning ─────────────────────────────────────────────────────────
 
+  /** Wave number as far as difficulty goes: later chapters start further along the curve */
+  private get tier(): number {
+    return this.wave + (this.level?.difficulty ?? 0);
+  }
+
   private enemiesPerWave(): number {
-    return ENEMIES_PER_WAVE_BASE + this.wave * ENEMIES_PER_WAVE_GROWTH;
+    return ENEMIES_PER_WAVE_BASE + this.tier * ENEMIES_PER_WAVE_GROWTH;
   }
 
   private scheduleNextSpawn(): void {
     this.spawnTimer = Phaser.Math.Between(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX);
     // Faster in later waves
-    const waveSpeed = Math.max(0.45, 1 - (this.wave - 1) * 0.08);
+    const waveSpeed = Math.max(0.45, 1 - (this.tier - 1) * 0.08);
     this.spawnTimer *= waveSpeed;
   }
 
@@ -136,20 +144,30 @@ export class WaveManager {
     const urgent = Math.random() < URGENT_TASK_CHANCE;
     
     let variant: CoworkerVariant = 'normal';
-    // Every 5th wave starts with a Boss!
-    if (this.spawnedThisWave === 0 && this.wave % 5 === 0) {
+    // Boss waves open with the boss: every 5th wave, or the level's own list
+    const bossWave = this.level ? !!this.level.bossWaves?.includes(this.wave) : this.wave % 5 === 0;
+    if (this.spawnedThisWave === 0 && bossWave) {
       variant = 'boss';
     } else {
       const roll = Math.random();
-      if (this.wave >= 6 && roll < 0.2) variant = 'remote';
-      else if (this.wave >= 4 && roll < 0.3) variant = 'tank';
-      else if (this.wave >= 3 && roll < 0.5) variant = 'fast';
-      else if (this.wave >= 2 && roll < 0.65) variant = 'swarm';
+      const tier = this.tier;
+      if (tier >= 6 && roll < 0.2) variant = 'remote';
+      else if (tier >= 4 && roll < 0.3) variant = 'tank';
+      else if (tier >= 3 && roll < 0.5) variant = 'fast';
+      else if (tier >= 2 && roll < 0.65) variant = 'swarm';
+      if (this.level && !this.level.variants.includes(variant)) variant = 'normal';
     }
 
-    const n = this.wave - 1;
+    let problem: string | undefined;
+    if (this.level) {
+      problem = variant === 'boss' && this.level.bossProblem
+        ? this.level.bossProblem
+        : Phaser.Utils.Array.GetRandom(this.level.problems);
+    }
+
+    const n = this.tier - 1;
     const hpScale = 1 + n * WAVE_HP_GROWTH + n * n * WAVE_HP_GROWTH_SQ;
-    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant, hpScale);
+    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant, hpScale, problem);
     this.enemies.push(cw);
     this.spawnedThisWave++;
 
@@ -176,6 +194,10 @@ export class WaveManager {
     showFloatingText(this.scene, DESK_X, DESK_Y - 40, `+${WAVE_MONEY_AMOUNT} 💰`, '#2ecc71');
 
     this.isPaused = true;
+    if (this.level && this.wave >= this.level.waves) {
+      EventBus.emit(GameEvents.LEVEL_COMPLETE);
+      return;
+    }
     this.hud.showStartWaveButton(this.wave + 1);
   }
 
@@ -188,24 +210,9 @@ export class WaveManager {
       if (t.variant === 'partner') t.rest();
     }
     this.hud.hideStartWaveButton();
-    this.hud.setWave(this.wave);
-    this.showWaveAnnouncement();
+    this.hud.setWave(this.wave, this.level?.waves);
+    showBanner(this.scene, `Спринт ${this.wave}`);
     this.scheduleNextSpawn();
-  }
-
-  private showWaveAnnouncement(): void {
-    const txt = this.scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, `⚠️ WAVE ${this.wave}`, {
-      fontSize: '34px', fontStyle: 'bold', color: '#ffeaa7',
-      stroke: '#2d3436', strokeThickness: 5,
-    }).setOrigin(0.5).setDepth(20);
-
-    this.scene.tweens.add({
-      targets: txt,
-      alpha: 0,
-      y: GAME_HEIGHT / 2 - 110,
-      duration: 1800,
-      ease: 'Quad.Out',
-      onComplete: () => txt.destroy(),
-    });
+    EventBus.emit(GameEvents.WAVE_STARTED, this.wave);
   }
 }

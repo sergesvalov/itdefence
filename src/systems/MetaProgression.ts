@@ -7,6 +7,8 @@ export interface MetaSaveData {
   damageLevel: number; // 0 to 5
   shieldDurationLevel: number; // 0 to 5
   tutorialCompleted: boolean;
+  /** How many campaign chapters are cleared (the next one is unlocked) */
+  campaignCleared: number;
 }
 
 const DEFAULT_SAVE: MetaSaveData = {
@@ -16,6 +18,7 @@ const DEFAULT_SAVE: MetaSaveData = {
   damageLevel: 0,
   shieldDurationLevel: 0,
   tutorialCompleted: true,
+  campaignCleared: 0,
 };
 
 export class MetaProgression {
@@ -48,6 +51,12 @@ export class MetaProgression {
 
   public static earnMoney(amount: number): void {
     this.get().money += amount;
+    this.save();
+  }
+
+  public static completeLevel(index: number): void {
+    const data = this.get();
+    data.campaignCleared = Math.max(data.campaignCleared, index + 1);
     this.save();
   }
 

@@ -12,7 +12,7 @@ import { SoundFX } from './SoundFX';
 import { isInOffice, isPlacementValid } from './PlacementValidator';
 import { Builder } from './Builder';
 import { EventBus } from '../events/EventBus';
-import { MetaProgression } from './MetaProgression';
+import { isBuildLocked } from './BuildLocks';
 import { showFloatingText } from '../ui/FloatingText';
 import { TowerMenu } from '../ui/TowerMenu';
 
@@ -26,6 +26,8 @@ export class TowerPlacer {
   public enabled = true;
   public getWave: () => number = () => 1;
   public isPaused: () => boolean = () => false;
+  /** Campaign levels fix how many partner desks are allowed; null = the endless-mode rule */
+  public partnerLimitOverride: number | null = null;
 
   private readonly buildItems: BuildItem[];
   private selectedIndex = 0;
@@ -42,7 +44,7 @@ export class TowerPlacer {
     private hud: HUD,
     private manager: TowerManager
   ) {
-    this.builder = new Builder(scene, economy, manager, () => this.getWave());
+    this.builder = new Builder(scene, economy, manager, () => this.getWave(), () => this.partnerLimitOverride);
     this.menu = new TowerMenu(scene);
 
     this.buildItems = [
@@ -160,6 +162,11 @@ export class TowerPlacer {
       const clickedTower = this.manager.towers.find(
         t => Phaser.Math.Distance.Between(t.x, t.y, ptr.x, ptr.y) < (TOWER_VARIANTS_DATA[t.variant].radius || TOWER_SIZE)
       );
+      if (clickedTower?.asleep) {
+        clickedTower.wake();
+        showFloatingText(this.scene, clickedTower.x, clickedTower.y, 'Разогнал!', '#74b9ff');
+        return;
+      }
       if (clickedTower) {
         // Tapping the tower whose menu was just dismissed simply closes it.
         if (clickedTower !== dismissed) this.openMenu(clickedTower);
@@ -217,12 +224,16 @@ export class TowerPlacer {
 
   cycleSelection(): void {
     SoundFX.playClick();
-    this.selectIndex((this.selectedIndex + 1) % this.buildItems.length);
+    // Next item that isn't locked (the tutorial / a campaign level may lock some)
+    let next = this.selectedIndex;
+    do {
+      next = (next + 1) % this.buildItems.length;
+    } while (isBuildLocked(next) && next !== this.selectedIndex);
+    this.selectIndex(next);
   }
 
   selectIndex(index: number): void {
-    // Index 0 is tower (Cooler), index 6 is furniture (Cabinet). Allow both during tutorial.
-    if (index > 0 && index !== 6 && !MetaProgression.get().tutorialCompleted) {
+    if (isBuildLocked(index)) {
       showFloatingText(this.scene, 80, 150, 'Заблокировано', '#f39c12');
       return;
     }

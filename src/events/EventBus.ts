@@ -10,4 +10,6 @@ export const GameEvents = {
   TASK_ARRIVED: 'task-arrived',
   GAME_OVER: 'game-over',
   COWORKER_KILLED: 'coworker-killed',
+  WAVE_STARTED: 'wave-started',
+  LEVEL_COMPLETE: 'level-complete',
 };

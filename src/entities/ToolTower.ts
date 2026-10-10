@@ -3,7 +3,7 @@ import type { Coworker } from './Coworker';
 import {
   TOWER_VARIANTS_DATA, type TowerVariant, type TowerVariantStats,
   TOWER_MAX_LEVEL, TOWER_UPGRADE_DAMAGE_MULT, TOWER_UPGRADE_RANGE_BONUS, TOWER_UPGRADE_FIRE_RATE_MULT,
-  TOWER_SELL_REFUND,
+  TOWER_SELL_REFUND, TOWER_SLEEP_AFTER_MS,
 } from '../config';
 import { MetaProgression } from '../systems/MetaProgression';
 import { TowerView, TOWER_SIZE } from './TowerView';
@@ -24,6 +24,10 @@ export class ToolTower extends Phaser.GameObjects.Container {
   public readonly variant: TowerVariant;
   public level = 1;
   public tasksSolved = 0;
+  /** Dozed off from idleness (only on "sleepy storage" levels) */
+  public asleep = false;
+  private idleMs = 0;
+  private wakeMs = 0;
   public cooldown = 0;
   public range: number;
   public damage: number;
@@ -112,7 +116,41 @@ export class ToolTower extends Phaser.GameObjects.Container {
 
   // ── Per-frame ─────────────────────────────────────────────────────────
 
-  public tick(delta: number, enemies: Coworker[]): void {
+  public wake(): void {
+    this.asleep = false;
+    this.idleMs = 0;
+    this.view.setAsleep(false);
+  }
+
+  /**
+   * `wakeDelayMs` is set on levels where idle towers fall asleep: after
+   * TOWER_SLEEP_AFTER_MS without anyone in range the tower dozes off, and
+   * once someone walks in it needs that long to get going again.
+   */
+  public tick(delta: number, enemies: Coworker[], wakeDelayMs: number | null = null): void {
+    if (wakeDelayMs !== null && this.variant !== 'partner') {
+      const busy = enemies.some(e => !e.isDead && !e.hasReachedDesk &&
+        Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= this.range);
+      if (this.asleep) {
+        if (busy) {
+          this.wakeMs -= delta;
+          if (this.wakeMs <= 0) this.wake();
+        } else {
+          this.wakeMs = wakeDelayMs;
+        }
+        if (this.asleep) return;
+      } else if (busy) {
+        this.idleMs = 0;
+      } else {
+        this.idleMs += delta;
+        if (this.idleMs >= TOWER_SLEEP_AFTER_MS) {
+          this.asleep = true;
+          this.wakeMs = wakeDelayMs;
+          this.view.setAsleep(true);
+          return;
+        }
+      }
+    }
     this.behavior.tick(delta, enemies);
   }
 }
