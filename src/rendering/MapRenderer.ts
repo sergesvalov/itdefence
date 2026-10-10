@@ -3,7 +3,7 @@ import {
   GAME_WIDTH, GAME_HEIGHT,
   OFFICE_Y_TOP, OFFICE_Y_BOTTOM,
   DESK_X, DESK_Y,
-  SPAWN_DOORS,
+  SPAWN_DOORS, TOOLBAR_WIDTH,
 } from '../config';
 
 import type { DoorDef } from '../config';
@@ -17,7 +17,9 @@ const PAL = {
   floorBase:     0x1a2a3a,   // dark navy — fallback floor fill
   floorTileA:    0x33475b,   // office carpet tile, lighter
   floorTileB:    0x2e4155,   // office carpet tile, darker
-  wallFill:      0xd4c5a9,   // warm cream (wall fallback)
+  wallFill:      0xe4d9c2,   // warm cream wall
+  wallPanel:     0xcbbd9f,   // wainscot band under it
+  wallTrim:      0xb3a383,   // rail + panel seams
   wallBaseboard: 0x5a3f2b,   // dark walnut baseboard
   borderShadow:  0x0e1a26,   // very dark navy for shadow line at wall-floor junction
   labelBg:       0x1a2430,   // dark chip behind text labels
@@ -28,9 +30,9 @@ const PAL = {
 
 /**
  * Draws the static map once per game: wall strip (doors) on top,
- * Petya's office (the battlefield) below, desk at the bottom. Uses a
- * texture for any slot whose asset was loaded (see TEXTURE_ASSETS in
- * config.ts), otherwise falls back to programmatic Graphics.
+ * Petya's office (the battlefield) below, desk at the bottom. Walls and
+ * floor are drawn in code; door and desk are sprites (TEXTURE_ASSETS in
+ * config.ts) with a programmatic fallback if one failed to load.
  * Returns a map of door definitions to their created image sprites (if any).
  */
 export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Image | null> {
@@ -42,27 +44,25 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   gfx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
   // ── Wall strip (top 200px) — the wall the doors are embedded in ─────
-  if (scene.textures.exists('tile-corridor-floor')) {
-    scene.add.tileSprite(0, 0, GAME_WIDTH, OFFICE_Y_TOP, 'tile-corridor-floor').setOrigin(0, 0);
-  } else {
-    // Programmatic wall fallback
-    gfx.fillStyle(PAL.wallFill);
-    gfx.fillRect(0, 0, GAME_WIDTH, OFFICE_Y_TOP);
-    // Baseboard strip at the bottom of the wall
-    gfx.fillStyle(PAL.wallBaseboard);
-    gfx.fillRect(0, OFFICE_Y_TOP - 6, GAME_WIDTH, 6);
+  gfx.fillStyle(PAL.wallFill);
+  gfx.fillRect(0, 0, GAME_WIDTH, OFFICE_Y_TOP);
+  // Wainscot: a darker lower band split into panels, then the baseboard
+  const WAINSCOT_TOP = OFFICE_Y_TOP - 46;
+  gfx.fillStyle(PAL.wallPanel);
+  gfx.fillRect(0, WAINSCOT_TOP, GAME_WIDTH, 46);
+  gfx.fillStyle(PAL.wallTrim);
+  gfx.fillRect(0, WAINSCOT_TOP, GAME_WIDTH, 4);
+  for (let x = TOOLBAR_WIDTH + 18; x < GAME_WIDTH; x += 66) {
+    gfx.fillRect(x, WAINSCOT_TOP + 4, 3, 36);
   }
+  gfx.fillStyle(PAL.wallBaseboard);
+  gfx.fillRect(0, OFFICE_Y_TOP - 6, GAME_WIDTH, 6);
 
   // ── Bottom wall strip ────────────────────────────────────────────────
-  if (scene.textures.exists('tile-wall')) {
-    scene.add.tileSprite(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM, 'tile-wall').setOrigin(0, 0);
-  } else {
-    gfx.fillStyle(PAL.wallFill);
-    gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM);
-    // Baseboard at top of bottom wall
-    gfx.fillStyle(PAL.wallBaseboard);
-    gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, 5);
-  }
+  gfx.fillStyle(PAL.wallPanel);
+  gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, GAME_HEIGHT - OFFICE_Y_BOTTOM);
+  gfx.fillStyle(PAL.wallBaseboard);
+  gfx.fillRect(0, OFFICE_Y_BOTTOM, GAME_WIDTH, 5);
 
   // ── Petya's office (the battlefield) ────────────────────────────────
   // Calm two-tone carpet tiles, deliberately low-contrast so coworkers and

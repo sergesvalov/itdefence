@@ -38,21 +38,22 @@ export class Toolbar {
     dockBg.strokePath();
     dockBg.setDepth(10000);
 
-    const infoY = GAME_HEIGHT - 65;
+    // Slim strip along the bottom wall, clear of Petya's desk
+    const infoY = GAME_HEIGHT - 18;
     this.toolbarInfoBg = scene.add.graphics().setDepth(10000);
     this.toolbarInfoBg.fillStyle(0x1e2a3a, 0.95);
     
     // Position it correctly to the right of the toolbar
     const bgWidth = GAME_WIDTH - TOOLBAR_WIDTH - 24;
     const bgX = TOOLBAR_WIDTH + 12;
-    this.toolbarInfoBg.fillRoundedRect(bgX, infoY - 18, bgWidth, 36, 8);
+    this.toolbarInfoBg.fillRoundedRect(bgX, infoY - 14, bgWidth, 28, 8);
     this.toolbarInfoBg.lineStyle(2, 0x4a7a9b, 0.6);
-    this.toolbarInfoBg.strokeRoundedRect(bgX, infoY - 18, bgWidth, 36, 8);
+    this.toolbarInfoBg.strokeRoundedRect(bgX, infoY - 14, bgWidth, 28, 8);
     this.toolbarInfoBg.setVisible(false);
 
     const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
     this.toolbarInfoText = scene.add.text(centerX, infoY, '', {
-      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '15px', color: '#7ab8d4', fontStyle: 'bold'
+      fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px', color: '#7ab8d4', fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(10001);
 
     items.forEach((item, index) => {

@@ -4,6 +4,7 @@ import type { ToolTower } from '../ToolTower';
 import type { Coworker } from '../Coworker';
 import { SoundFX } from '../../systems/SoundFX';
 import { GameSpeed } from '../../systems/GameSpeed';
+import { DOT_TEXTURE } from '../../rendering/textures';
 import { TOWER_VARIANTS_DATA } from '../../config';
 import { PROJECTILE_SPEED, SLOW_MULTIPLIER, SLOW_DURATION_MS, STUN_DURATION_MS, AOE_SPLASH_RADIUS } from '../../config';
 
@@ -132,11 +133,11 @@ export class ProjectileBehavior implements ITowerBehavior {
 
     let trail: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
     if (special !== 'aoe' && this.tower.variant !== 'docs') {
-      trail = scene.add.particles(0, 0, 'sprite-tower-cooler', {
+      trail = scene.add.particles(0, 0, DOT_TEXTURE, {
         color: [0xfdcb6e, 0xe17055],
         colorEase: 'quad.out',
         lifespan: 150,
-        scale: { start: 0.3, end: 0 },
+        scale: { start: 0.9, end: 0 },
         blendMode: 'ADD',
         follow: proj
       }).setDepth(15);

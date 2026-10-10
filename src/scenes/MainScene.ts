@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY, TEXTURE_ASSETS, assetUrl } from '../config';
+import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY } from '../config';
 import { drawMap } from '../rendering/MapRenderer';
+import { preloadTextures, ensureGeneratedTextures } from '../rendering/textures';
 import { HUD } from '../ui/HUD';
 import { Economy } from '../systems/Economy';
 import { TowerPlacer } from '../systems/TowerPlacer';
@@ -40,14 +41,13 @@ export class MainScene extends Phaser.Scene {
   // ──────────────────────────────────────────────────────────────────────
 
   preload(): void {
-    for (const asset of TEXTURE_ASSETS) {
-      this.load.image(asset.key, assetUrl(asset));
-    }
+    preloadTextures(this);
   }
 
   create(): void {
     this.isGameOver = false;
     SoundFX.init();
+    ensureGeneratedTextures(this);
     
     MetaProgression.load();
     const meta = MetaProgression.get();
