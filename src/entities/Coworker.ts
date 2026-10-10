@@ -33,6 +33,15 @@ export class Coworker extends Phaser.GameObjects.Container {
   
   public static partnerCounter = 0;
 
+  /** Multiplier this coworker's HP was scaled by (wave difficulty) */
+  public readonly hpScale: number;
+  /** Money paid when a tower removes this coworker */
+  public bounty: number;
+  /** Names of the two duplicate records this one falls apart into (see LevelDef.duplicates) */
+  public duplicateNames: [string, string] | null = null;
+  /** Was the killing blow armor-piercing (Docs)? */
+  public killedByPiercing = false;
+
   private waypoints: Waypoint[];
   private waypointIndex = 0;
   private readonly speed: number;
@@ -57,7 +66,7 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   private view: CoworkerView;
 
-  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1, problem?: string) {
+  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1, problem?: string, splitting = false) {
     const start = waypoints[0];
     super(scene, start.x, start.y);
 
@@ -68,10 +77,12 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.speed        = (BASE_SPEED + Phaser.Math.Between(-8, 16)) * stats.speedMult;
     this.maxHp        = BASE_HP * stats.hpMult * hpScale;
     this.armor        = stats.armor ?? 0;
+    this.hpScale      = hpScale;
+    this.bounty       = stats.bounty;
     this.hp           = this.maxHp;
     this.urgent       = urgent;
 
-    this.view = new CoworkerView(scene, this, urgent, variant, stats, problem);
+    this.view = new CoworkerView(scene, this, urgent, variant, stats, problem, splitting);
     this.view.redrawHpBar(this.hp, this.maxHp);
 
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
@@ -99,6 +110,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     SoundFX.playHit();
     showFloatingText(this.scene, this.x, this.y, `-${+amount.toFixed(1)}`, '#e74c3c');
     if (this.hp <= 0) {
+      this.killedByPiercing = piercing;
       this.kill();
       EventBus.emit(GameEvents.COWORKER_KILLED, this);
     }

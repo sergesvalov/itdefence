@@ -5,8 +5,8 @@ import { MetaProgression } from '../systems/MetaProgression';
 import type { StoryData } from './StoryScene';
 
 const FONT = 'Inter, system-ui, sans-serif';
-const ROW_HEIGHT = 64;
-const ROW_GAP = 8;
+const ROW_HEIGHT = 58;
+const ROW_GAP = 6;
 
 /** Chapter list for the act: cleared chapters, the next one, and locked ones. */
 export class CampaignScene extends Phaser.Scene {
@@ -72,6 +72,7 @@ export class CampaignScene extends Phaser.Scene {
   private startLevel(level: LevelDef): void {
     const story: StoryData = {
       title: level.title,
+      avatar: level.avatar && `sprite-avatar-${level.avatar}`,
       pages: level.intro,
       finalLabel: 'НАЧАТЬ',
       nextScene: 'MainScene',

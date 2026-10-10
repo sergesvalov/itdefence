@@ -24,7 +24,9 @@ export class CoworkerView {
     variant: CoworkerVariant,
     private stats: CoworkerStats,
     /** The problem this coworker brings (campaign) — shown instead of the plain ticket */
-    private problem?: string
+    private problem?: string,
+    /** Carries a «ё» record that may split into duplicates — gets a purple label */
+    splitting = false
   ) {
     const specificKey = `sprite-coworker-${variant}`;
     const keyToUse = scene.textures.exists(specificKey) ? specificKey : 'sprite-coworker';
@@ -72,8 +74,8 @@ export class CoworkerView {
     if (problem) {
       this.container.add(scene.add.text(0, -this.halfHeight - 4, problem, {
         fontFamily: 'Inter, system-ui, sans-serif', fontSize: '10px', fontStyle: 'bold',
-        color: urgent ? '#ffffff' : '#1a2330',
-        backgroundColor: urgent ? '#d63031' : '#ffeaa7',
+        color: splitting || urgent ? '#ffffff' : '#1a2330',
+        backgroundColor: splitting ? '#7c5ce7' : urgent ? '#d63031' : '#ffeaa7',
         padding: { x: 4, y: 2 },
       }).setOrigin(0.5, 1));
     }

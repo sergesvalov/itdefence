@@ -27,6 +27,10 @@ const GOLD = '#f1c453';
 const RED = '#e85d5d';
 const TEAL = '#5eead4';
 const PAPER = '#f4f1e6';
+const GINGER = '#c8642a';       // Вася
+const FRECKLE = '#b5754f';
+const PERM = '#d9a441';         // Марья Ивановна's hairdo
+const CARDIGAN = '#b56576';
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 const svg = (w, h, body, strokeWidth = 4) =>
@@ -114,8 +118,9 @@ const partner = () => svg(128, 128,
   shadow(64, 117, 54) +
   path('M38 92 q0 -32 26 -32 q26 0 26 32 z', '#2fbf8f') +                    // hoodie
   circle(64, 42, 18, SKIN) +
-  path('M46 42 q0 -22 18 -22 q18 0 18 22 q-8 -11 -18 -11 q-10 0 -18 11 z', '#3a2a1e') +
+  path('M46 42 q-2 -24 18 -24 q22 0 18 24 q-5 -12 -11 -9 q-4 -7 -10 0 q-8 -4 -15 9 z', GINGER) +
   dot(57, 45, 2.6, INK) + dot(71, 45, 2.6, INK) +
+  dot(52, 50, 1.2, FRECKLE) + dot(55, 52, 1.2, FRECKLE) + dot(73, 52, 1.2, FRECKLE) + dot(76, 50, 1.2, FRECKLE) +
   path('M58 52 q6 5 12 0', 'none', 'stroke-width="3"') +
   rect(42, 62, 44, 26, '#4a5a70', 4) + dot(64, 75, 4.5, '#9af0ea') +          // laptop lid
   rect(94, 72, 13, 14, '#fff', 3) +                                           // mug
@@ -207,6 +212,32 @@ const avatarPetya = () => svg(128, 128,
   dot(52, 58, 2.6, INK) + dot(76, 58, 2.6, INK) +
   line(46, 68, 56, 69, '#c79a78', 2.5) + line(72, 69, 82, 68, '#c79a78', 2.5) +             // tired eyes
   line(56, 76, 72, 76, INK, 3));
+
+const avatarVasya = () => svg(128, 128,
+  circle(64, 64, 60, '#24364a') +
+  path('M22 116 q2 -34 42 -34 q40 0 42 34 q-18 12 -42 12 q-24 0 -42 -12 z', '#2fbf8f') +
+  rect(56, 74, 16, 14, SKIN) +
+  `<ellipse cx="64" cy="54" rx="26" ry="28" fill="${SKIN}"/>` +
+  path('M37 52 q-5 -36 27 -36 q34 0 27 36 q-6 -17 -15 -13 q-6 -10 -15 0 q-12 -6 -24 13 z', GINGER) +
+  dot(53, 58, 3, INK) + dot(75, 58, 3, INK) +
+  line(46, 49, 58, 47, INK, 3) + line(70, 47, 82, 49, INK, 3) +
+  [[47, 66], [51, 69], [55, 66], [73, 66], [77, 69], [81, 66]].map(([x, y]) => dot(x, y, 1.5, FRECKLE)).join('') +
+  path('M54 72 q10 9 20 0', '#fff', 'stroke-width="3"'));
+
+const avatarMaria = () => svg(128, 128,
+  circle(64, 64, 60, '#24364a') +
+  `<ellipse cx="64" cy="40" rx="36" ry="30" fill="${PERM}"/>` +
+  path('M22 116 q2 -34 42 -34 q40 0 42 34 q-18 12 -42 12 q-24 0 -42 -12 z', CARDIGAN) +
+  rect(56, 74, 16, 14, SKIN) +
+  `<ellipse cx="64" cy="56" rx="25" ry="27" fill="${SKIN}"/>` +
+  path('M39 52 q4 -22 25 -22 q21 0 25 22 q-12 -12 -25 -10 q-13 -2 -25 10 z', PERM) +
+  [50, 57, 64, 71, 78].map((x, i) => dot(x, 92 + (i === 2 ? 3 : i % 2 ? 2 : 0), 3, '#f4f1e6')).join('') +   // beads
+  rect(43, 52, 18, 13, '#fff', 5, 'fill-opacity="0.3" stroke-width="3"') +
+  rect(67, 52, 18, 13, '#fff', 5, 'fill-opacity="0.3" stroke-width="3"') +
+  line(61, 57, 67, 57, INK, 3) +
+  dot(52, 59, 2.6, INK) + dot(76, 59, 2.6, INK) +
+  line(46, 47, 58, 49, INK, 3) + line(70, 49, 82, 47, INK, 3) +
+  path('M57 75 q7 -4 14 0', 'none', 'stroke="#c0392b" stroke-width="4"'));
 
 // ─── Coworkers ──────────────────────────────────────────────────────────
 // Chibi proportions: a big head on a short body, drawn head-on. The contact
@@ -315,6 +346,21 @@ const coworkerBoss = () => person({
     rect(cx + 5, 41, 14, 5, '#6b4a2f', 2, 'stroke-width="2.5"') + dot(cx + 20, 43.5, 2.2, '#ff9f1c'),  // cigar
 });
 
+// Марья Ивановна, главный бухгалтер: bouffant, glasses, cardigan, an armful of folders
+const coworkerMaria = () => person({
+  width: 100, bodyHalf: 24, shirt: CARDIGAN, pants: '#6d597a', shoes: '#355070', face: 'angry', mouth: 'flat',
+  hairBack: (cx) => `<ellipse cx="${cx}" cy="21" rx="27" ry="19" fill="${PERM}"/>`,
+  hairFront: (cx) =>
+    path(`M${cx - 19} 27 q3 -15 19 -15 q16 0 19 15 q-9 -8 -19 -7 q-10 -1 -19 7 z`, PERM) + glasses(cx),
+  torso: (cx) => [-8, -3, 2, 7].map((dx, i) => dot(cx + dx + 0.5, 54 + (i === 1 || i === 2 ? 3 : 0), 2, '#f4f1e6')).join(''),
+  held: (cx) =>
+    rect(cx - 22, 82, 44, 9, '#e9c46a', 2, 'stroke-width="3"') +
+    rect(cx - 20, 74, 40, 9, PAPER, 2, 'stroke-width="3"') +
+    rect(cx - 23, 66, 46, 9, '#8ecae6', 2, 'stroke-width="3"') +
+    flat(cx - 17, 69, 14, 3, '#fff'),
+  extra: (cx) => line(cx - 4, 42, cx + 4, 42, '#c0392b', 3.5),
+});
+
 const coworkerRemote = () => person({
   shirt: '#8b5cf6', pants: '#c4b5fd', shoes: '#f472b6', face: 'flat', mouth: 'flat',
   hairBack: (cx) => path(`M${cx - 22} 30 a22 24 0 0 1 44 0`, 'none', 'stroke-width="9"') +
@@ -335,6 +381,7 @@ const sprites = {
   'tower-coffee': coffee, 'tower-aircon': aircon, 'tower-partner': partner,
   'furniture-cabinet': cabinet, 'furniture-drawer': drawer, 'furniture-sofa': sofa,
   'desk': desk, 'door': door, 'door-open': doorOpen, 'avatar-petya': avatarPetya,
+  'avatar-vasya': avatarVasya, 'avatar-maria': avatarMaria, 'coworker-maria': coworkerMaria,
   'coworker': coworkerNormal, 'coworker-fast': coworkerFast, 'coworker-tank': coworkerTank,
   'coworker-swarm': coworkerSwarm, 'coworker-boss': coworkerBoss, 'coworker-remote': coworkerRemote,
 };

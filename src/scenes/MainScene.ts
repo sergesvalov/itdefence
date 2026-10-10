@@ -189,6 +189,7 @@ export class MainScene extends Phaser.Scene {
 
     const story: StoryData = {
       title: level.title,
+      avatar: level.avatar && `sprite-avatar-${level.avatar}`,
       pages: level.outro,
       finalLabel: 'ДАЛЬШЕ',
       footer: `Премия: +${level.reward} 💰`,

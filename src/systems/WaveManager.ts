@@ -9,6 +9,7 @@ import {
   OFFICE_Y_TOP, DESK_X, DESK_Y,
   WAVE_MONEY_AMOUNT, ENEMIES_PER_WAVE_BASE, ENEMIES_PER_WAVE_GROWTH,
   URGENT_TASK_CHANCE, WAVE_HP_GROWTH, WAVE_HP_GROWTH_SQ, COWORKER_VARIANTS,
+  DUPLICATE_HP_FRACTION, DUPLICATE_BOUNTY,
 
 } from '../config';
 import type { Economy } from './Economy';
@@ -43,10 +44,10 @@ export class WaveManager {
     this.hud.on('start-wave-tap', () => this.startNextWave());
     
     EventBus.on('furniture_changed', this.recalculatePaths, this);
-    EventBus.on(GameEvents.COWORKER_KILLED, this.payBounty, this);
+    EventBus.on(GameEvents.COWORKER_KILLED, this.onCoworkerKilled, this);
     this.scene.events.once('shutdown', () => {
       EventBus.off('furniture_changed', this.recalculatePaths, this);
-      EventBus.off(GameEvents.COWORKER_KILLED, this.payBounty, this);
+      EventBus.off(GameEvents.COWORKER_KILLED, this.onCoworkerKilled, this);
     });
   }
 
@@ -147,7 +148,7 @@ export class WaveManager {
     // Boss waves open with the boss: every 5th wave, or the level's own list
     const bossWave = this.level ? !!this.level.bossWaves?.includes(this.wave) : this.wave % 5 === 0;
     if (this.spawnedThisWave === 0 && bossWave) {
-      variant = 'boss';
+      variant = this.level?.bossVariant ?? 'boss';
     } else {
       const roll = Math.random();
       const tier = this.tier;
@@ -160,14 +161,24 @@ export class WaveManager {
 
     let problem: string | undefined;
     if (this.level) {
-      problem = variant === 'boss' && this.level.bossProblem
+      problem = COWORKER_VARIANTS[variant].boss && this.level.bossProblem
         ? this.level.bossProblem
         : Phaser.Utils.Array.GetRandom(this.level.problems);
     }
 
     const n = this.tier - 1;
     const hpScale = 1 + n * WAVE_HP_GROWTH + n * n * WAVE_HP_GROWTH_SQ;
-    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant, hpScale, problem);
+    // Some records are spelled with «ё» and will fall apart into duplicates
+    const dup = this.level?.duplicates;
+    let duplicateNames: [string, string] | null = null;
+    if (dup && !COWORKER_VARIANTS[variant].boss && Math.random() < dup.chance) {
+      const [original, a, b] = Phaser.Utils.Array.GetRandom(dup.names);
+      problem = original;
+      duplicateNames = [a, b];
+    }
+
+    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant, hpScale, problem, !!duplicateNames);
+    cw.duplicateNames = duplicateNames;
     this.enemies.push(cw);
     this.spawnedThisWave++;
 
@@ -183,10 +194,31 @@ export class WaveManager {
 
   // ── Wave loop & money ─────────────────────────────────────────────────
 
-  private payBounty(cw: Coworker): void {
-    const { bounty } = COWORKER_VARIANTS[cw.variant];
-    this.economy.earn(bounty);
-    showFloatingText(this.scene, cw.x, cw.y - 30, `+${bounty} 💰`, '#f1c40f');
+  private onCoworkerKilled(cw: Coworker): void {
+    this.economy.earn(cw.bounty);
+    showFloatingText(this.scene, cw.x, cw.y - 30, `+${cw.bounty} 💰`, '#f1c40f');
+    if (cw.duplicateNames) this.resolveDuplicates(cw, cw.duplicateNames);
+  }
+
+  /**
+   * A «ё» record was closed. Docs (the script) merges it cleanly; anything
+   * else leaves two duplicate records walking on from the same spot.
+   */
+  private resolveDuplicates(cw: Coworker, names: [string, string]): void {
+    if (cw.killedByPiercing) {
+      showFloatingText(this.scene, cw.x, cw.y - 48, 'Дубли слиты', '#a29bfe');
+      return;
+    }
+    showFloatingText(this.scene, cw.x, cw.y - 48, 'Дубль!', '#a29bfe');
+    names.forEach((name, i) => {
+      const x = cw.x + (i === 0 ? -14 : 14);
+      const copy = new Coworker(
+        this.scene, this.buildPath(x, cw.y, cw.variant), false, cw.variant,
+        cw.hpScale * DUPLICATE_HP_FRACTION, name,
+      );
+      copy.bounty = DUPLICATE_BOUNTY;
+      this.enemies.push(copy);
+    });
   }
 
   private completeWave(): void {

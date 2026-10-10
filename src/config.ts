@@ -80,6 +80,11 @@ export const TOWER_SLEEP_AFTER_MS = 5000;
 export const TOWER_WAKE_DELAY_MS = 2600;
 export const TOWER_WAKE_DELAY_WITH_PARTNER_MS = 1100;
 
+/** Duplicate records ("Пётр и Петр"): HP of each copy as a fraction of the
+ *  original's, and the bounty a copy pays */
+export const DUPLICATE_HP_FRACTION = 0.45;
+export const DUPLICATE_BOUNTY = 2;
+
 /** Partner desk: tasks it takes over per wave before burning out (rested by the next wave) */
 export const PARTNER_TASKS_PER_WAVE = 5;
 
@@ -200,7 +205,7 @@ export const SHIELD_DOT_INTERVAL_MS = 800;
 
 // ── Coworker Variants (Enemies) ────────────────────────────────────────────────────────
 
-export type CoworkerVariant = 'normal' | 'fast' | 'tank' | 'swarm' | 'boss' | 'remote';
+export type CoworkerVariant = 'normal' | 'fast' | 'tank' | 'swarm' | 'boss' | 'remote' | 'maria';
 
 export interface CoworkerStats {
   hpMult: number;
@@ -213,6 +218,8 @@ export interface CoworkerStats {
   bounty: number;
   /** Fraction of non-piercing damage ignored (0..1) */
   armor?: number;
+  /** Opens a boss wave; can't be removed by the ultimate */
+  boss?: boolean;
 }
 
 export const COWORKER_VARIANTS: Record<CoworkerVariant, CoworkerStats> = {
@@ -220,8 +227,10 @@ export const COWORKER_VARIANTS: Record<CoworkerVariant, CoworkerStats> = {
   fast:   { hpMult: 0.7, speedMult: 1.5, scale: 0.9, tint: 0xf39c12, emoji: '⚡', name: 'Agile Коуч', bounty: 6 },
   tank:   { hpMult: 2.5, speedMult: 0.65, scale: 1.15, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер', bounty: 12, armor: 0.5 },
   swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.8, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер', bounty: 3 },
-  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.3, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик', bounty: 60 },
+  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.3, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик', bounty: 60, boss: true },
   remote: { hpMult: 0.8, speedMult: 1.2, scale: 1.0, tint: 0x8e44ad, emoji: '💻', name: 'Удаленщик', bounty: 7 },
+  // Марья Ивановна, главный бухгалтер — the boss of the "Программа" chapter
+  maria:  { hpMult: 13, speedMult: 0.4, scale: 1.25, tint: 0xb56576, emoji: '📎', name: 'Марья Ивановна', bounty: 60, boss: true, armor: 0.3 },
 };
 
 // ─── Sprites ────────────────────────────────────────────────────────────
@@ -243,12 +252,15 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   sprite('door-open',       'door-open',       124, 138),
   sprite('desk',            'desk',            312, 280),
   sprite('avatar-petya',    'avatar-petya',    192, 192),
+  sprite('avatar-vasya',    'avatar-vasya',    192, 192),
+  sprite('avatar-maria',    'avatar-maria',    192, 192),
   sprite('coworker',        'coworker',        120, 192),
   sprite('coworker-fast',   'coworker-fast',   120, 192),
   sprite('coworker-swarm',  'coworker-swarm',  120, 192),
   sprite('coworker-remote', 'coworker-remote', 120, 192),
   sprite('coworker-tank',   'coworker-tank',   150, 192),
   sprite('coworker-boss',   'coworker-boss',   150, 192),
+  sprite('coworker-maria',  'coworker-maria',  150, 192),
   // sprite-tower-cooler, sprite-tower-router, ...
   ...TOWER_VARIANT_KEYS.map(variant => sprite(`tower-${variant}`, `tower-${variant}`, 192, 192)),
   // sprite-furniture-cabinet, ...

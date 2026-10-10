@@ -3,6 +3,8 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
 export interface StoryData {
   title: string;
+  /** Portrait sprite key; Petya when omitted */
+  avatar?: string;
   pages: string[];
   /** Label of the button on the last page */
   finalLabel: string;
@@ -35,8 +37,9 @@ export class StoryScene extends Phaser.Scene {
   create(): void {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1e2a3a).setOrigin(0);
 
-    if (this.textures.exists('sprite-avatar-petya')) {
-      this.add.image(52, 70, 'sprite-avatar-petya').setDisplaySize(64, 64);
+    const avatar = this.story.avatar ?? 'sprite-avatar-petya';
+    if (this.textures.exists(avatar)) {
+      this.add.image(52, 70, avatar).setDisplaySize(64, 64);
     }
     this.add.text(96, 70, this.story.title, {
       fontFamily: FONT, fontSize: '24px', color: '#fbbf24', fontStyle: 'bold',
