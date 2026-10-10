@@ -1,3 +1,3 @@
 @Library('mylib@main') _
 
-declarativePipeline(agent: 'built-in')
+declarativePipeline(agent: 'agent-222')
