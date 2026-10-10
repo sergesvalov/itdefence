@@ -13,6 +13,7 @@ import { isInOffice, isPlacementValid } from './PlacementValidator';
 import { Builder } from './Builder';
 import { EventBus } from '../events/EventBus';
 import { MetaProgression } from './MetaProgression';
+import { showFloatingText } from '../ui/FloatingText';
 
 const KEYBOARD_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
 
@@ -158,7 +159,7 @@ export class TowerPlacer {
       if (!isInOffice(sx, sy)) {
         // Only show text if they clicked somewhat in the game area, not if they clicked the left menu
         if (ptr.x > 84) {
-          import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, ptr.x, ptr.y, 'Вне зоны офиса', '#ff6b6b'));
+          showFloatingText(this.scene, ptr.x, ptr.y, 'Вне зоны офиса', '#ff6b6b');
         }
         return;
       }
@@ -168,14 +169,14 @@ export class TowerPlacer {
         const stats = TOWER_VARIANTS_DATA[item.variant];
         const radius = stats.radius || TOWER_SIZE;
         if (!isPlacementValid(sx, sy, radius, this.manager, this.carrying, true)) {
-          import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, sx, sy, 'Нельзя строить здесь', '#ff6b6b'));
+          showFloatingText(this.scene, sx, sy, 'Нельзя строить здесь', '#ff6b6b');
           return;
         }
         this.builder.tryPlaceTower(sx, sy, item.variant);
       } else {
         const stats = FURNITURE_TYPES_DATA[item.type];
         if (!isPlacementValid(sx, sy, stats.radius, this.manager, this.carrying, false)) {
-          import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, sx, sy, 'Нельзя строить здесь', '#ff6b6b'));
+          showFloatingText(this.scene, sx, sy, 'Нельзя строить здесь', '#ff6b6b');
           return;
         }
         if (this.builder.tryPlaceFurniture(sx, sy, item.type)) {
@@ -201,7 +202,7 @@ export class TowerPlacer {
   selectIndex(index: number): void {
     // Index 0 is tower (Cooler), index 6 is furniture (Cabinet). Allow both during tutorial.
     if (index > 0 && index !== 6 && !MetaProgression.get().tutorialCompleted) {
-      import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, 80, 150, 'Заблокировано', '#f39c12'));
+      showFloatingText(this.scene, 80, 150, 'Заблокировано', '#f39c12');
       return;
     }
     SoundFX.playClick();
@@ -256,10 +257,13 @@ export class TowerPlacer {
     if (isInOffice(x, y) && isPlacementValid(x, y, radius, this.manager, this.carrying, isTower)) {
       piece.setPosition(x, y);
       SoundFX.playBuild();
-      if (!isTower) EventBus.emit('furniture_moved');
+      if (!isTower) {
+        EventBus.emit('furniture_changed');
+        EventBus.emit('furniture_moved');
+      }
     } else {
       piece.setPosition(this.carryOrigin.x, this.carryOrigin.y);
-      import('../ui/FloatingText').then(m => m.showFloatingText(this.scene, x, y, 'Нельзя разместить здесь', '#ff6b6b'));
+      showFloatingText(this.scene, x, y, 'Нельзя разместить здесь', '#ff6b6b');
     }
     
     if (piece instanceof Furniture) piece.setPicked(false);

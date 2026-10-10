@@ -3,8 +3,6 @@ import { TOWER_VARIANTS_DATA, type TowerVariant } from '../config';
 export const TOWER_SIZE = 40;
 
 export class TowerView {
-  private base?: Phaser.GameObjects.Rectangle;
-  private icon?: Phaser.GameObjects.Text;
   private sprite?: Phaser.GameObjects.Image;
   private rangeCircle: Phaser.GameObjects.Arc;
   private barrelLine: Phaser.GameObjects.Graphics;

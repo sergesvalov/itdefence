@@ -17,7 +17,7 @@ export class Toolbar {
   private toolbarInfoText: Phaser.GameObjects.Text;
   private toolbarInfoBg: Phaser.GameObjects.Graphics;
 
-  constructor(private scene: Phaser.Scene, private events: Phaser.Events.EventEmitter) {
+  constructor(scene: Phaser.Scene, private events: Phaser.Events.EventEmitter) {
     const items = [
       ...TOWER_VARIANT_KEYS.map(key => ({ ...TOWER_VARIANTS_DATA[key], type: 'tower', variant: key })),
       ...FURNITURE_TYPE_KEYS.map(key => ({ ...FURNITURE_TYPES_DATA[key], type: 'furniture', variant: key }))

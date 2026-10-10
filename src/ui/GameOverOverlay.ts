@@ -5,7 +5,7 @@ export class GameOverOverlay {
   private overlay: Phaser.GameObjects.Container;
   private earnedMetaText: Phaser.GameObjects.Text;
 
-  constructor(private scene: Phaser.Scene, private events: Phaser.Events.EventEmitter) {
+  constructor(scene: Phaser.Scene, events: Phaser.Events.EventEmitter) {
     this.overlay = scene.add.container(0, 0);
 
     const veil = scene.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x0000aa).setAlpha(0.85);

@@ -243,6 +243,12 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   })),
 ];
 
+/** Asset URL with a per-build version suffix, so a new deploy busts the
+ *  browser cache while repeat visits to the same build still hit it. */
+export function assetUrl(asset: TextureAsset): string {
+  return `${asset.path}?v=${__ASSET_VERSION__}`;
+}
+
 // ─── Spawn doors ────────────────────────────────────────────────────────
 // Reception strip along the top edge, one row, below where the HUD panel
 // sits (top-left corner) so nothing gets visually covered.

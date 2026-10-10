@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY, TEXTURE_ASSETS } from '../config';
+import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY, TEXTURE_ASSETS, assetUrl } from '../config';
 import { drawMap } from '../rendering/MapRenderer';
 import { HUD } from '../ui/HUD';
 import { Economy } from '../systems/Economy';
@@ -40,8 +40,7 @@ export class MainScene extends Phaser.Scene {
 
   preload(): void {
     for (const asset of TEXTURE_ASSETS) {
-      // Append a cache-buster query parameter to force reloading assets
-      this.load.image(asset.key, `${asset.path}?v=${Date.now()}`);
+      this.load.image(asset.key, assetUrl(asset));
     }
   }
 
@@ -131,7 +130,6 @@ export class MainScene extends Phaser.Scene {
     this.towerPlacer.enabled = false;
     this.ultimate.enabled = false;
     this.shield.enabled = false;
-    console.log('Game Over – the Inbox overflowed!');
     this.hud.showGameOver(earnedMeta);
     this.cameras.main.shake(600, 0.012);
     
@@ -146,12 +144,5 @@ export class MainScene extends Phaser.Scene {
       duration: 1500,
       ease: 'Quad.Out'
     });
-  }
-
-  private restartGame(): void {
-    for (const cw of this.waveManager.enemies) cw.destroy();
-    for (const t  of this.towerManager.towers) t.destroy();
-    for (const f  of this.towerManager.furniture) f.destroy();
-    this.scene.restart();
   }
 }

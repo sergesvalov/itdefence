@@ -39,7 +39,10 @@ export class WaveManager {
     this.hud.setWave(this.wave);
     this.hud.on('start-wave-tap', () => this.startNextWave());
     
-    EventBus.on('furniture_changed', () => this.recalculatePaths());
+    EventBus.on('furniture_changed', this.recalculatePaths, this);
+    this.scene.events.once('shutdown', () => {
+      EventBus.off('furniture_changed', this.recalculatePaths, this);
+    });
   }
 
   public recalculatePaths(): void {

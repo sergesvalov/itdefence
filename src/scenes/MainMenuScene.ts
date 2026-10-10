@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, TEXTURE_ASSETS } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT, TEXTURE_ASSETS, assetUrl } from '../config';
 
 import { MetaProgression } from '../systems/MetaProgression';
 
@@ -10,7 +10,7 @@ export class MainMenuScene extends Phaser.Scene {
 
   preload(): void {
     for (const asset of TEXTURE_ASSETS) {
-      this.load.image(asset.key, `${asset.path}?v=${Date.now()}`);
+      this.load.image(asset.key, assetUrl(asset));
     }
   }
 

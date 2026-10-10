@@ -15,7 +15,7 @@ export class CoworkerView {
     private scene: Phaser.Scene,
     private container: Phaser.GameObjects.Container,
     private urgent: boolean,
-    private variant: CoworkerVariant,
+    variant: CoworkerVariant,
     private stats: CoworkerStats
   ) {
     const specificKey = `sprite-coworker-${variant}`;

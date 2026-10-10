@@ -12,8 +12,6 @@ export class Furniture extends Phaser.GameObjects.Container {
   public readonly type: FurnitureType;
   public readonly radius: number;
 
-  private circle?: Phaser.GameObjects.Arc;
-  private icon?: Phaser.GameObjects.Text;
   private sprite?: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, x: number, y: number, type: FurnitureType) {
