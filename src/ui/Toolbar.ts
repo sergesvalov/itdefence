@@ -62,11 +62,18 @@ export class Toolbar {
       bg.fillStyle(0x2c3e50, 1);
       bg.fillRoundedRect(-slotSize/2, -slotSize/2, slotSize, slotSize, 8);
       const variantOrType = (item as any).variant;
-      const icon = IconRenderer.drawIcon(scene, 0, -8, item.type as 'tower' | 'furniture', variantOrType, 20);
+      const spriteKey = `sprite-${item.type}-${variantOrType}`;
+      let icon: Phaser.GameObjects.Image | Phaser.GameObjects.Graphics;
+      if (scene.textures.exists(spriteKey)) {
+        icon = scene.add.image(0, -8, spriteKey);
+        icon.setScale(36 / Math.max(icon.width, icon.height));
+      } else {
+        icon = IconRenderer.drawIcon(scene, 0, -8, item.type as 'tower' | 'furniture', variantOrType, 20);
+      }
       
       const priceText = item.type === 'tower' ? `${(item as any).cost} 💰` : 'FREE';
       const priceColor = item.type === 'tower' ? '#f1c40f' : '#2ecc71';
-      const price = scene.add.text(0, 18, priceText, { 
+      const price = scene.add.text(0, 20, priceText, { 
         fontFamily: 'Inter, system-ui, sans-serif', fontSize: '13px', color: priceColor, fontStyle: 'bold' 
       }).setOrigin(0.5);
 

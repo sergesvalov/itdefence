@@ -2,9 +2,15 @@ import Phaser from 'phaser';
 import type { CoworkerVariant, CoworkerStats } from '../config';
 export const RADIUS = 22;
 
+/** On-screen sprite height at scale 1 */
+const SPRITE_HEIGHT = 64;
+const HP_BAR_WIDTH = 34;
+
 export class CoworkerView {
   private coBody: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
   private readonly useSprite: boolean;
+  /** Half the body's on-screen height — anchors the ticket, HP bar and status icons */
+  private readonly halfHeight: number;
   private hpBar: Phaser.GameObjects.Graphics;
   private ticket: Phaser.GameObjects.Graphics;
   private sitIcon: Phaser.GameObjects.Text;
@@ -24,9 +30,17 @@ export class CoworkerView {
     const bodyParts: Phaser.GameObjects.GameObject[] = [];
 
     if (this.useSprite) {
-      this.coBody = scene.add.image(0, 0, keyToUse).setDisplaySize(RADIUS * 2 * stats.scale, RADIUS * 2.4 * stats.scale);
+      // Fixed height, width from the sprite's own proportions (never squashed)
+      const height = SPRITE_HEIGHT * stats.scale;
+      const img = scene.add.image(0, 0, keyToUse);
+      img.setDisplaySize(height * img.width / img.height, height);
+      this.halfHeight = height / 2;
+      // Contact shadow so the figure reads against the floor
+      bodyParts.push(scene.add.ellipse(0, this.halfHeight - 3, img.displayWidth * 0.95, 12, 0x000000, 0.35));
+      this.coBody = img;
       bodyParts.push(this.coBody);
     } else {
+      this.halfHeight = RADIUS * stats.scale;
       this.coBody = scene.add.arc(0, 0, RADIUS * stats.scale, 0, 360, false, stats.tint);
       this.coBody.setStrokeStyle(2, 0xd63031);
       bodyParts.push(this.coBody);
@@ -46,38 +60,45 @@ export class CoworkerView {
     this.hpBar = scene.add.graphics();
 
     // ── Sofa sit indicator (hidden unless sitting) ─────────────────────────
-    this.sitIcon = scene.add.text(0, -32, '🛋️', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
-    
+    this.sitIcon = scene.add.text(0, -this.halfHeight - 26, '🛋️', { fontSize: '14px' }).setOrigin(0.5).setVisible(false);
+
     // ── Status Text (Zzz, Slow, etc) ─────────────────────────────────────
-    this.statusText = scene.add.text(0, -RADIUS * stats.scale - 20, '', { fontSize: '14px' }).setOrigin(0.5);
+    this.statusText = scene.add.text(0, -this.halfHeight - 26, '', { fontSize: '14px' }).setOrigin(0.5);
 
     this.container.add([...bodyParts, this.ticket, this.hpBar, this.sitIcon, this.statusText]);
+
+    // ── Armor badge next to the HP bar ───────────────────────────────────
+    if (stats.armor) {
+      this.container.add(scene.add.text(-HP_BAR_WIDTH / 2 - 9, this.halfHeight + 6, '🛡️', { fontSize: '10px' }).setOrigin(0.5));
+    }
   }
 
   private drawTicket(): void {
     this.ticket.clear();
     const fill = this.urgent ? 0xff7675 : 0xffeaa7;
     const stroke = this.urgent ? 0xd63031 : 0xd4ac0d;
+    const top = -this.halfHeight - 13;
     this.ticket.fillStyle(fill);
-    this.ticket.fillRect(-7, -30, 14, 10);
+    this.ticket.fillRect(-7, top, 14, 10);
     this.ticket.lineStyle(1.5, stroke);
-    this.ticket.strokeRect(-7, -30, 14, 10);
-    
+    this.ticket.strokeRect(-7, top, 14, 10);
+
     this.ticket.lineStyle(1, this.urgent ? 0x922b21 : 0xb7950b);
     for (let i = 0; i < 3; i++) {
-      this.ticket.lineBetween(-5, -28 + i * 3, 5, -28 + i * 3);
+      this.ticket.lineBetween(-5, top + 2 + i * 3, 5, top + 2 + i * 3);
     }
   }
 
   public redrawHpBar(hp: number, maxHp: number): void {
     this.hpBar.clear();
-    const W = 32, H = 4;
+    const W = HP_BAR_WIDTH, H = 5;
+    const y = this.halfHeight + 3;
     const ratio = Math.max(0, hp / maxHp);
-    this.hpBar.fillStyle(0x2d3436);
-    this.hpBar.fillRect(-W / 2, RADIUS + 4, W, H);
-    const col = ratio > 0.6 ? 0x00b894 : ratio > 0.3 ? 0xe17055 : 0xd63031;
+    this.hpBar.fillStyle(0x0e1a26);
+    this.hpBar.fillRect(-W / 2 - 1, y - 1, W + 2, H + 2);
+    const col = ratio > 0.6 ? 0x2ecc71 : ratio > 0.3 ? 0xf39c12 : 0xe74c3c;
     this.hpBar.fillStyle(col);
-    this.hpBar.fillRect(-W / 2, RADIUS + 4, W * ratio, H);
+    this.hpBar.fillRect(-W / 2, y, W * ratio, H);
   }
 
   public setSitIconVisible(visible: boolean): void {

@@ -20,8 +20,8 @@ export class TowerView {
     const radius = stats.radius || TOWER_SIZE;
 
     // ── Range indicator (initially hidden) ───────────────────────────────
-    this.rangeCircle = scene.add.arc(0, 0, initialRange, 0, 360, false, color, 0.03);
-    this.rangeCircle.setStrokeStyle(1, color, 0.15);
+    this.rangeCircle = scene.add.arc(0, 0, initialRange, 0, 360, false, color, 0.08);
+    this.rangeCircle.setStrokeStyle(2, color, 0.5);
     this.rangeCircle.setVisible(false);
 
     // ── Barrel graphic ───────────────────────────────────────────────────
@@ -143,6 +143,10 @@ export class TowerView {
     // Placement pop animation
     this.container.setScale(0.1);
     scene.tweens.add({ targets: this.container, scaleX: 1, scaleY: 1, duration: 180, ease: 'Back.Out' });
+  }
+
+  public setRangeVisible(visible: boolean): void {
+    this.rangeCircle.setVisible(visible);
   }
 
   private levelStars(level: number): string {

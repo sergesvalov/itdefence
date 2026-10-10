@@ -31,6 +31,11 @@ export class TowerManager {
     this.towers.push(tower);
   }
 
+  public removeTower(tower: ToolTower): void {
+    const i = this.towers.indexOf(tower);
+    if (i >= 0) this.towers.splice(i, 1);
+  }
+
   public addFurniture(f: Furniture): void {
     this.furniture.push(f);
     EventBus.emit('furniture_changed');

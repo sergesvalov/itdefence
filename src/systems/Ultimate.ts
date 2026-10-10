@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { Coworker } from '../entities/Coworker';
 import type { HUD } from '../ui/HUD';
-import { GAME_WIDTH, GAME_HEIGHT, ULTIMATE_COOLDOWN_MS, ULTIMATE_KILL_FRACTION } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT, ULTIMATE_COOLDOWN_MS, ULTIMATE_KILL_FRACTION, ULTIMATE_BOSS_DAMAGE_FRACTION } from '../config';
 import { showFloatingText } from '../ui/FloatingText';
 
 /**
@@ -49,9 +49,14 @@ export class Ultimate {
       return;
     }
 
-    const count = Math.ceil(alive.length * ULTIMATE_KILL_FRACTION);
-    const targets = Phaser.Utils.Array.Shuffle(alive.slice()).slice(0, count);
+    // Bosses don't file tickets — they just get dented instead of leaving.
+    const regular = alive.filter(e => e.variant !== 'boss');
+    const count = Math.ceil(regular.length * ULTIMATE_KILL_FRACTION);
+    const targets = Phaser.Utils.Array.Shuffle(regular).slice(0, count);
     for (const target of targets) target.sendToHelpdesk();
+    for (const boss of alive) {
+      if (boss.variant === 'boss') boss.takeDamage(boss.maxHp * ULTIMATE_BOSS_DAMAGE_FRACTION, true);
+    }
 
     this.announce();
     this.scene.cameras.main.shake(150, 0.006);

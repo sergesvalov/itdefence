@@ -19,15 +19,17 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1e2a3a).setOrigin(0);
 
     // Title
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 4 - 30, 'IT DEFENCE', {
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT * 0.1, 'IT DEFENCE', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '48px',
       color: '#fbbf24',
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      stroke: '#0e1a26',
+      strokeThickness: 6
     }).setOrigin(0.5);
 
     // Subtitle
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 4 + 20, 'Защити свой стол от горящих дедлайнов!', {
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT * 0.1 + 48, 'Защити свой стол от горящих дедлайнов!', {
       fontFamily: 'Inter, sans-serif',
       fontSize: '18px',
       color: '#ecf0f1',
@@ -36,10 +38,12 @@ export class MainMenuScene extends Phaser.Scene {
       wordWrap: { width: GAME_WIDTH - 40 }
     }).setOrigin(0.5);
 
-    // Background decoration
-    this.add.image(GAME_WIDTH / 2 - 100, GAME_HEIGHT / 4 + 90, 'sprite-coworker-fast').setScale(1.5).setTint(0xf39c12);
-    this.add.image(GAME_WIDTH / 2 + 100, GAME_HEIGHT / 4 + 80, 'sprite-coworker-boss').setScale(1.8).setTint(0xe74c3c);
-    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 4 + 110, 'sprite-desk').setScale(1.2);
+    // Scene: Petya at his desk, coworkers closing in from both sides
+    const artY = GAME_HEIGHT * 0.36;
+    this.add.ellipse(GAME_WIDTH / 2, artY + 70, 380, 60, 0x0e1a26, 0.5);
+    this.addArt(GAME_WIDTH / 2 - 150, artY - 10, 'sprite-coworker-fast', 120);
+    this.addArt(GAME_WIDTH / 2 + 150, artY - 20, 'sprite-coworker-boss', 140);
+    this.addArt(GAME_WIDTH / 2, artY, 'sprite-desk', 190);
 
     const startY = GAME_HEIGHT / 2 + 30;
     const spacing = 75;
@@ -68,9 +72,17 @@ export class MainMenuScene extends Phaser.Scene {
     });
   }
 
+  /** Adds a sprite scaled to `height` px, keeping its proportions. */
+  private addArt(x: number, y: number, key: string, height: number): void {
+    if (!this.textures.exists(key)) return;
+    const img = this.add.image(x, y, key);
+    img.setScale(height / img.height);
+  }
+
   private createButton(x: number, y: number, text: string, color: number, onClick: () => void) {
     const btn = this.add.container(x, y);
     const bg = this.add.rectangle(0, 0, 240, 60, color).setInteractive({ useHandCursor: true });
+    bg.setStrokeStyle(3, 0xffffff, 0.25);
     const txt = this.add.text(0, 0, text, {
       fontFamily: 'Inter, sans-serif',
       fontSize: '24px',

@@ -24,6 +24,8 @@ export class HUD extends Phaser.Events.EventEmitter {
   private shieldButton: AbilityButton;
   private startWaveButton: Phaser.GameObjects.Container;
   private startWaveText: Phaser.GameObjects.Text;
+  private speedBg: Phaser.GameObjects.Arc;
+  private speedText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, startingMoney: number, inboxLimit: number) {
     super();
@@ -40,6 +42,17 @@ export class HUD extends Phaser.Events.EventEmitter {
     // ── Ability buttons — right edge, below top bar ─────────────────────────
     this.ultimateButton = this.buildAbilityButton(GAME_WIDTH - 40, 96, '🎫', '', 'ultimate-tap');
     this.shieldButton   = this.buildAbilityButton(GAME_WIDTH - 40, 160, '🛡️', '', 'shield-tap');
+
+    // ── Game speed toggle — left edge of the wall strip ───────────────────
+    this.speedBg = scene.add.circle(0, 0, 20, 0x1e2a3a, 0.9);
+    this.speedBg.setStrokeStyle(2, 0x4a7a9b, 0.6);
+    this.speedText = scene.add.text(0, 0, '×1', {
+      fontFamily: fontStyle, fontSize: '16px', color: '#ecf0f1', fontStyle: 'bold',
+    }).setOrigin(0.5);
+    scene.add.container(TOOLBAR_WIDTH + 36, 96, [this.speedBg, this.speedText])
+      .setDepth(10001)
+      .setInteractive(new Phaser.Geom.Circle(0, 0, 24), Phaser.Geom.Circle.Contains)
+      .on('pointerdown', () => this.emit('speed-tap'));
 
     // ── "Start Wave" button ───────────────────────────────────────────
     const swX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2; // center of play area
@@ -91,6 +104,11 @@ export class HUD extends Phaser.Events.EventEmitter {
   public hideStartWaveButton(): void {
     this.startWaveButton.setVisible(false);
     this.startWaveText.setVisible(false);
+  }
+
+  public setSpeed(speed: number): void {
+    this.speedText.setText(`×${speed}`);
+    this.speedBg.setFillStyle(speed > 1 ? 0xe67e22 : 0x1e2a3a, 0.9);
   }
 
   // ── Ultimate & Shield ───────────────────────────────────────────────

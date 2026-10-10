@@ -8,7 +8,7 @@ import {
   SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX,
   OFFICE_Y_TOP, DESK_X, DESK_Y,
   WAVE_MONEY_AMOUNT, ENEMIES_PER_WAVE_BASE, ENEMIES_PER_WAVE_GROWTH,
-  URGENT_TASK_CHANCE,
+  URGENT_TASK_CHANCE, WAVE_HP_GROWTH, WAVE_HP_GROWTH_SQ, COWORKER_VARIANTS,
   GAME_WIDTH, GAME_HEIGHT,
 } from '../config';
 import type { Economy } from './Economy';
@@ -40,8 +40,10 @@ export class WaveManager {
     this.hud.on('start-wave-tap', () => this.startNextWave());
     
     EventBus.on('furniture_changed', this.recalculatePaths, this);
+    EventBus.on(GameEvents.COWORKER_KILLED, this.payBounty, this);
     this.scene.events.once('shutdown', () => {
       EventBus.off('furniture_changed', this.recalculatePaths, this);
+      EventBus.off(GameEvents.COWORKER_KILLED, this.payBounty, this);
     });
   }
 
@@ -145,7 +147,9 @@ export class WaveManager {
       else if (this.wave >= 2 && roll < 0.65) variant = 'swarm';
     }
 
-    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant);
+    const n = this.wave - 1;
+    const hpScale = 1 + n * WAVE_HP_GROWTH + n * n * WAVE_HP_GROWTH_SQ;
+    const cw = new Coworker(this.scene, this.buildPath(door.x, door.y, variant), urgent, variant, hpScale);
     this.enemies.push(cw);
     this.spawnedThisWave++;
 
@@ -161,6 +165,12 @@ export class WaveManager {
 
   // ── Wave loop & money ─────────────────────────────────────────────────
 
+  private payBounty(cw: Coworker): void {
+    const { bounty } = COWORKER_VARIANTS[cw.variant];
+    this.economy.earn(bounty);
+    showFloatingText(this.scene, cw.x, cw.y - 30, `+${bounty} 💰`, '#f1c40f');
+  }
+
   private completeWave(): void {
     this.economy.earn(WAVE_MONEY_AMOUNT);
     showFloatingText(this.scene, DESK_X, DESK_Y - 40, `+${WAVE_MONEY_AMOUNT} 💰`, '#2ecc71');
@@ -174,6 +184,9 @@ export class WaveManager {
     this.wave++;
     this.spawnedThisWave = 0;
     this.isPaused = false;
+    for (const t of this.getTowers()) {
+      if (t.variant === 'partner') t.rest();
+    }
     this.hud.hideStartWaveButton();
     this.hud.setWave(this.wave);
     this.showWaveAnnouncement();

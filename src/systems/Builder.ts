@@ -74,6 +74,14 @@ export class Builder {
     return true;
   }
 
+  public sellTower(tower: ToolTower): void {
+    const value = tower.getSellValue();
+    this.manager.removeTower(tower);
+    this.economy.earn(value);
+    showFloatingText(this.scene, tower.x, tower.y, `+${value} 💰`, '#2ecc71');
+    tower.destroy();
+  }
+
   public tryPlaceFurniture(x: number, y: number, type: FurnitureType): boolean {
     const stats = FURNITURE_TYPES_DATA[type];
     if (this.manager.countFurniture(type) >= stats.maxCount) {

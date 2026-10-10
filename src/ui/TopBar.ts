@@ -28,8 +28,8 @@ export class TopBar {
     }).setOrigin(0, 0.5).setDepth(10001);
     this.setMoney(startingMoney);
 
-    const centerX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2;
-    this.waveText = scene.add.text(centerX, 28, '', { ...boldStyle, fontSize: '20px', color: '#fbbf24' })
+    // Sits between the money (left) and the inbox counter (right)
+    this.waveText = scene.add.text(TOOLBAR_WIDTH + 162, 28, '', { ...boldStyle, fontSize: '18px', color: '#fbbf24' })
       .setOrigin(0.5, 0.5)
       .setDepth(10001);
 

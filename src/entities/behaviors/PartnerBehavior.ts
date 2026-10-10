@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import type { ITowerBehavior } from './ITowerBehavior';
 import type { ToolTower } from '../ToolTower';
 import type { Coworker } from '../Coworker';
+import { PARTNER_TASKS_PER_WAVE } from '../../config';
 
 export class PartnerBehavior implements ITowerBehavior {
   constructor(private tower: ToolTower) {}
 
   tick(delta: number, enemies: Coworker[]): void {
-    if (this.tower.tasksSolved >= 10) {
+    if (this.tower.tasksSolved >= PARTNER_TASKS_PER_WAVE) {
       this.tower.setAlpha(0.5);
       return;
     }

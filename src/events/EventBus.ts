@@ -9,4 +9,5 @@ if (typeof window !== 'undefined') {
 export const GameEvents = {
   TASK_ARRIVED: 'task-arrived',
   GAME_OVER: 'game-over',
+  COWORKER_KILLED: 'coworker-killed',
 };

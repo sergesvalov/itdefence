@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import type { Coworker } from './Coworker';
 import {
   TOWER_VARIANTS_DATA, type TowerVariant, type TowerVariantStats,
-  TOWER_MAX_LEVEL, TOWER_UPGRADE_DAMAGE_BONUS, TOWER_UPGRADE_RANGE_BONUS, TOWER_UPGRADE_FIRE_RATE_MULT,
+  TOWER_MAX_LEVEL, TOWER_UPGRADE_DAMAGE_MULT, TOWER_UPGRADE_RANGE_BONUS, TOWER_UPGRADE_FIRE_RATE_MULT,
+  TOWER_SELL_REFUND,
 } from '../config';
 import { MetaProgression } from '../systems/MetaProgression';
 import { TowerView, TOWER_SIZE } from './TowerView';
@@ -30,6 +31,7 @@ export class ToolTower extends Phaser.GameObjects.Container {
   public priority: 'first' | 'closest' | 'strongest';
 
   private readonly baseCost: number;
+  private totalSpent: number;
   private readonly baseRange: number;
   private readonly baseFireRate: number;
   private readonly baseDamage: number;
@@ -48,8 +50,9 @@ export class ToolTower extends Phaser.GameObjects.Container {
     
     this.baseRange    = stats.range;
     this.baseFireRate = stats.fireRate;
-    this.baseDamage   = Math.round(stats.damage * metaDamageBonus);
+    this.baseDamage   = stats.damage * metaDamageBonus;
     this.baseCost     = stats.cost;
+    this.totalSpent   = stats.cost;
     this.special      = stats.special;
     this.range    = this.baseRange;
     this.damage   = this.baseDamage;
@@ -88,12 +91,23 @@ export class ToolTower extends Phaser.GameObjects.Container {
 
   public upgrade(): void {
     if (!this.canUpgrade()) return;
+    this.totalSpent += this.getUpgradeCost();
     this.level++;
-    this.damage   = this.baseDamage + TOWER_UPGRADE_DAMAGE_BONUS * (this.level - 1);
+    this.damage   = this.baseDamage * (1 + TOWER_UPGRADE_DAMAGE_MULT * (this.level - 1));
     this.range    = this.baseRange  + TOWER_UPGRADE_RANGE_BONUS  * (this.level - 1);
     this.fireRate = this.baseFireRate * Math.pow(TOWER_UPGRADE_FIRE_RATE_MULT, this.level - 1);
     
     this.view.playUpgradeAnimation(this.level, this.range);
+  }
+
+  public getSellValue(): number {
+    return Math.floor(this.totalSpent * TOWER_SELL_REFUND);
+  }
+
+  /** Partner desk: rested and ready to take tasks again (called every new wave). */
+  public rest(): void {
+    this.tasksSolved = 0;
+    this.setAlpha(1);
   }
 
   // ── Per-frame ─────────────────────────────────────────────────────────

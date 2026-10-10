@@ -14,6 +14,7 @@ import { Builder } from './Builder';
 import { EventBus } from '../events/EventBus';
 import { MetaProgression } from './MetaProgression';
 import { showFloatingText } from '../ui/FloatingText';
+import { TowerMenu } from '../ui/TowerMenu';
 
 const KEYBOARD_KEYS = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
 
@@ -33,14 +34,16 @@ export class TowerPlacer {
   public carrying: Furniture | ToolTower | null = null;
   private carryOrigin = { x: 0, y: 0 };
   private builder: Builder;
+  private menu: TowerMenu;
 
   constructor(
     private scene: Phaser.Scene,
-    economy: Economy,
+    private economy: Economy,
     private hud: HUD,
     private manager: TowerManager
   ) {
     this.builder = new Builder(scene, economy, manager, () => this.getWave());
+    this.menu = new TowerMenu(scene);
 
     this.buildItems = [
       ...TOWER_VARIANT_KEYS.map((variant): BuildItem => ({ kind: 'tower', variant })),
@@ -134,17 +137,35 @@ export class TowerPlacer {
         return;
       }
 
+      let dismissed: ToolTower | null = null;
+      if (this.menu.isOpen) {
+        dismissed = this.menu.tower!;
+        const action = this.menu.hit(ptr.x, ptr.y);
+        this.menu.close();
+        if (action === 'upgrade') {
+          this.builder.tryUpgrade(dismissed);
+          this.openMenu(dismissed);
+          return;
+        }
+        if (action === 'sell') {
+          this.builder.sellTower(dismissed);
+          return;
+        }
+        if (action === 'move') {
+          this.pickUpTower(dismissed);
+          return;
+        }
+      }
+
       const clickedTower = this.manager.towers.find(
         t => Phaser.Math.Distance.Between(t.x, t.y, ptr.x, ptr.y) < (TOWER_VARIANTS_DATA[t.variant].radius || TOWER_SIZE)
       );
       if (clickedTower) {
-        if (clickedTower.variant === 'partner' && this.isPaused()) {
-          this.pickUpTower(clickedTower);
-        } else {
-          this.builder.tryUpgrade(clickedTower);
-        }
+        // Tapping the tower whose menu was just dismissed simply closes it.
+        if (clickedTower !== dismissed) this.openMenu(clickedTower);
         return;
       }
+      if (dismissed) return;
 
       const clickedFurniture = this.manager.furniture.find(
         f => Phaser.Math.Distance.Between(f.x, f.y, ptr.x, ptr.y) < f.radius + 4
@@ -235,6 +256,17 @@ export class TowerPlacer {
       const left = stats.maxCount - this.manager.countFurniture(item.type);
       this.hud.setFurnitureSelect(this.selectedIndex, stats, left);
     }
+  }
+
+  private openMenu(tower: ToolTower): void {
+    this.menu.open(tower, {
+      canAfford: this.economy.canAfford(tower.getUpgradeCost()),
+      canMove: tower.variant === 'partner' && this.isPaused(),
+    });
+  }
+
+  public closeMenu(): void {
+    this.menu.close();
   }
 
   private pickUp(piece: Furniture): void {

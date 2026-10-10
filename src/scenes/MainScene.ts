@@ -13,6 +13,7 @@ import { SoundFX } from '../systems/SoundFX';
 import { Inbox } from '../systems/Inbox';
 import { EventBus, GameEvents } from '../events/EventBus';
 import { MetaProgression } from '../systems/MetaProgression';
+import { GameSpeed } from '../systems/GameSpeed';
 
 /**
  * MainScene — thin coordinator. Owns overall game/round state (game-over)
@@ -56,6 +57,7 @@ export class MainScene extends Phaser.Scene {
     const doorSprites = drawMap(this);
 
     this.hud = new HUD(this, startMoney, maxInbox);
+    this.setGameSpeed(1);
     this.economy = new Economy(this.hud, startMoney);
     
     this.towerManager = new TowerManager(this);
@@ -88,6 +90,10 @@ export class MainScene extends Phaser.Scene {
     
     this.tutorialManager = new TutorialManager(this);
 
+    this.hud.on('speed-tap', () => {
+      if (!this.isGameOver) this.setGameSpeed(GameSpeed.value === 1 ? 2 : 1);
+    });
+
     this.hud.on('restart-tap', () => { 
       if (this.isGameOver) {
         this.scene.start('MainMenuScene');
@@ -108,6 +114,8 @@ export class MainScene extends Phaser.Scene {
       if (this.tutorialManager.isPaused) return;
     }
 
+    delta *= GameSpeed.value;
+
     this.shield.update(delta);
     this.waveManager.update(delta);
     this.towerManager.tick(delta, this.waveManager.enemies, this.towerPlacer.carrying);
@@ -119,6 +127,13 @@ export class MainScene extends Phaser.Scene {
   // GAME LOGIC
   // ──────────────────────────────────────────────────────────────────────
 
+  private setGameSpeed(speed: number): void {
+    GameSpeed.value = speed;
+    this.time.timeScale = speed;
+    this.tweens.timeScale = speed;
+    this.hud.setSpeed(speed);
+  }
+
   private triggerGameOver(): void {
     if (this.isGameOver) return;
     this.isGameOver = true;
@@ -127,7 +142,9 @@ export class MainScene extends Phaser.Scene {
     const earnedMeta = wave * 10;
     MetaProgression.earnMoney(earnedMeta);
 
+    this.setGameSpeed(1);
     this.towerPlacer.enabled = false;
+    this.towerPlacer.closeMenu();
     this.ultimate.enabled = false;
     this.shield.enabled = false;
     this.hud.showGameOver(earnedMeta);

@@ -3,6 +3,8 @@ import type { ITowerBehavior } from './ITowerBehavior';
 import type { ToolTower } from '../ToolTower';
 import type { Coworker } from '../Coworker';
 import { SoundFX } from '../../systems/SoundFX';
+import { GameSpeed } from '../../systems/GameSpeed';
+import { TOWER_VARIANTS_DATA } from '../../config';
 import { PROJECTILE_SPEED, SLOW_MULTIPLIER, SLOW_DURATION_MS, STUN_DURATION_MS, AOE_SPLASH_RADIUS } from '../../config';
 
 export class ProjectileBehavior implements ITowerBehavior {
@@ -85,10 +87,11 @@ export class ProjectileBehavior implements ITowerBehavior {
     const maxTravel = this.tower.range;
     const damage = this.tower.damage;
     const special = this.tower.special;
+    const piercing = !!TOWER_VARIANTS_DATA[this.tower.variant].armorPiercing;
 
-    const update = (_: unknown, time: number, delta: number) => {
+    const update = (_time: number, delta: number) => {
       if (!proj.active) return;
-      const dt = delta / 1000;
+      const dt = delta * GameSpeed.value / 1000;
       proj.x += vx * dt;
       proj.y += vy * dt;
       travelled += PROJECTILE_SPEED * dt;
@@ -96,14 +99,14 @@ export class ProjectileBehavior implements ITowerBehavior {
       if (!target.isDead && !target.hasReachedDesk) {
         const dist = Phaser.Math.Distance.Between(proj.x, proj.y, target.x, target.y);
         if (dist < 18) {
-          target.takeDamage(damage);
+          target.takeDamage(damage, piercing);
           if (special === 'slow') target.applySlow(SLOW_MULTIPLIER, SLOW_DURATION_MS);
           if (special === 'stun') target.applySlow(0, STUN_DURATION_MS);
           if (special === 'aoe') {
             for (const e of enemies) {
               if (e === target || e.isDead || e.hasReachedDesk) continue;
               if (Phaser.Math.Distance.Between(proj.x, proj.y, e.x, e.y) <= AOE_SPLASH_RADIUS) {
-                e.takeDamage(damage);
+                e.takeDamage(damage, piercing);
               }
             }
           }
@@ -129,7 +132,7 @@ export class ProjectileBehavior implements ITowerBehavior {
 
     let trail: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
     if (special !== 'aoe' && this.tower.variant !== 'docs') {
-      trail = scene.add.particles(0, 0, 'sprite-tower-cooler', { // Use a basic texture, it will be tinted. Wait, Phaser 3.60+ allows textureless particles with just a shape or a 1x1 white pixel, but we can just use a graphics generated texture or fallback.
+      trail = scene.add.particles(0, 0, 'sprite-tower-cooler', {
         color: [0xfdcb6e, 0xe17055],
         colorEase: 'quad.out',
         lifespan: 150,
@@ -137,9 +140,6 @@ export class ProjectileBehavior implements ITowerBehavior {
         blendMode: 'ADD',
         follow: proj
       }).setDepth(15);
-      
-      // Since 'sprite-tower-cooler' is large, we can just use it very small as a particle.
-      // Alternatively, we could create a 1x1 white texture, but we'll stick to a loaded asset for safety.
     }
 
     scene.events.on('update', update);

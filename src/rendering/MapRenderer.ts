@@ -15,7 +15,8 @@ import type { DoorDef } from '../config';
 //   Accents: walnut brown, soft gold, muted teal
 const PAL = {
   floorBase:     0x1a2a3a,   // dark navy — fallback floor fill
-  floorGrid:     0x243648,   // subtle grid lines on floor
+  floorTileA:    0x33475b,   // office carpet tile, lighter
+  floorTileB:    0x2e4155,   // office carpet tile, darker
   wallFill:      0xd4c5a9,   // warm cream (wall fallback)
   wallBaseboard: 0x5a3f2b,   // dark walnut baseboard
   borderShadow:  0x0e1a26,   // very dark navy for shadow line at wall-floor junction
@@ -64,12 +65,15 @@ export function drawMap(scene: Phaser.Scene): Map<DoorDef, Phaser.GameObjects.Im
   }
 
   // ── Petya's office (the battlefield) ────────────────────────────────
-  if (scene.textures.exists('tile-office-floor')) {
-    scene.add.tileSprite(0, OFFICE_Y_TOP, GAME_WIDTH, OFFICE_Y_BOTTOM - OFFICE_Y_TOP, 'tile-office-floor').setOrigin(0, 0);
-  } else {
-    // Plain dark floor — no grid lines (they looked like Excel)
-    gfx.fillStyle(PAL.floorBase);
-    gfx.fillRect(0, OFFICE_Y_TOP, GAME_WIDTH, OFFICE_Y_BOTTOM - OFFICE_Y_TOP);
+  // Calm two-tone carpet tiles, deliberately low-contrast so coworkers and
+  // projectiles stay readable. Cells line up with the 80px build grid
+  // (TowerPlacer.snap), so they double as a placement guide.
+  const CELL = 80;
+  for (let y = OFFICE_Y_TOP, row = 0; y < OFFICE_Y_BOTTOM; y += CELL, row++) {
+    for (let x = -CELL / 2, col = 0; x < GAME_WIDTH; x += CELL, col++) {
+      gfx.fillStyle((row + col) % 2 === 0 ? PAL.floorTileA : PAL.floorTileB);
+      gfx.fillRect(x, y, CELL, Math.min(CELL, OFFICE_Y_BOTTOM - y));
+    }
   }
 
   // ── Wall-floor junction shadows (soft transitions for depth) ────────

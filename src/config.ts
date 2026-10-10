@@ -36,7 +36,7 @@ export const PROJECTILE_SPEED = 280;
  * front of the queue every INBOX_RESOLVE_INTERVAL_MS.
  */
 export const INBOX_LIMIT = 10;
-export const INBOX_RESOLVE_INTERVAL_MS = 4000;
+export const INBOX_RESOLVE_INTERVAL_MS = 5000;
 
 /** Chance a spawning coworker carries a red/urgent task, which jumps the
  *  Inbox queue (to the front) instead of joining the back on arrival. */
@@ -50,18 +50,31 @@ export const SPAWN_INTERVAL_MAX = 3500;
 export const STARTING_MONEY = 150;
 
 /** Money paid out every time a wave is fully cleared */
-export const WAVE_MONEY_AMOUNT = 40;
+export const WAVE_MONEY_AMOUNT = 30;
 
 /** How many coworkers spawn in a wave: BASE + wave * GROWTH */
 export const ENEMIES_PER_WAVE_BASE = 6;
 export const ENEMIES_PER_WAVE_GROWTH = 1;
 
+/** Coworker HP grows by this fraction of the base every wave after the first */
+export const WAVE_HP_GROWTH = 0.15;
+/** ...plus this fraction times waves-squared, so late waves outpace maxed-out towers */
+export const WAVE_HP_GROWTH_SQ = 0.01;
+
 /** Tower upgrades: max level and per-level bonuses (applied on top of each
  *  variant's own base range/fireRate/damage below) */
 export const TOWER_MAX_LEVEL = 3;
-export const TOWER_UPGRADE_DAMAGE_BONUS = 1;
+/** Each level adds this fraction of the base damage (so cheap and heavy
+ *  towers scale alike, instead of a flat +1 tripling the 1-damage ones) */
+export const TOWER_UPGRADE_DAMAGE_MULT = 0.6;
 export const TOWER_UPGRADE_RANGE_BONUS = 20;
 export const TOWER_UPGRADE_FIRE_RATE_MULT = 0.85;
+
+/** Selling a tower returns this fraction of everything spent on it */
+export const TOWER_SELL_REFUND = 0.6;
+
+/** Partner desk: tasks it takes over per wave before burning out (rested by the next wave) */
+export const PARTNER_TASKS_PER_WAVE = 5;
 
 // ─── Tower variants ─────────────────────────────────────────────────────
 export type TowerVariant = 'cooler' | 'router' | 'docs' | 'coffee' | 'aircon' | 'partner';
@@ -85,16 +98,10 @@ export interface TowerVariantStats {
    *             damages (if damage > 0) + slows everyone currently in range (router)
    * 'stun'    — big single-target hit that also freezes movement (docs)
    * 'lureChain' — lures enemies to approach it once, and unleashes chain damage upon contact.
-   * 'partner' — lures enemies (50% chance). After 10 hits, burns out.
+   * 'partner' — takes over every second coworker, up to PARTNER_TASKS_PER_WAVE per wave.
    */
   special?: 'slow' | 'aoe' | 'aoeSlow' | 'stun' | 'lureChain' | 'partner';
-  /**
-   * Bypasses enemy armor/damage-reduction. Currently inert — no enemy in
-   * the game has armor yet. Docs is flagged now so that whenever an
-   * armored enemy (e.g. a shielded "Manager") gets added, there's an
-   * obvious place to check this instead of re-deriving which tower should
-   * pierce it.
-   */
+  /** Ignores enemy armor (see CoworkerStats.armor) */
   armorPiercing?: boolean;
   /** Optional override for radius (e.g., for large objects like desks). Default is TOWER_SIZE. */
   radius?: number;
@@ -107,21 +114,20 @@ export const TOWER_VARIANT_KEYS: readonly TowerVariant[] =
 export const TOWER_VARIANTS_DATA: Record<TowerVariant, TowerVariantStats> = {
   // "Кулер": Lures enemies to take a break.
   // Once an enemy reaches it, it deals damage that chain-reacts to others in range.
-  cooler: { label: 'Кулер',   icon: '🚰', color: 0x0984e3, range: 110, fireRate: 0,    damage: 1, cost: 45, special: 'lureChain' },
+  cooler: { label: 'Кулер',   icon: '🚰', color: 0x0984e3, range: 110, fireRate: 0,    damage: 3, cost: 45, special: 'lureChain' },
   // "Плохой коннект": pure crowd control, no real damage. Ring-shaped
   // Wi-Fi pulse from the tower itself — everyone in range "hangs loading
   // the page" (slowed), holding them in other towers' kill zones.
-  router: { label: 'Router',  icon: '📡', color: 0x6c5ce7, range: 100, fireRate: 1500, damage: 0, cost: 65, special: 'aoeSlow' },
+  router: { label: 'Router',  icon: '📡', color: 0x6c5ce7, range: 100, fireRate: 1500, damage: 0, cost: 50, special: 'aoeSlow' },
   // "Бюрократия": slow heavy artillery, single target, colossal damage.
-  // Ignores armor (armorPiercing) — the intended counter once an armored
-  // enemy exists (see the interface comment above).
-  docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 160, fireRate: 2200, damage: 5, cost: 90, special: 'stun', armorPiercing: true },
-  // Coffee break — slows whatever it hits.
-  coffee: { label: 'Coffee',  icon: '☕', color: 0x8b5e3c, range: 110, fireRate: 1200, damage: 1, cost: 55, special: 'slow' },
+  // Ignores armor (armorPiercing) — the counter to the armored Бухгалтер.
+  docs:   { label: 'Docs',    icon: '📖', color: 0x00b894, range: 160, fireRate: 2600, damage: 6, cost: 100, special: 'stun', armorPiercing: true },
+  // Coffee break — cheap rapid-fire workhorse, slows whatever it hits.
+  coffee: { label: 'Coffee',  icon: '☕', color: 0x8b5e3c, range: 110, fireRate: 700,  damage: 1, cost: 55, special: 'slow' },
   // Blast of cold air — splash-damages everyone near the impact point.
-  aircon: { label: 'AC',      icon: '🌬️', color: 0x81ecec, range: 140, fireRate: 1600, damage: 1, cost: 80, special: 'aoe' },
-  // Partner desk — absorbs 10 tasks, 50% chance to intercept enemies.
-  partner:{ label: 'Напарник',icon: '🧑‍💻', color: 0x55efc4, range: 0, fireRate: 0, damage: 0, cost: 200, special: 'partner', radius: 45 },
+  aircon: { label: 'AC',      icon: '🌬️', color: 0x81ecec, range: 140, fireRate: 1600, damage: 2, cost: 85, special: 'aoe' },
+  // Partner desk — intercepts every second coworker (PARTNER_TASKS_PER_WAVE per wave).
+  partner:{ label: 'Напарник',icon: '🧑‍💻', color: 0x55efc4, range: 0, fireRate: 0, damage: 0, cost: 150, special: 'partner', radius: 45 },
 };
 
 /** Coffee/Router: how much a slow reduces speed, and for how long */
@@ -130,7 +136,7 @@ export const SLOW_DURATION_MS = 1500;
 
 /** AC: splash-damage radius around the impact point (Router's pulse just
  *  uses its own `range` as the radius — no separate constant needed) */
-export const AOE_SPLASH_RADIUS = 50;
+export const AOE_SPLASH_RADIUS = 60;
 
 /** Docs: how long the stun (RTFM to the face) freezes movement for */
 export const STUN_DURATION_MS = 1200;
@@ -176,6 +182,8 @@ export const SOFA_SIT_DURATION_MS = 3000;
 export const ULTIMATE_COOLDOWN_MS = 30000;
 /** Fraction of enemies on screen removed per activation (rounded up) */
 export const ULTIMATE_KILL_FRACTION = 0.5;
+/** Bosses can't be ticketed away — they lose this fraction of max HP instead */
+export const ULTIMATE_BOSS_DAMAGE_FRACTION = 0.2;
 
 // ─── Shield: "Я на митинге" ──────────────────────────────────────────────
 export const SHIELD_COOLDOWN_MS = 25000;
@@ -194,15 +202,19 @@ export interface CoworkerStats {
   tint: number;
   emoji: string;
   name: string;
+  /** Money paid out when a tower kills this coworker */
+  bounty: number;
+  /** Fraction of non-piercing damage ignored (0..1) */
+  armor?: number;
 }
 
 export const COWORKER_VARIANTS: Record<CoworkerVariant, CoworkerStats> = {
-  normal: { hpMult: 1, speedMult: 1, scale: 1.0, tint: 0xffffff, emoji: '', name: 'Коллега' },
-  fast:   { hpMult: 0.7, speedMult: 1.5, scale: 0.9, tint: 0xf39c12, emoji: '⚡', name: 'Agile Коуч' },
-  tank:   { hpMult: 3, speedMult: 0.65, scale: 1.15, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер' },
-  swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.8, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер' },
-  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.3, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик' },
-  remote: { hpMult: 0.8, speedMult: 1.2, scale: 1.0, tint: 0x8e44ad, emoji: '💻', name: 'Удаленщик' },
+  normal: { hpMult: 1, speedMult: 1, scale: 1.0, tint: 0xffffff, emoji: '', name: 'Коллега', bounty: 5 },
+  fast:   { hpMult: 0.7, speedMult: 1.5, scale: 0.9, tint: 0xf39c12, emoji: '⚡', name: 'Agile Коуч', bounty: 6 },
+  tank:   { hpMult: 2.5, speedMult: 0.65, scale: 1.15, tint: 0x95a5a6, emoji: '🛡️', name: 'Бухгалтер', bounty: 12, armor: 0.5 },
+  swarm:  { hpMult: 0.4, speedMult: 1.2, scale: 0.8, tint: 0x2ecc71, emoji: '🐣', name: 'Стажер', bounty: 3 },
+  boss:   { hpMult: 15, speedMult: 0.35, scale: 1.3, tint: 0xe74c3c, emoji: '👿', name: 'Заказчик', bounty: 60 },
+  remote: { hpMult: 0.8, speedMult: 1.2, scale: 1.0, tint: 0x8e44ad, emoji: '💻', name: 'Удаленщик', bounty: 7 },
 };
 
 // ─── Map textures ───────────────────────────────────────────────────────
@@ -215,7 +227,6 @@ export interface TextureAsset {
 
 export const TEXTURE_ASSETS: TextureAsset[] = [
   { key: 'tile-corridor-floor', path: 'assets/tiles/corridor-floor.png', kind: 'tile' },
-  { key: 'tile-office-floor',   path: 'assets/tiles/office-floor.png',   kind: 'tile' },
   { key: 'tile-wall',           path: 'assets/tiles/wall.png',           kind: 'tile' },
   { key: 'sprite-door',         path: 'assets/sprites/door.png',         kind: 'sprite' },
   { key: 'sprite-door-open',    path: 'assets/sprites/door-open.png',    kind: 'sprite' },

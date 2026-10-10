@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
-import { SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS, type CoworkerVariant, COWORKER_VARIANTS } from '../config';
+import {
+  SHIELD_DOT_DAMAGE, SHIELD_DOT_INTERVAL_MS, SOFA_SIT_DURATION_MS, PARTNER_TASKS_PER_WAVE,
+  type CoworkerVariant, COWORKER_VARIANTS,
+} from '../config';
 import type { Furniture } from './Furniture';
 import type { ToolTower } from './ToolTower';
 import { CoworkerView, RADIUS } from './CoworkerView';
 import { showFloatingText } from '../ui/FloatingText';
 import { SoundFX } from '../systems/SoundFX';
+import { EventBus, GameEvents } from '../events/EventBus';
 
 export interface Waypoint {
   x: number;
@@ -33,7 +37,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   private waypointIndex = 0;
   private readonly speed: number;
   private slowMultiplier = 1;
-  private slowUntil = 0;
+  private slowRemainingMs = 0;
+  private readonly armor: number;
   private isBlockedAtDoor = false;
   private waitDamageTimer = 0;
 
@@ -42,7 +47,7 @@ export class Coworker extends Phaser.GameObjects.Container {
   private sitTimer = 0;
   private sitFurniture: Furniture | null = null;
   private sitCooldownFurniture: Furniture | null = null;
-  private sitCooldownUntil = 0;
+  private sitCooldownMs = 0;
 
   // Lure mechanic (for Cooler tower)
   public visitedCoolers = new Set<ToolTower>();
@@ -52,7 +57,7 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   private view: CoworkerView;
 
-  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal') {
+  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1) {
     const start = waypoints[0];
     super(scene, start.x, start.y);
 
@@ -61,7 +66,8 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.waypoints    = waypoints;
     this.waypointIndex = 1; // head towards waypoint[1] immediately
     this.speed        = (BASE_SPEED + Phaser.Math.Between(-8, 16)) * stats.speedMult;
-    this.maxHp        = BASE_HP * stats.hpMult;
+    this.maxHp        = BASE_HP * stats.hpMult * hpScale;
+    this.armor        = stats.armor ?? 0;
     this.hp           = this.maxHp;
     this.urgent       = urgent;
 
@@ -83,14 +89,19 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   // ── Public API ─────────────────────────────────────────────────────────
 
-  public takeDamage(amount: number): void {
+  /** `piercing` damage ignores armor (Docs tower, the ultimate). */
+  public takeDamage(amount: number, piercing = false): void {
     if (this.isDead) return;
+    if (!piercing) amount *= 1 - this.armor;
     this.hp -= amount;
     this.view.redrawHpBar(this.hp, this.maxHp);
     this.view.triggerHitFlash();
     SoundFX.playHit();
-    showFloatingText(this.scene, this.x, this.y, `-${amount}`, '#e74c3c');
-    if (this.hp <= 0) this.kill();
+    showFloatingText(this.scene, this.x, this.y, `-${+amount.toFixed(1)}`, '#e74c3c');
+    if (this.hp <= 0) {
+      this.kill();
+      EventBus.emit(GameEvents.COWORKER_KILLED, this);
+    }
   }
 
   public setLure(tower: ToolTower): void {
@@ -120,7 +131,7 @@ export class Coworker extends Phaser.GameObjects.Container {
    */
   public applySlow(multiplier: number, durationMs: number): void {
     this.slowMultiplier = multiplier;
-    this.slowUntil = this.scene.time.now + durationMs;
+    this.slowRemainingMs = durationMs;
   }
 
   /**
@@ -174,7 +185,7 @@ export class Coworker extends Phaser.GameObjects.Container {
       this.x = f.x + Math.cos(angle) * pushDist;
       this.y = f.y + Math.sin(angle) * pushDist;
       this.sitCooldownFurniture = f;
-      this.sitCooldownUntil = this.scene.time.now + 1500;
+      this.sitCooldownMs = 1500;
     }
     this.isSitting = false;
     this.sitFurniture = null;
@@ -189,7 +200,7 @@ export class Coworker extends Phaser.GameObjects.Container {
 
     if (!this.hasRolledForPartner) {
       this.hasRolledForPartner = true;
-      const activePartners = towers.filter(t => t.variant === 'partner' && t.tasksSolved < 10);
+      const activePartners = towers.filter(t => t.variant === 'partner' && t.tasksSolved < PARTNER_TASKS_PER_WAVE);
       if (activePartners.length > 0) {
         Coworker.partnerCounter++;
         if (Coworker.partnerCounter % 2 === 0) {
@@ -198,14 +209,15 @@ export class Coworker extends Phaser.GameObjects.Container {
       }
     }
 
-    if (this.partnerTarget && (!this.partnerTarget.scene || this.partnerTarget.tasksSolved >= 10)) {
+    if (this.partnerTarget && (!this.partnerTarget.scene || this.partnerTarget.tasksSolved >= PARTNER_TASKS_PER_WAVE)) {
       this.partnerTarget = null;
     }
 
-    if (this.slowUntil > 0 && this.scene.time.now > this.slowUntil) {
-      this.slowMultiplier = 1;
-      this.slowUntil = 0;
+    if (this.slowRemainingMs > 0) {
+      this.slowRemainingMs -= delta;
+      if (this.slowRemainingMs <= 0) this.slowMultiplier = 1;
     }
+    if (this.sitCooldownMs > 0) this.sitCooldownMs -= delta;
 
     this.view.updateVisuals(delta, this.isBlockedAtDoor, this.isSitting, this.slowMultiplier);
 
@@ -257,13 +269,16 @@ export class Coworker extends Phaser.GameObjects.Container {
 
     let nx = this.x;
     let ny = this.y;
-    const reachedTarget = dist < 6;
+    // Never step past the target: a long frame (or ×2 speed) would otherwise
+    // overshoot it and leave the coworker oscillating around the waypoint.
+    const step = effectiveSpeed * dt;
+    const reachedTarget = dist <= Math.max(step, 0.5);
     if (reachedTarget) {
       nx = targetX;
       ny = targetY;
     } else {
-      nx = this.x + (dx / dist) * effectiveSpeed * dt;
-      ny = this.y + (dy / dist) * effectiveSpeed * dt;
+      nx = this.x + (dx / dist) * step;
+      ny = this.y + (dy / dist) * step;
     }
 
     if (this.variant !== 'remote') {
@@ -272,7 +287,7 @@ export class Coworker extends Phaser.GameObjects.Container {
         const minDist = RADIUS + f.radius;
         if (fd >= minDist) continue;
 
-        const onCooldown = this.sitCooldownFurniture === f && this.scene.time.now < this.sitCooldownUntil;
+        const onCooldown = this.sitCooldownFurniture === f && this.sitCooldownMs > 0;
         if (f.type === 'sofa' && !onCooldown) {
           this.sitDown(f);
           return;
