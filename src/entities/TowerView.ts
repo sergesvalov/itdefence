@@ -8,6 +8,7 @@ export class TowerView {
   private barrelLine: Phaser.GameObjects.Graphics;
   private levelText: Phaser.GameObjects.Text;
   private sleepText?: Phaser.GameObjects.Text;
+  private hungText?: Phaser.GameObjects.Text;
 
   constructor(
     private scene: Phaser.Scene,
@@ -154,6 +155,21 @@ export class TowerView {
     }
     this.sleepText?.setVisible(asleep);
     if (asleep) this.sprite?.setTint(0x7f8c9b);
+    else this.sprite?.clearTint();
+    this.clearAim();
+  }
+
+  /** Reddish, with a "ЗАВИС" tag, while the tower is hung. */
+  public setHung(hung: boolean): void {
+    if (hung && !this.hungText) {
+      this.hungText = this.scene.add.text(0, -TOWER_SIZE - 4, 'ЗАВИС', {
+        fontFamily: 'Inter, system-ui, sans-serif', fontSize: '11px', fontStyle: 'bold',
+        color: '#ffffff', backgroundColor: '#c0392b', padding: { x: 5, y: 2 },
+      }).setOrigin(0.5);
+      this.container.add(this.hungText);
+    }
+    this.hungText?.setVisible(hung);
+    if (hung) this.sprite?.setTint(0xb07a7a);
     else this.sprite?.clearTint();
     this.clearAim();
   }

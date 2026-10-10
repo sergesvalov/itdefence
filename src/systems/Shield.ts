@@ -17,6 +17,8 @@ export class Shield {
   public enabled = true;
 
   private chargeMs = 0;
+  /** Multiplier on charging speed (a campaign level may raise it) */
+  public chargeRate = 1;
   private ready = false;
   private active = false;
   private activeMs = 0;
@@ -42,7 +44,7 @@ export class Shield {
     }
 
     if (this.ready) return;
-    this.chargeMs = Math.min(SHIELD_COOLDOWN_MS, this.chargeMs + delta);
+    this.chargeMs = Math.min(SHIELD_COOLDOWN_MS, this.chargeMs + delta * this.chargeRate);
     this.hud.setShieldCharge(this.chargeMs / SHIELD_COOLDOWN_MS);
 
     if (this.chargeMs >= SHIELD_COOLDOWN_MS) {

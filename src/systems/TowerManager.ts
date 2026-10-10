@@ -2,6 +2,7 @@ import { ToolTower } from '../entities/ToolTower';
 import { Furniture } from '../entities/Furniture';
 import { EventBus } from '../events/EventBus';
 import type { Coworker } from '../entities/Coworker';
+import { showFloatingText } from '../ui/FloatingText';
 import { FURNITURE_TYPES_DATA, FURNITURE_TYPE_KEYS, GAME_WIDTH, OFFICE_Y_BOTTOM, OFFICE_Y_TOP, TOWER_WAKE_DELAY_MS, TOWER_WAKE_DELAY_WITH_PARTNER_MS, type FurnitureType } from '../config';
 
 export class TowerManager {
@@ -9,6 +10,9 @@ export class TowerManager {
   public readonly furniture: Furniture[] = [];
   /** Campaign modifier: idle towers fall asleep (see ToolTower.tick) */
   public sleepyTowers = false;
+  /** Campaign modifier: a random tower hangs every [min, max] ms while a wave is on */
+  public zombieInterval: { minMs: number; maxMs: number } | null = null;
+  private zombieTimer = 0;
 
   constructor(private scene: Phaser.Scene) {}
 
@@ -26,9 +30,22 @@ export class TowerManager {
     for (const f of this.furniture) {
       f.setDepth(f.y);
     }
+    if (this.zombieInterval && enemies.length > 0) this.tickZombies(delta, this.zombieInterval);
     if (carrying) {
       carrying.setDepth(9999);
     }
+  }
+
+  private tickZombies(delta: number, interval: { minMs: number; maxMs: number }): void {
+    if (this.zombieTimer <= 0) this.zombieTimer = Phaser.Math.Between(interval.minMs, interval.maxMs);
+    this.zombieTimer -= delta;
+    if (this.zombieTimer > 0) return;
+
+    const candidates = this.towers.filter(t => t.variant !== 'partner' && !t.hung);
+    if (candidates.length === 0) return;
+    const victim = Phaser.Utils.Array.GetRandom(candidates);
+    victim.hang();
+    showFloatingText(this.scene, victim.x, victim.y, 'Контейнер завис', '#ff7675');
   }
 
   public countFurniture(type: FurnitureType): number {

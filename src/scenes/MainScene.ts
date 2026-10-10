@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY } from '../config';
+import { INBOX_LIMIT, INBOX_RESOLVE_INTERVAL_MS, STARTING_MONEY, setSpawnDoors } from '../config';
 import { drawMap } from '../rendering/MapRenderer';
 import { preloadTextures, ensureGeneratedTextures } from '../rendering/textures';
 import { HUD } from '../ui/HUD';
@@ -16,7 +16,7 @@ import { EventBus, GameEvents } from '../events/EventBus';
 import { MetaProgression } from '../systems/MetaProgression';
 import { GameSpeed } from '../systems/GameSpeed';
 import { setAllowedBuilds } from '../systems/BuildLocks';
-import { ACT1_LEVELS, getLevel, type LevelDef } from '../campaign/act1';
+import { findLevel, type ActDef, type LevelDef } from '../campaign';
 import { showBanner } from '../ui/FloatingText';
 import type { StoryData } from './StoryScene';
 
@@ -37,6 +37,8 @@ export class MainScene extends Phaser.Scene {
   public isGameOver = false;
   /** Campaign level being played, or null for the endless mode */
   private level: LevelDef | null = null;
+  private act: ActDef | null = null;
+  private levelIndex = 0;
   private levelComplete = false;
 
   constructor() {
@@ -48,7 +50,10 @@ export class MainScene extends Phaser.Scene {
   // ──────────────────────────────────────────────────────────────────────
 
   init(data: { levelId?: string | null }): void {
-    this.level = getLevel(data?.levelId ?? undefined);
+    const found = findLevel(data?.levelId);
+    this.level = found?.level ?? null;
+    this.act = found?.act ?? null;
+    this.levelIndex = found?.index ?? 0;
   }
 
   preload(): void {
@@ -59,13 +64,14 @@ export class MainScene extends Phaser.Scene {
     this.isGameOver = false;
     this.levelComplete = false;
     setAllowedBuilds(this.level?.build ?? null);
+    setSpawnDoors(this.level?.doors);
     SoundFX.init();
     ensureGeneratedTextures(this);
     
     MetaProgression.load();
     const meta = MetaProgression.get();
     const startMoney = (this.level?.startMoney ?? STARTING_MONEY) + meta.moneyLevel * 50;
-    const maxInbox = INBOX_LIMIT + meta.inboxLevel * 2;
+    const maxInbox = (this.level?.inbox?.limit ?? INBOX_LIMIT) + meta.inboxLevel * 2;
 
     const doorSprites = drawMap(this);
 
@@ -75,6 +81,7 @@ export class MainScene extends Phaser.Scene {
     
     this.towerManager = new TowerManager(this);
     this.towerManager.sleepyTowers = !!this.level?.sleepyTowers;
+    this.towerManager.zombieInterval = this.level?.zombieTowers ?? null;
     this.towerPlacer = new TowerPlacer(this, this.economy, this.hud, this.towerManager);
     if (this.level) this.towerPlacer.partnerLimitOverride = this.level.partnerLimit ?? 0;
     
@@ -85,7 +92,7 @@ export class MainScene extends Phaser.Scene {
     );
     this.towerPlacer.refreshHudSelection();
 
-    this.inbox = new Inbox(this, this.hud, maxInbox, INBOX_RESOLVE_INTERVAL_MS);
+    this.inbox = new Inbox(this, this.hud, maxInbox, this.level?.inbox?.resolveMs ?? INBOX_RESOLVE_INTERVAL_MS);
     
     EventBus.on(GameEvents.GAME_OVER, this.triggerGameOver, this);
     EventBus.on(GameEvents.WAVE_STARTED, this.onWaveStarted, this);
@@ -107,6 +114,7 @@ export class MainScene extends Phaser.Scene {
     this.towerPlacer.isPaused = () => this.waveManager.getIsPaused();
     this.ultimate = new Ultimate(this, this.hud, () => this.waveManager.enemies);
     this.shield = new Shield(this, this.hud, () => this.waveManager.enemies);
+    this.ultimate.chargeRate = this.shield.chargeRate = this.level?.abilityChargeRate ?? 1;
     
     this.tutorialManager = this.level ? undefined : new TutorialManager(this);
 
@@ -115,7 +123,9 @@ export class MainScene extends Phaser.Scene {
     });
 
     const leave = () => {
-      if (this.isGameOver) this.scene.start(this.level ? 'CampaignScene' : 'MainMenuScene');
+      if (!this.isGameOver) return;
+      if (this.act) this.scene.start('CampaignScene', { actId: this.act.id });
+      else this.scene.start('MainMenuScene');
     };
     this.hud.on('restart-tap', leave);
     this.input.keyboard?.on('keydown-R', leave);
@@ -183,7 +193,8 @@ export class MainScene extends Phaser.Scene {
     this.ultimate.enabled = false;
     this.shield.enabled = false;
 
-    MetaProgression.completeLevel(ACT1_LEVELS.indexOf(level));
+    const actId = this.act?.id ?? 'act1';
+    MetaProgression.completeLevel(actId, this.levelIndex);
     MetaProgression.earnMoney(level.reward);
     showBanner(this, 'Глава пройдена!', '#55efc4');
 
@@ -194,6 +205,7 @@ export class MainScene extends Phaser.Scene {
       finalLabel: 'ДАЛЬШЕ',
       footer: `Премия: +${level.reward} 💰`,
       nextScene: 'CampaignScene',
+      nextData: { actId },
     };
     this.time.delayedCall(1800, () => this.scene.start('StoryScene', story));
   }

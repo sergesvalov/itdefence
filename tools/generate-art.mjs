@@ -239,6 +239,44 @@ const avatarMaria = () => svg(128, 128,
   line(46, 47, 58, 49, INK, 3) + line(70, 49, 82, 47, INK, 3) +
   path('M57 75 q7 -4 14 0', 'none', 'stroke="#c0392b" stroke-width="4"'));
 
+// Сева, скрам-мастер: улыбчивый, в худи, со стикером
+const avatarSeva = () => svg(128, 128,
+  circle(64, 64, 60, '#24364a') +
+  path('M22 116 q2 -34 42 -34 q40 0 42 34 q-18 12 -42 12 q-24 0 -42 -12 z', '#f39c12') +
+  rect(56, 74, 16, 14, SKIN) +
+  `<ellipse cx="64" cy="54" rx="25" ry="27" fill="${SKIN}"/>` +
+  path('M39 52 q-4 -32 25 -32 q29 0 25 32 q-4 -16 -12 -18 q-14 6 -28 0 q-7 4 -10 18 z', '#2f3640') +
+  path('M48 56 q5 -5 10 0', 'none', 'stroke-width="3"') + path('M70 56 q5 -5 10 0', 'none', 'stroke-width="3"') +   // smiling eyes
+  path('M52 68 q12 12 24 0 z', '#fff', 'stroke-width="3"') +
+  rect(84, 92, 18, 18, '#ffe66d', 2, 'transform="rotate(8 93 101)" stroke-width="3"'));                             // sticky note
+
+// Саша, менеджер проектов: рубашка, щетина, внимательный взгляд
+const avatarSasha = () => svg(128, 128,
+  circle(64, 64, 60, '#24364a') +
+  path('M22 116 q2 -34 42 -34 q40 0 42 34 q-18 12 -42 12 q-24 0 -42 -12 z', '#8ecae6') +
+  path('M52 84 L64 100 L76 84 z', '#fff') +
+  rect(56, 74, 16, 12, SKIN) +
+  `<ellipse cx="64" cy="54" rx="25" ry="27" fill="${SKIN}"/>` +
+  path('M41 66 q23 24 46 0 q-2 14 -23 15 q-21 -1 -23 -15 z', '#d4b393', 'stroke="none"') +
+  path('M39 50 q-2 -30 25 -30 q27 0 25 30 q-8 -16 -25 -12 q-12 -8 -25 12 z', '#8a5a34') +
+  dot(53, 57, 2.8, INK) + dot(75, 57, 2.8, INK) +
+  line(46, 50, 58, 49, INK, 3.5) + line(70, 49, 82, 50, INK, 3.5) +
+  path('M56 72 q8 4 16 0', 'none', 'stroke-width="3"'));
+
+// Начальник отдела в интеграторе: half engineer, half salesman
+const avatarChief = () => svg(128, 128,
+  circle(64, 64, 60, '#24364a') +
+  path('M22 116 q2 -34 42 -34 q40 0 42 34 q-18 12 -42 12 q-24 0 -42 -12 z', '#34495e') +
+  path('M52 84 L64 104 L76 84 z', '#fff') +
+  path('M61 88 h6 l2 16 l-5 6 l-5 -6 z', TEAL, 'stroke-width="2.5"') +
+  rect(56, 74, 16, 12, SKIN) +
+  `<ellipse cx="64" cy="54" rx="25" ry="27" fill="${SKIN}"/>` +
+  path('M39 50 q-2 -30 25 -30 q27 0 25 30 q-5 -14 -25 -14 q-20 0 -25 14 z', '#2f3640') +
+  flat(39, 44, 5, 12, '#aab4bf', 2) + flat(84, 44, 5, 12, '#aab4bf', 2) +                     // grey temples
+  dot(53, 57, 2.8, INK) + dot(75, 57, 2.8, INK) +
+  line(46, 49, 58, 50, INK, 3.5) + line(70, 48, 82, 45, INK, 3.5) +                           // one raised brow
+  path('M55 72 q10 5 18 -3', 'none', 'stroke-width="3"'));
+
 // ─── Coworkers ──────────────────────────────────────────────────────────
 // Chibi proportions: a big head on a short body, drawn head-on. The contact
 // shadow is added in-game (CoworkerView), so none is baked in here.
@@ -381,7 +419,7 @@ const sprites = {
   'tower-coffee': coffee, 'tower-aircon': aircon, 'tower-partner': partner,
   'furniture-cabinet': cabinet, 'furniture-drawer': drawer, 'furniture-sofa': sofa,
   'desk': desk, 'door': door, 'door-open': doorOpen, 'avatar-petya': avatarPetya,
-  'avatar-vasya': avatarVasya, 'avatar-maria': avatarMaria, 'coworker-maria': coworkerMaria,
+  'avatar-vasya': avatarVasya, 'avatar-maria': avatarMaria, 'avatar-chief': avatarChief, 'avatar-seva': avatarSeva, 'avatar-sasha': avatarSasha, 'coworker-maria': coworkerMaria,
   'coworker': coworkerNormal, 'coworker-fast': coworkerFast, 'coworker-tank': coworkerTank,
   'coworker-swarm': coworkerSwarm, 'coworker-boss': coworkerBoss, 'coworker-remote': coworkerRemote,
 };

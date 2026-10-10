@@ -1,52 +1,5 @@
-import type { CoworkerVariant, FurnitureType, TowerVariant } from '../config';
+import type { LevelDef } from './types';
 
-/**
- * Campaign levels. Each one is a chapter of the book: a short text before
- * and after, its own set of buildable items, and (later in the act) a
- * mechanic taken straight from the story.
- */
-export interface LevelDef {
-  id: string;
-  title: string;
-  /** One line under the title in the chapter list */
-  teaser: string;
-  /** What the coworkers come with in this chapter — shown above each of them.
-   *  Whatever the heroes build, they are defending against these. */
-  problems: string[];
-  /** The boss's own problem (falls back to a regular one) */
-  bossProblem?: string;
-  /** Story pages shown before / after the level */
-  intro: string[];
-  outro: string[];
-  /** Waves to survive to win */
-  waves: number;
-  startMoney: number;
-  /** What the player may build here */
-  build: (TowerVariant | FurnitureType)[];
-  /** Which coworker types can show up (bosses come from `bossWaves`) */
-  variants: CoworkerVariant[];
-  /** Added to the wave number for enemy count / HP / spawn rate */
-  difficulty: number;
-  bossWaves?: number[];
-  /** Partner desks allowed (omitted = none) */
-  partnerLimit?: number;
-  /** "Хранилище с характером": idle towers doze off and wake up lazily */
-  sleepyTowers?: boolean;
-  /** At the start of these waves the priciest tower is taken away */
-  towerLoss?: { wave: number; message: string }[];
-  /** Who tells this chapter's story (portrait on the text screens); Petya by default */
-  avatar?: 'vasya' | 'maria';
-  /** Boss of this chapter, if it isn't the generic one */
-  bossVariant?: CoworkerVariant;
-  /**
-   * "Пётр и Петр": some coworkers carry a record spelled with «ё». Removed by
-   * anything but Docs (the script), such a record falls apart into two
-   * duplicates. Each entry is [original, duplicate, duplicate].
-   */
-  duplicates?: { chance: number; names: [string, string, string][] };
-  /** Meta money for clearing the level */
-  reward: number;
-}
 
 export const ACT1_TITLE = 'Акт I. Системный администратор';
 
@@ -253,7 +206,3 @@ export const ACT1_LEVELS: LevelDef[] = [
     reward: 100,
   },
 ];
-
-export function getLevel(id: string | undefined): LevelDef | null {
-  return ACT1_LEVELS.find(l => l.id === id) ?? null;
-}

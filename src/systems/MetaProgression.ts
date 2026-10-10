@@ -7,8 +7,10 @@ export interface MetaSaveData {
   damageLevel: number; // 0 to 5
   shieldDurationLevel: number; // 0 to 5
   tutorialCompleted: boolean;
-  /** How many campaign chapters are cleared (the next one is unlocked) */
+  /** How many chapters of act I are cleared (the next one is unlocked) */
   campaignCleared: number;
+  /** Same for the later acts, by act id */
+  actsCleared: Record<string, number>;
 }
 
 const DEFAULT_SAVE: MetaSaveData = {
@@ -19,6 +21,7 @@ const DEFAULT_SAVE: MetaSaveData = {
   shieldDurationLevel: 0,
   tutorialCompleted: true,
   campaignCleared: 0,
+  actsCleared: {},
 };
 
 export class MetaProgression {
@@ -54,9 +57,16 @@ export class MetaProgression {
     this.save();
   }
 
-  public static completeLevel(index: number): void {
+  public static getCleared(actId: string): number {
     const data = this.get();
-    data.campaignCleared = Math.max(data.campaignCleared, index + 1);
+    return actId === 'act1' ? data.campaignCleared : data.actsCleared[actId] ?? 0;
+  }
+
+  public static completeLevel(actId: string, index: number): void {
+    const data = this.get();
+    const cleared = Math.max(this.getCleared(actId), index + 1);
+    if (actId === 'act1') data.campaignCleared = cleared;
+    else data.actsCleared = { ...data.actsCleared, [actId]: cleared };
     this.save();
   }
 

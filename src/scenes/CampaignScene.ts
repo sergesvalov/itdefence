@@ -1,42 +1,74 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
-import { ACT1_LEVELS, ACT1_TITLE, type LevelDef } from '../campaign/act1';
+import { ACTS, getAct, type ActDef, type LevelDef } from '../campaign';
 import { MetaProgression } from '../systems/MetaProgression';
 import type { StoryData } from './StoryScene';
 
 const FONT = 'Inter, system-ui, sans-serif';
 const ROW_HEIGHT = 58;
 const ROW_GAP = 6;
+const LIST_TOP = 122;
 
-/** Chapter list for the act: cleared chapters, the next one, and locked ones. */
+/** Chapter list: a tab per act, then its cleared chapters, the next one, and locked ones. */
 export class CampaignScene extends Phaser.Scene {
+  private act!: ActDef;
+
   constructor() {
     super('CampaignScene');
   }
 
+  init(data: { actId?: string }): void {
+    this.act = getAct(data?.actId);
+  }
+
   create(): void {
     MetaProgression.load();
-    const cleared = MetaProgression.get().campaignCleared;
+    const cleared = MetaProgression.getCleared(this.act.id);
 
     this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1e2a3a).setOrigin(0);
-    this.add.text(GAME_WIDTH / 2, 44, ACT1_TITLE, {
+    this.add.text(GAME_WIDTH / 2, 36, this.act.title, {
       fontFamily: FONT, fontSize: '22px', color: '#fbbf24', fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, 74, `Пройдено глав: ${Math.min(cleared, ACT1_LEVELS.length)} из ${ACT1_LEVELS.length}`, {
-      fontFamily: FONT, fontSize: '14px', color: '#bdc3c7',
-    }).setOrigin(0.5);
 
-    ACT1_LEVELS.forEach((level, i) => {
-      this.addRow(level, i, 104 + i * (ROW_HEIGHT + ROW_GAP), cleared);
+    this.addTabs();
+
+    this.act.levels.forEach((level, i) => {
+      this.addRow(level, i, LIST_TOP + i * (ROW_HEIGHT + ROW_GAP), cleared);
     });
 
-    const backY = GAME_HEIGHT - 44;
-    const back = this.add.rectangle(GAME_WIDTH / 2, backY, 200, 48, 0x4a7a9b).setInteractive({ useHandCursor: true });
+    const backY = GAME_HEIGHT - 40;
+    const back = this.add.rectangle(GAME_WIDTH / 2, backY, 200, 44, 0x4a7a9b).setInteractive({ useHandCursor: true });
     back.setStrokeStyle(3, 0xffffff, 0.25);
     this.add.text(GAME_WIDTH / 2, backY, 'В МЕНЮ', {
       fontFamily: FONT, fontSize: '18px', color: '#ffffff', fontStyle: 'bold',
     }).setOrigin(0.5);
     back.on('pointerdown', () => this.scene.start('MainMenuScene'));
+  }
+
+  /** One tab per act — each is a separate attempt at the same life, so all are open. */
+  private addTabs(): void {
+    const gap = 8;
+    const width = (GAME_WIDTH - 32 - gap * (ACTS.length - 1)) / ACTS.length;
+    ACTS.forEach((act, i) => {
+      const active = act === this.act;
+      const x = 16 + i * (width + gap);
+      const done = Math.min(MetaProgression.getCleared(act.id), act.levels.length);
+
+      const bg = this.add.graphics();
+      bg.fillStyle(active ? 0x4a7a9b : 0x2c3e50, 1);
+      bg.fillRoundedRect(x, 64, width, 40, 8);
+      if (active) {
+        bg.lineStyle(2, 0xfbbf24, 0.9);
+        bg.strokeRoundedRect(x, 64, width, 40, 8);
+      }
+      this.add.text(x + width / 2, 84, `${act.short} · ${done}/${act.levels.length}`, {
+        fontFamily: FONT, fontSize: '16px', color: active ? '#ffffff' : '#bdc3c7', fontStyle: 'bold',
+      }).setOrigin(0.5);
+
+      if (active) return;
+      this.add.zone(x, 64, width, 40).setOrigin(0).setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.scene.start('CampaignScene', { actId: act.id }));
+    });
   }
 
   private addRow(level: LevelDef, index: number, top: number, cleared: number): void {

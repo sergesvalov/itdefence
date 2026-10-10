@@ -41,6 +41,14 @@ export class Coworker extends Phaser.GameObjects.Container {
   public duplicateNames: [string, string] | null = null;
   /** Was the killing blow armor-piercing (Docs)? */
   public killedByPiercing = false;
+  /** Not worth the cold water: does nothing on reaching the desk (see LevelDef.lake) */
+  public harmless = false;
+  /** A verbal agreement: comes back unless `documented` (see LevelDef.verbal) */
+  public verbal = false;
+  /** Took at least one Docs hit — there is a letter about it */
+  public documented = false;
+  /** A small issue: what it turns into if Docs finishes it (see LevelDef.escalation) */
+  public escalatesTo: string | null = null;
 
   private waypoints: Waypoint[];
   private waypointIndex = 0;
@@ -66,7 +74,7 @@ export class Coworker extends Phaser.GameObjects.Container {
 
   private view: CoworkerView;
 
-  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1, problem?: string, splitting = false) {
+  constructor(scene: Phaser.Scene, waypoints: Waypoint[], urgent = false, variant: CoworkerVariant = 'normal', hpScale = 1, problem?: string, labelColor?: string) {
     const start = waypoints[0];
     super(scene, start.x, start.y);
 
@@ -82,7 +90,7 @@ export class Coworker extends Phaser.GameObjects.Container {
     this.hp           = this.maxHp;
     this.urgent       = urgent;
 
-    this.view = new CoworkerView(scene, this, urgent, variant, stats, problem, splitting);
+    this.view = new CoworkerView(scene, this, urgent, variant, stats, problem, labelColor);
     this.view.redrawHpBar(this.hp, this.maxHp);
 
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
@@ -103,7 +111,8 @@ export class Coworker extends Phaser.GameObjects.Container {
   /** `piercing` damage ignores armor (Docs tower, the ultimate). */
   public takeDamage(amount: number, piercing = false): void {
     if (this.isDead) return;
-    if (!piercing) amount *= 1 - this.armor;
+    if (piercing) this.documented = true;
+    else amount *= 1 - this.armor;
     this.hp -= amount;
     this.view.redrawHpBar(this.hp, this.maxHp);
     this.view.triggerHitFlash();

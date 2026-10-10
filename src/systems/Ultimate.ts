@@ -15,6 +15,8 @@ export class Ultimate {
   public enabled = true;
 
   private chargeMs = 0;
+  /** Multiplier on charging speed (a campaign level may raise it) */
+  public chargeRate = 1;
   private ready = false;
 
   constructor(
@@ -27,7 +29,7 @@ export class Ultimate {
 
   update(delta: number): void {
     if (this.ready) return;
-    this.chargeMs = Math.min(ULTIMATE_COOLDOWN_MS, this.chargeMs + delta);
+    this.chargeMs = Math.min(ULTIMATE_COOLDOWN_MS, this.chargeMs + delta * this.chargeRate);
     this.hud.setUltimateCharge(this.chargeMs / ULTIMATE_COOLDOWN_MS);
 
     if (this.chargeMs >= ULTIMATE_COOLDOWN_MS) {

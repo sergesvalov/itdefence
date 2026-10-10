@@ -26,6 +26,8 @@ export class ToolTower extends Phaser.GameObjects.Container {
   public tasksSolved = 0;
   /** Dozed off from idleness (only on "sleepy storage" levels) */
   public asleep = false;
+  /** Hung like a zombie container: looks alive, does nothing until restarted by a tap */
+  public hung = false;
   private idleMs = 0;
   private wakeMs = 0;
   public cooldown = 0;
@@ -116,6 +118,30 @@ export class ToolTower extends Phaser.GameObjects.Container {
 
   // ── Per-frame ─────────────────────────────────────────────────────────
 
+  public hang(): void {
+    this.hung = true;
+    this.view.setHung(true);
+  }
+
+  /**
+   * Kill and recreate. Nothing was mounted to a persistent disk, so the
+   * upgrades are gone: the tower comes back at level 1. Returns whether
+   * anything was actually lost.
+   */
+  public restart(): boolean {
+    const lost = this.level > 1;
+    this.hung = false;
+    this.level = 1;
+    this.damage = this.baseDamage;
+    this.range = this.baseRange;
+    this.fireRate = this.baseFireRate;
+    this.totalSpent = this.baseCost;
+    this.cooldown = 0;
+    this.view.setHung(false);
+    this.view.playUpgradeAnimation(this.level, this.range);
+    return lost;
+  }
+
   public wake(): void {
     this.asleep = false;
     this.idleMs = 0;
@@ -128,6 +154,7 @@ export class ToolTower extends Phaser.GameObjects.Container {
    * once someone walks in it needs that long to get going again.
    */
   public tick(delta: number, enemies: Coworker[], wakeDelayMs: number | null = null): void {
+    if (this.hung) return;
     if (wakeDelayMs !== null && this.variant !== 'partner') {
       const busy = enemies.some(e => !e.isDead && !e.hasReachedDesk &&
         Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= this.range);

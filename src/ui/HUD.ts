@@ -26,6 +26,7 @@ export class HUD extends Phaser.Events.EventEmitter {
   private startWaveText: Phaser.GameObjects.Text;
   private speedBg: Phaser.GameObjects.Arc;
   private speedText: Phaser.GameObjects.Text;
+  private deadlineText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, startingMoney: number, inboxLimit: number) {
     super();
@@ -53,6 +54,12 @@ export class HUD extends Phaser.Events.EventEmitter {
       .setDepth(10001)
       .setInteractive(new Phaser.Geom.Circle(0, 0, 24), Phaser.Geom.Circle.Contains)
       .on('pointerdown', () => this.emit('speed-tap'));
+
+    // ── Wave deadline (campaign levels with a deadline) ───────────────────
+    this.deadlineText = scene.add.text(TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2, 78, '', {
+      fontFamily: fontStyle, fontSize: '16px', color: '#ffffff', fontStyle: 'bold',
+      backgroundColor: '#1e2a3a', padding: { x: 8, y: 4 },
+    }).setOrigin(0.5).setDepth(10001).setVisible(false);
 
     // ── "Start Wave" button ───────────────────────────────────────────
     const swX = TOOLBAR_WIDTH + (GAME_WIDTH - TOOLBAR_WIDTH) / 2; // center of play area
@@ -104,6 +111,16 @@ export class HUD extends Phaser.Events.EventEmitter {
   public hideStartWaveButton(): void {
     this.startWaveButton.setVisible(false);
     this.startWaveText.setVisible(false);
+  }
+
+  /** Time left until the wave's deadline, in ms (negative = overdue); null hides the timer. */
+  public setDeadline(remainingMs: number | null): void {
+    this.deadlineText.setVisible(remainingMs !== null);
+    if (remainingMs === null) return;
+    const late = remainingMs < 0;
+    const seconds = Math.ceil(Math.abs(remainingMs) / 1000);
+    this.deadlineText.setText(late ? `Просрочка ${seconds}с` : `Срок: ${seconds}с`);
+    this.deadlineText.setBackgroundColor(late ? '#c0392b' : remainingMs < 10000 ? '#d35400' : '#1e2a3a');
   }
 
   public setSpeed(speed: number): void {

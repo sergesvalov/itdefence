@@ -162,6 +162,11 @@ export class TowerPlacer {
       const clickedTower = this.manager.towers.find(
         t => Phaser.Math.Distance.Between(t.x, t.y, ptr.x, ptr.y) < (TOWER_VARIANTS_DATA[t.variant].radius || TOWER_SIZE)
       );
+      if (clickedTower?.hung) {
+        const lost = clickedTower.restart();
+        showFloatingText(this.scene, clickedTower.x, clickedTower.y, lost ? 'Переподнял. Но база пустая' : 'Переподнял', '#ff7675');
+        return;
+      }
       if (clickedTower?.asleep) {
         clickedTower.wake();
         showFloatingText(this.scene, clickedTower.x, clickedTower.y, 'Разогнал!', '#74b9ff');

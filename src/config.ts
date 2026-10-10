@@ -85,6 +85,9 @@ export const TOWER_WAKE_DELAY_WITH_PARTNER_MS = 1100;
 export const DUPLICATE_HP_FRACTION = 0.45;
 export const DUPLICATE_BOUNTY = 2;
 
+/** "Озеро": money for stopping one of the few real problems */
+export const LAKE_REAL_BOUNTY = 30;
+
 /** Partner desk: tasks it takes over per wave before burning out (rested by the next wave) */
 export const PARTNER_TASKS_PER_WAVE = 5;
 
@@ -254,6 +257,9 @@ export const TEXTURE_ASSETS: TextureAsset[] = [
   sprite('avatar-petya',    'avatar-petya',    192, 192),
   sprite('avatar-vasya',    'avatar-vasya',    192, 192),
   sprite('avatar-maria',    'avatar-maria',    192, 192),
+  sprite('avatar-chief',    'avatar-chief',    192, 192),
+  sprite('avatar-seva',     'avatar-seva',     192, 192),
+  sprite('avatar-sasha',    'avatar-sasha',    192, 192),
   sprite('coworker',        'coworker',        120, 192),
   sprite('coworker-fast',   'coworker-fast',   120, 192),
   sprite('coworker-swarm',  'coworker-swarm',  120, 192),
@@ -282,6 +288,12 @@ export interface DoorDef {
   label: string;
 }
 
-export const SPAWN_DOORS: DoorDef[] = [
-  { x: 282, y: 165.5, label: 'Reception' },
-];
+const DOOR_Y = 165.5;
+const DEFAULT_DOORS: DoorDef[] = [{ x: 282, y: DOOR_Y, label: 'Reception' }];
+
+export let SPAWN_DOORS: DoorDef[] = DEFAULT_DOORS;
+
+/** Sets the doors for the level about to start; null restores the single default door. */
+export function setSpawnDoors(doors: { x: number; label: string }[] | null | undefined): void {
+  SPAWN_DOORS = doors ? doors.map(d => ({ x: d.x, y: DOOR_Y, label: d.label })) : DEFAULT_DOORS;
+}
